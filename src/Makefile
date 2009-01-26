@@ -13,10 +13,10 @@ LDFLAGS=  -L $(LIBBOOSTDIR) -lboost_program_options -lboost_regex
 all: ggen
 
 ggen: ggen.o
-	g++-4.1 $^ $(LDFLAGS) -o $@
+	$(CC) $^ $(LDFLAGS) -o $@
 
 ggen.o: ggen.cpp
-	g++-4.1 $(CFLAGS) -c $^
+	$(CC) $(CFLAGS) -c $^
 
 clean:
 	rm -f *.o ggen
