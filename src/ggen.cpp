@@ -1,14 +1,30 @@
+/* GGen is a random graph generator :
+ * it provides means to generate a graph following a
+ * collection of methods found in the litterature.
+ *
+ * This is a research project founded by the MOAIS Team,
+ * INRIA, Grenoble Universities.
+ */
+
 #include <iostream>
+
+/* We use extensively the BOOST library for 
+ * handling output, program options and random generators
+ */
 #include <boost/config.hpp>
+
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/graphviz.hpp>
 #include <boost/graph/random.hpp>
 #include <boost/graph/properties.hpp>
+
 #include <boost/random/linear_congruential.hpp>
 #include <boost/random/uniform_int.hpp>
 #include <boost/program_options.hpp>
+
 #include <boost/regex.hpp>
+
 using namespace boost;
 
 
@@ -47,7 +63,6 @@ Graph *generate_graph(int num_vertices, int num_edges) {
  * Run through the adjacency matrix
  * and at each i,j decide if matrix[i][j] is an edge by tossing a coin
  */
-
 
 
 
