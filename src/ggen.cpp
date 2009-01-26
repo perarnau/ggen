@@ -108,7 +108,7 @@ void gg_random_vertex_pairs(Graph& g,int num_vertices, int num_edges, base_gener
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace po = boost::program_options;
-dynamic_properties vertex_p;
+dynamic_properties properties;
 Graph *g;
 
 void create_default_vertex_property()
@@ -118,15 +118,15 @@ void create_default_vertex_property()
 	typedef graph_traits<Graph>::vertex_iterator vertex_iter;
 	user_map *map = new  user_map();
 	name_map * bmap = new name_map(*map);
-	vertex_p.property("node_id",*bmap);
+	properties.property("node_id",*bmap);
 	
 	std::pair<vertex_iter, vertex_iter> vp;
 	int i =0;
 	for (vp = boost::vertices(*g); vp.first != vp.second; ++vp.first)
 	{
 		//std::cout << i << " : " << *vp.first << "\n";
-		put("node_id",vertex_p,*vp.first,i++);
-		//std::cout << get("node_id",vertex_p,*vp.first) << "\n";
+		put("node_id",properties,*vp.first,i++);
+		//std::cout << get("node_id",properties,*vp.first) << "\n";
 	}
 
 }
@@ -150,11 +150,11 @@ void parse_distribution(std::string name,std::string s)
 
 		user_map* map = new user_map();
 		vertex_map * bmap = new vertex_map(*map);
-		vertex_p.property(name,*bmap);
+		properties.property(name,*bmap);
 		
 		std::pair<vertex_iter, vertex_iter> vp;
 		for (vp = boost::vertices(*g); vp.first != vp.second; ++vp.first)
-			    put(name,vertex_p,*vp.first,uni());
+			    put(name,properties,*vp.first,uni());
 		
 	}
 }
@@ -219,7 +219,7 @@ int main(int argc, char** argv)
 	// Handle parsing and generation of graph properties
 	///////////////////////////////////////////////////////
 	create_default_vertex_property();
-	//vertex_p.property("node_id",get(vertex_name,*g));
+	//properties.property("node_id",get(vertex_name,*g));
 	
 	if (vm.count("vertex-property")) {
 
@@ -232,7 +232,7 @@ int main(int argc, char** argv)
 
 	// Write graph
 	////////////////////////////////////	
-	write_graphviz(std::cout, *g,vertex_p);
+	write_graphviz(std::cout, *g,properties);
 	delete g;
 	return 0;
 }
