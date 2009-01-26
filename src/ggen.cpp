@@ -50,13 +50,12 @@ typedef adjacency_list<setS, vecS, bidirectionalS,
 
 /* Boost graph generator,
  * Any hint on what is exactly done is welcome
+ * Swann : as of today the boost code seems to 
+ * make a variant of our random_vertex_pairs method.
  */
-Graph *generate_graph(int num_vertices, int num_edges) {
+void generate_graph(Graph& g,int num_vertices, int num_edges) {
 
-	Graph *g = new Graph;
-	rand48 r = rand48((uint64_t) 0);
-	generate_random_graph(*g,num_vertices,num_edges,r,false,false);
-	return g;
+	boost::generate_random_graph(g,num_vertices,num_edges,*random_generator,false,false);
 }
 
 /* Random generation by the adjacency matrix method :
@@ -68,9 +67,9 @@ Graph *generate_graph(int num_vertices, int num_edges) {
 
 /* Random generation by choosing pairs of vertices.
 */ 
-Graph *generate_graph_random_vertex_pairs(int num_vertices, int num_edges) {	
+void generate_graph_random_vertex_pairs(Graph& g,int num_vertices, int num_edges) {	
 
-	Graph *g = new Graph(num_vertices);
+	g = Graph(num_vertices);
 
 	/* We want a random generator with an uniform distribution over 0,num_vertices
 	*/
@@ -84,12 +83,10 @@ Graph *generate_graph_random_vertex_pairs(int num_vertices, int num_edges) {
 		if( u == v )
 			continue;
 
-		std::pair<graph_traits<Graph>::edge_descriptor,bool> result = add_edge(u,v,*g);
+		std::pair<graph_traits<Graph>::edge_descriptor,bool> result = add_edge(u,v,g);
 		if(result.second)
 			added_edges++;
 	}
-
-	return g;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -194,13 +191,15 @@ int main(int argc, char** argv)
 
 	// Graph generation
 	////////////////////////////////
+	
+	g = new Graph();
 
 	//g = generate_graph(num_vertices,num_edges);
 	//write_graphviz(std::cout, *g);
 	//delete g;
 
 	
-	g = generate_graph_random_vertex_pairs(nb_vertices,nb_edges);
+	generate_graph_random_vertex_pairs(*g,nb_vertices,nb_edges);
 	
 
 	// Handle parsing and generation of graph properties
