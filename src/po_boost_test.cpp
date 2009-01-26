@@ -4,6 +4,7 @@
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/graphviz.hpp>
 #include <boost/graph/random.hpp>
+#include <boost/graph/properties.hpp>
 #include <boost/random/linear_congruential.hpp>
 #include <boost/random/uniform_int.hpp>
 #include <boost/program_options.hpp>
@@ -29,7 +30,7 @@ base_generator_type* random_generator;
  *	* We don't have any additional properties on vertices or edges
  */
 typedef adjacency_list<setS, vecS, bidirectionalS,
-	no_property, no_property> Graph;
+	dynamic_properties, dynamic_properties> Graph;
 
 /* Boost graph generator,
  * Any hint on what is exactly done is welcome
@@ -81,11 +82,30 @@ Graph *generate_graph_random_vertex_pairs(int num_vertices, int num_edges) {
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace po = boost::program_options;
+dynamic_properties vertex_p;
+Graph *g;
 
-std::map< std::string, void*> generator_map;
-boost::dynamic_properties vertex_p;
+void create_default_vertex_property()
+{
+	typedef std::map< graph_traits<Graph>::vertex_descriptor, int>  user_map;
+	typedef boost::associative_property_map< user_map > name_map;
+	typedef graph_traits<Graph>::vertex_iterator vertex_iter;
+	user_map *map = new  user_map();
+	name_map * bmap = new name_map(*map);
+	vertex_p.property("node_id",*bmap);
+	
+	std::pair<vertex_iter, vertex_iter> vp;
+	int i =0;
+	for (vp = boost::vertices(*g); vp.first != vp.second; ++vp.first)
+	{
+		//std::cout << i << " : " << *vp.first << "\n";
+		put("node_id",vertex_p,*vp.first,i++);
+		//std::cout << get("node_id",vertex_p,*vp.first) << "\n";
+	}
 
-void* parse_distribution(std::string s)
+}
+
+void parse_distribution(std::string name,std::string s)
 {
 	// for now we only know of the uniform distribution of integers
 	static const boost::regex uni_int("uni_int\\((\\d+),(\\d+)\\)");
@@ -96,32 +116,32 @@ void* parse_distribution(std::string s)
 		min = boost::lexical_cast<int>(what[1]);
 		max =  boost::lexical_cast<int>(what[2]);
 		boost::uniform_int<> uni_dist(min,max);
-		boost::variate_generator<base_generator_type&, boost::uniform_int<> >* uni = new boost::variate_generator<base_generator_type&, boost::uniform_int<> >(*random_generator,uni_dist);
-		return uni;
+		boost::variate_generator<base_generator_type&, boost::uniform_int<> > uni(*random_generator,uni_dist);
+		
+		typedef std::map< graph_traits<Graph>::vertex_descriptor, int > user_map;
+		typedef graph_traits<Graph>::vertex_iterator vertex_iter;
+		typedef boost::associative_property_map< user_map > vertex_map;
+
+		user_map* map = new user_map();
+		vertex_map * bmap = new vertex_map(*map);
+		vertex_p.property(name,*bmap);
+		
+		std::pair<vertex_iter, vertex_iter> vp;
+		for (vp = boost::vertices(*g); vp.first != vp.second; ++vp.first)
+			    put(name,vertex_p,*vp.first,uni());
+		
 	}
-	else
-		return NULL;
 }
 
-std::pair<std::string,void *>* parse_property(std::string s)
+void parse_property(std::string s)
 {
-	std::pair<std::string,void*> *result = NULL;
 	int i = s.find(':');
 	if(i!= std::string::npos) 
 	{
 		std::string property_name = s.substr(0,i);
 		std::string distribution_definition = s.substr(i+1);
-		void *gen = parse_distribution(distribution_definition);
-		if(gen != NULL)
-		{
-			result = new std::pair<std::string,void*>(property_name,gen);
-			return result;
-		}
-		else
-			return NULL;
+		parse_distribution(property_name,distribution_definition);
 	}
-	else
-		return NULL; 
 }
 
 
@@ -130,10 +150,9 @@ std::pair<std::string,void *>* parse_property(std::string s)
 int main(int argc, char** argv)
 {
 	int nb_vertices,nb_edges;
-	generator_map();
-	vertex_p();
 
-
+	// Handle command line arguments
+	////////////////////////////////////
 	po::options_description desc("Allowed options");
 	desc.add_options()
 		("help", "produce help message")
@@ -152,32 +171,40 @@ int main(int argc, char** argv)
 		        return 1;
 	}
 
-	if (vm.count("vertex-property")) {
-		std::vector < std::string > v = vm["vertex-property"].as< std::vector< std::string> >();
-		for (std::vector<std::string>::iterator it = v.begin(); it != v.end();it++)
-		{
-			std::pair< std::string, void* > *result = parse_property(*it);
-			if(result != NULL)
-			{
-				
-			}
-			else
-			{
-				std::cout << "Error in parsing property " << *it << "\n";
-				exit(EXIT_FAILURE);
-			}
-		}
-	}
 	
+	// Create used random_generator
+	////////////////////////////////
 	random_generator = new base_generator_type(random_seed);
 
-	Graph *g;
+
+	// Graph generation
+	////////////////////////////////
+
 	//g = generate_graph(num_vertices,num_edges);
 	//write_graphviz(std::cout, *g);
 	//delete g;
 
+	
 	g = generate_graph_random_vertex_pairs(nb_vertices,nb_edges);
-	write_graphviz(std::cout, *g);
+	
+
+	// Handle parsing and generation of graph properties
+	///////////////////////////////////////////////////////
+	create_default_vertex_property();
+	//vertex_p.property("node_id",get(vertex_name,*g));
+	
+	if (vm.count("vertex-property")) {
+
+		std::vector < std::string > v = vm["vertex-property"].as< std::vector< std::string> >();
+		for (std::vector<std::string>::iterator it = v.begin(); it != v.end();it++)
+		{
+			parse_property(*it);
+		}
+	}
+
+	// Write graph
+	////////////////////////////////////	
+	write_graphviz(std::cout, *g,vertex_p);
 	delete g;
 	return 0;
 }
