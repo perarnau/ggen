@@ -48,43 +48,57 @@ base_generator_type* random_generator;
 typedef adjacency_list<setS, vecS, bidirectionalS,
 	dynamic_properties, dynamic_properties> Graph;
 
+////////////////////////////////////////////////////////////////////////////////
+// Generation Methods
+////////////////////////////////////////////////////////////////////////////////
+
+/* DEVELOPPERS: 
+ * all generation methods must use the same prototype :
+ 	
+ 	void gg_##method_name##(Graph& g, int num_vertices, int num_edges, base_generator_type& gen, bool allow_parallel = false, bool self_edges = false)
+ 
+ * This prototype come from BOOST and seem to handle all the complexity a generation method can have.
+ */
+
+
+
 /* Boost graph generator,
  * Any hint on what is exactly done is welcome
  * Swann : as of today the boost code seems to 
  * make a variant of our random_vertex_pairs method.
  */
-void generate_graph(Graph& g,int num_vertices, int num_edges) {
+void gg_boost(Graph& g,int num_vertices, int num_edges, base_generator_type& gen, bool allow_parallel = false, bool self_edges = false) {
 
-	boost::generate_random_graph(g,num_vertices,num_edges,*random_generator,false,false);
+	boost::generate_random_graph(g,num_vertices,num_edges,gen,allow_parallel,self_edges);
 }
 
 /* Random generation by the adjacency matrix method :
  * Run through the adjacency matrix
  * and at each i,j decide if matrix[i][j] is an edge by tossing a coin
  */
-
+void gg_adjacency_matrix(Graph& g,int num_vertices,int num_edges, base_generator_type& gen, bool allow_parallel = false, bool self_edges = false);
 
 
 /* Random generation by choosing pairs of vertices.
 */ 
-void generate_graph_random_vertex_pairs(Graph& g,int num_vertices, int num_edges) {	
+void gg_random_vertex_pairs(Graph& g,int num_vertices, int num_edges, base_generator_type& gen, bool allow_parallel = false, bool self_edges = false) {	
 
 	g = Graph(num_vertices);
 
 	/* We want a random generator with an uniform distribution over 0,num_vertices
 	*/
 	boost::uniform_int<> uni_dist(0,num_vertices-1);
-	boost::variate_generator<base_generator_type&, boost::uniform_int<> > uni(*random_generator,uni_dist);
+	boost::variate_generator<base_generator_type&, boost::uniform_int<> > uni(gen,uni_dist);
 
 	int added_edges = 0;
 	while(added_edges < num_edges ) {
 		int u =  uni();
 		int v =  uni();
-		if( u == v )
+		if( !self_edges && u == v )
 			continue;
 
 		std::pair<graph_traits<Graph>::edge_descriptor,bool> result = add_edge(u,v,g);
-		if(result.second)
+		if(!allow_parallel && result.second)
 			added_edges++;
 	}
 }
@@ -199,7 +213,7 @@ int main(int argc, char** argv)
 	//delete g;
 
 	
-	generate_graph_random_vertex_pairs(*g,nb_vertices,nb_edges);
+	gg_random_vertex_pairs(*g,nb_vertices,nb_edges,*random_generator);
 	
 
 	// Handle parsing and generation of graph properties
