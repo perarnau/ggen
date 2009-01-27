@@ -12,11 +12,11 @@ LDFLAGS=  -L $(LIBBOOSTDIR) -lboost_program_options -lboost_regex
 
 all: ggen
 
-ggen: ggen.o
+ggen: ggen.o dynamic_properties.o
 	$(CC) $^ $(LDFLAGS) -o $@
 
-ggen.o: ggen.cpp
-	$(CC) $(CFLAGS) -c $^
+%.o: %.cpp %.hpp
+	$(CC) $(CFLAGS) -c $<
 
 clean:
 	rm -f *.o ggen

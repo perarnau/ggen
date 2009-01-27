@@ -6,47 +6,24 @@
  * INRIA, Grenoble Universities.
  */
 
+
 #include <iostream>
 
 /* We use extensively the BOOST library for 
  * handling output, program options and random generators
  */
 #include <boost/config.hpp>
-
-#include <boost/graph/adjacency_list.hpp>
-#include <boost/graph/graph_traits.hpp>
-#include <boost/graph/graphviz.hpp>
-#include <boost/graph/random.hpp>
-#include <boost/graph/properties.hpp>
-
-#include <boost/random/linear_congruential.hpp>
-#include <boost/random/uniform_int.hpp>
 #include <boost/program_options.hpp>
-
 #include <boost/regex.hpp>
+#include <boost/graph/graphviz.hpp>
+
+#include "ggen.hpp"
+#include "dynamic_properties.hpp"
 
 using namespace boost;
 
-
-/* Random generation stuff
- *  we define a base generator and each graph generation method
- *  use this base generator to define the random generator it wants
- */
-
-typedef minstd_rand base_generator_type;
 uint64_t random_seed;
 base_generator_type* random_generator;
-
-/* This is the definition of the graph struture
- * According to boost that means :
- *	* The graph is an adjacency list
- *	* The vertices are managed as a std::Vector
- *	* The edges are managed as std::set to enforce no parallel edges
- *	* The graph is bidirectional
- *	* We don't have any additional properties on vertices or edges
- */
-typedef adjacency_list<setS, vecS, bidirectionalS,
-	dynamic_properties, dynamic_properties> Graph;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Generation Methods
@@ -67,7 +44,7 @@ typedef adjacency_list<setS, vecS, bidirectionalS,
  * Swann : as of today the boost code seems to 
  * make a variant of our random_vertex_pairs method.
  */
-void gg_boost(Graph& g,int num_vertices, int num_edges, base_generator_type& gen, bool allow_parallel = false, bool self_edges = false) {
+void gg_boost(Graph& g,int num_vertices, int num_edges, base_generator_type& gen, bool allow_parallel /*= false*/, bool self_edges /*= false*/) {
 
 	boost::generate_random_graph(g,num_vertices,num_edges,gen,allow_parallel,self_edges);
 }
@@ -76,12 +53,12 @@ void gg_boost(Graph& g,int num_vertices, int num_edges, base_generator_type& gen
  * Run through the adjacency matrix
  * and at each i,j decide if matrix[i][j] is an edge by tossing a coin
  */
-void gg_adjacency_matrix(Graph& g,int num_vertices,int num_edges, base_generator_type& gen, bool allow_parallel = false, bool self_edges = false);
+void gg_adjacency_matrix(Graph& g,int num_vertices,int num_edges, base_generator_type& gen, bool allow_parallel /*= false*/, bool self_edges /*= false*/);
 
 
 /* Random generation by choosing pairs of vertices.
 */ 
-void gg_random_vertex_pairs(Graph& g,int num_vertices, int num_edges, base_generator_type& gen, bool allow_parallel = false, bool self_edges = false) {	
+void gg_random_vertex_pairs(Graph& g,int num_vertices, int num_edges, base_generator_type& gen, bool allow_parallel /*= false*/, bool self_edges /*= false*/) {	
 
 	g = Graph(num_vertices);
 
@@ -111,28 +88,8 @@ namespace po = boost::program_options;
 dynamic_properties properties;
 Graph *g;
 
-void create_default_vertex_property()
-{
-	typedef std::map< graph_traits<Graph>::vertex_descriptor, int>  user_map;
-	typedef boost::associative_property_map< user_map > name_map;
-	typedef graph_traits<Graph>::vertex_iterator vertex_iter;
-	user_map *map = new  user_map();
-	name_map * bmap = new name_map(*map);
-	properties.property("node_id",*bmap);
-	
-	std::pair<vertex_iter, vertex_iter> vp;
-	int i =0;
-	for (vp = boost::vertices(*g); vp.first != vp.second; ++vp.first)
-	{
-		//std::cout << i << " : " << *vp.first << "\n";
-		put("node_id",properties,*vp.first,i++);
-		//std::cout << get("node_id",properties,*vp.first) << "\n";
-	}
-
-}
-
 void parse_distribution(std::string name,std::string s)
-{
+{	
 	// for now we only know of the uniform distribution of integers
 	static const boost::regex uni_int("uni_int\\((\\d+),(\\d+)\\)");
 	boost::smatch what;
@@ -218,7 +175,7 @@ int main(int argc, char** argv)
 
 	// Handle parsing and generation of graph properties
 	///////////////////////////////////////////////////////
-	create_default_vertex_property();
+	create_default_vertex_property(properties,*g);
 	//properties.property("node_id",get(vertex_name,*g));
 	
 	if (vm.count("vertex-property")) {
