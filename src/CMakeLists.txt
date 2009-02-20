@@ -2,11 +2,17 @@
 PROJECT(ggen CXX C)
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 
-# Pour boost
+set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR})
+
+# For boost
 SET(Boost_USE_STATIC_LIBS OFF)
 SET(Boost_USE_MULTITHREAD OFF)
 FIND_PACKAGE(Boost REQUIRED regex program_options graph)
 
-ADD_EXECUTABLE(ggen ggen.cpp dynamic_properties.cpp)
-TARGET_LINK_LIBRARIES(ggen ${Boost_LIBRARIES})
+# For GSL
+find_package(GSL)
 
+ADD_EXECUTABLE(ggen ggen.cpp dynamic_properties.cpp)
+ADD_EXECUTABLE(property_adder property_adder.cpp random.cpp  dynamic_properties.cpp)
+TARGET_LINK_LIBRARIES(ggen ${Boost_LIBRARIES})
+target_link_libraries(property_adder ${Boost_LIBRARIES} ${GSL_LIBRARIES})
