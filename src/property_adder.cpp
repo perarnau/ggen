@@ -19,6 +19,7 @@
 
 #include "ggen.hpp"
 #include "dynamic_properties.hpp"
+#include "random.hpp"
 
 using namespace boost;
 using namespace std;
@@ -69,69 +70,92 @@ void parse_property(std::string s)
 		parse_distribution(property_name,distribution_definition);
 	}
 }
+
 */
-istream *infile = NULL;
-ostream *outfile = NULL;
 
-void outfile_parser(const string& name) 
+/*
+void add_vertex_property(string name)
 {
-	if(!name.compare("__cout"))
-		outfile = &cout;
-	else
-	{
-		filebuf *fb = new filebuf();
-		fb->open(name.c_str(),ios::out);
-		outfile = new ostream(fb);
-	}
+	// create random generator
+	double min,max;
+	void *p[3] = { &min, &max, NULL };
+	ggen_gsl_rnd *rnd = ggen_gsl_rnd::create_rnd(GSL_RNG_DEFAULT,(unsigned long int)random_seed,(unsigned long )GSL_RND_DEFAULT, (void **)p);
+
+	// iterators
+	typedef std::map< graph_traits<Graph>::vertex_descriptor, double > user_map;
+	typedef graph_traits<Graph>::vertex_iterator vertex_iter;
+	typedef boost::associative_property_map< user_map > vertex_map;
+
+	user_map* map = new user_map();
+	vertex_map * bmap = new vertex_map(*map);
+	properties.property(name,*bmap);
+		
+	// iterate and add random property
+	std::pair<vertex_iter, vertex_iter> vp;
+	for (vp = boost::vertices(*g); vp.first != vp.second; ++vp.first)
+		    put(name,properties,*vp.first,rnd->get());
+
 }
-
-void infile_parser(const string& name) 
-{
-	if(!name.compare("__cin"))
-		infile = &cin;
-	else
-	{
-		filebuf *fb = new filebuf();
-		fb->open(name.c_str(),ios::in);
-		infile = new istream(fb);
-	}
-}
-
-
-
-
+*/
 /* Main program
  */
 int main(int argc, char** argv)
 {
 	int nb_vertices,nb_edges;
 	string infilename, outfilename;
+	istream *infile = NULL;
+	ostream *outfile = NULL;
+	random_options_state rs;
 
 	// Handle command line arguments
 	////////////////////////////////////
 	po::options_description desc("Allowed options");
 	desc.add_options()
 		("help", "produce help message")
-		/* random generator option */
-		//("seed,s", po::value<uint64_t>(&random_seed)->default_value(time(NULL)), "set the random generator seed")
-		
 		
 		/* I/O options */
-		("input,i", po::value<string>(&infilename)->default_value("__cin")->notifier(&infile_parser), "Set the output file")
-		("output,o", po::value<string>(&outfilename)->default_value("__cout")->notifier(&outfile_parser), "Set the output file")
+		("input,i", po::value<string>(&infilename), "Set the output file")
+		("output,o", po::value<string>(&outfilename), "Set the output file")
 
 		/* Property options */
 	;
+
+	po::options_description ro = random_add_options();
+	po::options_description all;
+	all.add(desc).add(ro);
 	
+	
+	// Parse command line options
+	////////////////////////////////
 	po::variables_map vm;
-	po::store(po::parse_command_line(argc,argv,desc),vm);
+	po::store(po::parse_command_line(argc,argv,all),vm);
 	po::notify(vm);
 	
-	if (vm.count("help")) {
-		std::cout << desc << "\n";
+	if (vm.count("help"))
+	{
+		std::cout << all << "\n";
 		        return 1;
 	}
 
+	if (vm.count("input")) 
+	{
+		filebuf *fb = new filebuf();
+		fb->open(vm["input"].as<std::string>().c_str(),ios::in);
+		infile = new istream(fb);
+	}
+	else
+		infile = &cin;
+	
+	if (vm.count("output")) 
+	{
+		filebuf *fb = new filebuf();
+		fb->open(vm["output"].as<std::string>().c_str(),ios::out);
+		outfile = new ostream(fb);
+	}
+	else
+		outfile = &cout;
+	
+	random_options_start(vm,rs);
 
 	// Graph generation
 	////////////////////////////////
@@ -153,6 +177,9 @@ int main(int argc, char** argv)
 	// Write graph
 	////////////////////////////////////	
 	write_graphviz(*outfile, *g,properties);
+	
+	random_options_end(vm,rs);
+
 	delete g;
 	return 0;
 }
