@@ -49,6 +49,40 @@ void add_vertex_property(ggen_rnd* rnd,string name)
 		    put(name,properties,*vp.first,boost::lexical_cast<std::string>(rnd->get()));
 }
 
+
+// UGLY & BAD HACK : we need to create a map with edge_descriptor as Key but this
+// type doesn't implement the required '<' operator.
+// see http://www.nabble.com/BGL:-std::map<Edge,-int>-needs-the-<-operator-td4019596.html  for more details
+
+struct cmp_edge :
+	public std::binary_function<graph_traits<Graph>::edge_descriptor,graph_traits<Graph>::edge_descriptor, bool>
+{
+		bool operator()(const graph_traits<Graph>::edge_descriptor &e1, const graph_traits<Graph>::edge_descriptor &e2) const
+		{
+			return e1.get_property() < e2.get_property();
+		}
+}; 
+
+
+void add_edge_property(ggen_rnd* rnd,string name)
+{
+	// iterators
+	typedef std::map < graph_traits<Graph>::edge_descriptor, std::string, cmp_edge > user_map;
+	typedef graph_traits<Graph>::edge_iterator edge_iter;
+	typedef boost::associative_property_map< user_map > edge_map;
+
+	user_map* map = new user_map();
+	edge_map * bmap = new edge_map(*map);
+	properties.property(name,*bmap);
+
+	// iterate and add random property
+	std::pair<edge_iter, edge_iter> ep;
+	for (ep = boost::edges(*g); ep.first != ep.second; ++ep.first)
+		    put(name,properties,*ep.first,boost::lexical_cast<std::string>(rnd->get()));
+	
+}
+
+
 /* Main program
  */
 int main(int argc, char** argv)
@@ -59,6 +93,7 @@ int main(int argc, char** argv)
 	istream *infile = NULL;
 	ostream *outfile = NULL;
 	random_options_state rs;
+	bool edge_property;
 
 	// Handle command line arguments
 	////////////////////////////////////
@@ -67,11 +102,12 @@ int main(int argc, char** argv)
 		("help", "produce help message")
 		
 		/* I/O options */
-		("input,i", po::value<string>(&infilename), "Set the output file")
-		("output,o", po::value<string>(&outfilename), "Set the output file")
+		("input,i", po::value<string>(), "Set the output file")
+		("output,o", po::value<string>(), "Set the output file")
 
 		/* Property options */
-		("name,n",po::value<string>(&name),"Set the property name")
+		("name,n",po::value<string>(),"Set the property name")
+		("edge,e",po::bool_switch(),"Add an edge property instead of a vertex one")
 	;
 
 	po::options_description ro = random_add_options();
@@ -116,6 +152,14 @@ int main(int argc, char** argv)
 	else
 		name = "NewProperty";
 
+	if(vm.count("edge"))
+	{
+		edge_property = true;
+	}
+	else
+		edge_property = false;
+
+
 	random_options_start(vm,rs);
 
 	// Graph generation
@@ -133,7 +177,10 @@ int main(int argc, char** argv)
 	
 	// Add property
 	////////////////////////////////////
-	add_vertex_property(rs.rnd,name);
+	if(edge_property)
+		add_edge_property(rs.rnd,name);
+	else
+		add_vertex_property(rs.rnd,name);
 	
 	// Write graph
 	////////////////////////////////////	
