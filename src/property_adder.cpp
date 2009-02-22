@@ -31,48 +31,6 @@ using namespace std;
 namespace po = boost::program_options;
 dynamic_properties properties;
 Graph *g;
-/*
-void parse_distribution(std::string name,std::string s)
-{	
-	// for now we only know of the uniform distribution of integers
-	static const boost::regex uni_int("uni_int\\((\\d+),(\\d+)\\)");
-	boost::smatch what;
-	if(boost::regex_match(s,what,uni_int))
-	{
-		int min,max;
-		min = boost::lexical_cast<int>(what[1]);
-		max =  boost::lexical_cast<int>(what[2]);
-		boost::uniform_int<> uni_dist(min,max);
-		boost::variate_generator<base_generator_type&, boost::uniform_int<> > uni(*random_generator,uni_dist);
-		
-		typedef std::map< graph_traits<Graph>::vertex_descriptor, int > user_map;
-		typedef graph_traits<Graph>::vertex_iterator vertex_iter;
-		typedef boost::associative_property_map< user_map > vertex_map;
-
-		user_map* map = new user_map();
-		vertex_map * bmap = new vertex_map(*map);
-		properties.property(name,*bmap);
-		
-		std::pair<vertex_iter, vertex_iter> vp;
-		for (vp = boost::vertices(*g); vp.first != vp.second; ++vp.first)
-			    put(name,properties,*vp.first,uni());
-		
-	}
-}
-
-void parse_property(std::string s)
-{
-	int i = s.find(':');
-	if(i!= std::string::npos) 
-	{
-		std::string property_name = s.substr(0,i);
-		std::string distribution_definition = s.substr(i+1);
-		parse_distribution(property_name,distribution_definition);
-	}
-}
-
-*/
-
 
 void add_vertex_property(ggen_rnd* rnd,string name)
 {
