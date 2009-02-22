@@ -19,10 +19,10 @@
  */
 
 /******************************************************************************
-  * GGEN GSL Random Number Distribution,
-  * Factory pattern
-  * Handle all creation and access to gsl_rnd
-******************************************************************************/
+ * GGEN GSL Random Number Distribution,
+ * Factory pattern
+ * Handle all creation and access to gsl_rnd
+ ******************************************************************************/
 
 /* GGEN_RNG_TYPE to gsl_rng_type matrix */
 
@@ -147,13 +147,13 @@ double ggen_rnd_flat::get()
 namespace po =  boost::program_options;
 
 /*
-struct random_options_state {
-	unsigned int rng_type;
-	ggen_rnd *rnd;
-	std::string filename;
-	unsigned int seed;
-}
-*/
+   struct random_options_state {
+   unsigned int rng_type;
+   ggen_rnd *rnd;
+   std::string filename;
+   unsigned int seed;
+   }
+   */
 
 // return the program options allowed for the rng/rnd part
 po::options_description random_add_options()
@@ -167,7 +167,7 @@ po::options_description random_add_options()
 		("dist-arg1,1",po::value<std::string>(),"First argument of the distribution")
 		("dist-arg2,2",po::value<std::string>(),"Second argument of the distribution")
 		("dist-arg3,3",po::value<std::string>(),"Third argument of the distribution")
-	;
+		;
 
 	return desc;
 }
@@ -190,35 +190,34 @@ void random_options_start(const po::variables_map& vm,random_options_state& rs)
 	else
 		rs.rng_type = GGEN_RNG_DEFAULT;
 
-	
+	unsigned int rnd_type; 
 	if(vm.count("dist-type"))
 	{
-		unsigned int rnd_type = vm["dist-type"].as<unsigned int>();
+		rnd_type = vm["dist-type"].as<unsigned int>();
 		if(rnd_type >= GGEN_RND_MAX)
 			std::cout << "Error : invalid dist-type option, max is : " << GGEN_RND_MAX-1 << ".\n";
 
-		std::vector<std::string> args;
-		if(vm.count("dist-arg1"))
-		{
-			args.push_back(vm["dist-arg1"].as<std::string>());
-		}
-
-		if(vm.count("dist-arg2") && args.size() == 1)
-		{
-			args.push_back(vm["dist-arg2"].as<std::string>());
-		}
-
-		if(vm.count("dist-arg3") && args.size() == 2)
-		{
-			args.push_back(vm["dist-arg3"].as<std::string>());
-		}
-
-
-		rs.rnd = ggen_rnd::create_rnd(rnd_type,rs.rng_type,rs.seed,args);
 	}
 	else
-		rs.rnd = ggen_rnd::create_rnd(rs.rng_type,rs.seed);
+		rnd_type = GGEN_RND_DEFAULT;
 
+	std::vector<std::string> args;
+	if(vm.count("dist-arg1"))
+	{
+		args.push_back(vm["dist-arg1"].as<std::string>());
+	}
+
+	if(vm.count("dist-arg2") && args.size() == 1)
+	{
+		args.push_back(vm["dist-arg2"].as<std::string>());
+	}
+
+	if(vm.count("dist-arg3") && args.size() == 2)
+	{
+		args.push_back(vm["dist-arg3"].as<std::string>());
+	}
+
+	rs.rnd = ggen_rnd::create_rnd(rnd_type,rs.rng_type,rs.seed,args);
 
 	// this must be the last, as the rnd must have been created
 	if(vm.count("rng-file"))
