@@ -18,6 +18,7 @@
 #include <boost/graph/graphviz.hpp>
 
 #include "ggen.hpp"
+#include "graph_generator.hpp"
 #include "dynamic_properties.hpp"
 
 using namespace boost;

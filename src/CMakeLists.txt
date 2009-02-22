@@ -12,7 +12,7 @@ FIND_PACKAGE(Boost REQUIRED regex program_options graph)
 # For GSL
 find_package(GSL)
 
-ADD_EXECUTABLE(ggen ggen.cpp dynamic_properties.cpp)
+ADD_EXECUTABLE(graph_generator graph_generator.cpp dynamic_properties.cpp)
 ADD_EXECUTABLE(property_adder property_adder.cpp random.cpp  dynamic_properties.cpp)
-TARGET_LINK_LIBRARIES(ggen ${Boost_LIBRARIES})
+TARGET_LINK_LIBRARIES(graph_generator ${Boost_LIBRARIES})
 target_link_libraries(property_adder ${Boost_LIBRARIES} ${GSL_LIBRARIES})
