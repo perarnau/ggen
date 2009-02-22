@@ -36,14 +36,14 @@ const gsl_rng_type* ggen_rng_table[GGEN_RNG_MAX] =
  *************/
 
 /* factory method */
-ggen_rnd* ggen_rnd::create_rnd(const unsigned int ggen_rnd_type, const unsigned int rng_type, unsigned long int seed, void *parameters[3])
+ggen_rnd* ggen_rnd::create_rnd(const unsigned int ggen_rnd_type, const unsigned int rng_type, unsigned long int seed, std::vector<std::string> args)
 {
 	switch(ggen_rnd_type)
 	{
 		case GGEN_RND_GAUSSIAN:
-			return new ggen_rnd_gaussian(rng_type, seed, parameters);
+			return new ggen_rnd_gaussian(rng_type, seed, args);
 		case GGEN_RND_FLAT:
-			return new ggen_rnd_flat(rng_type, seed, parameters);
+			return new ggen_rnd_flat(rng_type, seed, args);
 		default:
 			return NULL;
 	}
@@ -51,10 +51,10 @@ ggen_rnd* ggen_rnd::create_rnd(const unsigned int ggen_rnd_type, const unsigned 
 
 ggen_rnd* ggen_rnd::create_rnd(const unsigned int rng_type, unsigned long int seed)
 {
-	double min = 0.0;
-	double max = 1.0;
-	void *p[3] = { &min, &max, NULL };
-	return create_rnd(GGEN_RND_DEFAULT,rng_type,seed,p);
+	std::vector<std::string> args;
+	args.push_back("0.0");
+	args.push_back("1.0");
+	return create_rnd(GGEN_RND_DEFAULT,rng_type,seed,args);
 }
 
 /* this constructor allows centralized creation of the rng associated with each rnd */
@@ -106,9 +106,12 @@ void ggen_rnd::write(std::string filename)
 /* Gaussian Distribution 
  ************************/
 
-ggen_rnd_gaussian::ggen_rnd_gaussian(const unsigned int rng_type, unsigned long int seed, void *parameters[3]) : ggen_rnd(rng_type,seed)
+ggen_rnd_gaussian::ggen_rnd_gaussian(const unsigned int rng_type, unsigned long int seed, std::vector<std::string> args) : ggen_rnd(rng_type,seed)
 {
-	sigma = *((double*)parameters[1]);
+	if(args.size() == 1)
+		sigma = boost::lexical_cast<double>(args[0]);
+	else
+		; //TODO error handling + bad lexical cast exception
 }
 
 double ggen_rnd_gaussian::get()
@@ -120,11 +123,16 @@ double ggen_rnd_gaussian::get()
 /* Flat (Uniform) Distribution 
  ******************************/
 
-ggen_rnd_flat::ggen_rnd_flat(const unsigned int rng_type, unsigned long int seed, void *parameters[3]) : ggen_rnd(rng_type,seed)
+ggen_rnd_flat::ggen_rnd_flat(const unsigned int rng_type, unsigned long int seed, std::vector<std::string> args) : ggen_rnd(rng_type,seed)
 
 {
-	min = *((double*)parameters[0]);
-	max = *((double*)parameters[1]);
+	if(args.size() == 2)
+	{
+		min = boost::lexical_cast<double>(args[0]);
+		max = boost::lexical_cast<double>(args[1]);
+	}
+	else
+		; //TODO error handling;
 }
 
 double ggen_rnd_flat::get()
@@ -156,6 +164,9 @@ po::options_description random_add_options()
 		("rng-type",po::value<unsigned int>(),"RNG type")
 		("rng-file",po::value<std::string>(),"If set, read the RNG state on program start and write it at exit")
 		("dist-type",po::value<unsigned int>(),"Random Number Distribution type")
+		("dist-arg1,1",po::value<std::string>(),"First argument of the distribution")
+		("dist-arg2,2",po::value<std::string>(),"Second argument of the distribution")
+		("dist-arg3,3",po::value<std::string>(),"Third argument of the distribution")
 	;
 
 	return desc;
@@ -182,8 +193,28 @@ void random_options_start(const po::variables_map& vm,random_options_state& rs)
 	
 	if(vm.count("dist-type"))
 	{
-		//TODO
-		;
+		unsigned int rnd_type = vm["dist-type"].as<unsigned int>();
+		if(rnd_type >= GGEN_RND_MAX)
+			std::cout << "Error : invalid dist-type option, max is : " << GGEN_RND_MAX-1 << ".\n";
+
+		std::vector<std::string> args;
+		if(vm.count("dist-arg1"))
+		{
+			args.push_back(vm["dist-arg1"].as<std::string>());
+		}
+
+		if(vm.count("dist-arg2") && args.size() == 1)
+		{
+			args.push_back(vm["dist-arg2"].as<std::string>());
+		}
+
+		if(vm.count("dist-arg3") && args.size() == 2)
+		{
+			args.push_back(vm["dist-arg3"].as<std::string>());
+		}
+
+
+		rs.rnd = ggen_rnd::create_rnd(rnd_type,rs.rng_type,rs.seed,args);
 	}
 	else
 		rs.rnd = ggen_rnd::create_rnd(rs.rng_type,rs.seed);

@@ -58,7 +58,7 @@ class ggen_rnd {
 		void read(std::string filename);
 		void write(std::string filename);
 
-		static ggen_rnd* create_rnd(const unsigned int ggen_rnd_type, const unsigned int rng_type, unsigned long int seed, void *parameters[3]);
+		static ggen_rnd* create_rnd(const unsigned int ggen_rnd_type, const unsigned int rng_type, unsigned long int seed, std::vector<std::string> args);
 		static ggen_rnd* create_rnd(const unsigned int rng_type, unsigned long int seed);
 	protected:
 		gsl_rng *rng;
@@ -69,7 +69,7 @@ class ggen_rnd {
 
 class ggen_rnd_gaussian : public ggen_rnd {
 	public:
-		ggen_rnd_gaussian(const unsigned int rng_type, unsigned long int seed, void *parameters[3]);
+		ggen_rnd_gaussian(const unsigned int rng_type, unsigned long int seed, std::vector<std::string> args);
 		double get();
 	private:
 		double sigma;
@@ -80,7 +80,7 @@ class ggen_rnd_gaussian : public ggen_rnd {
 
 class ggen_rnd_flat : public ggen_rnd {
 	public:
-		ggen_rnd_flat(const unsigned int rng_type, unsigned long int seed, void *parameters[3]);
+		ggen_rnd_flat(const unsigned int rng_type, unsigned long int seed, std::vector<std::string> args);
 		double get();
 	private:
 		double min,max;
