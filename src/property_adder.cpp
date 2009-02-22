@@ -150,7 +150,14 @@ int main(int argc, char** argv)
 	}
 	else
 		outfile = &cout;
-	
+
+	if(vm.count("name"))
+	{
+		name = vm["name"].as<string>();
+	}
+	else
+		name = "NewProperty";
+
 	random_options_start(vm,rs);
 
 	// Graph generation
