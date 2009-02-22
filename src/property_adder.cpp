@@ -73,14 +73,9 @@ void parse_property(std::string s)
 
 */
 
-/*
-void add_vertex_property(string name)
-{
-	// create random generator
-	double min,max;
-	void *p[3] = { &min, &max, NULL };
-	ggen_gsl_rnd *rnd = ggen_gsl_rnd::create_rnd(GSL_RNG_DEFAULT,(unsigned long int)random_seed,(unsigned long )GSL_RND_DEFAULT, (void **)p);
 
+void add_vertex_property(ggen_rnd* rnd,string name)
+{
 	// iterators
 	typedef std::map< graph_traits<Graph>::vertex_descriptor, double > user_map;
 	typedef graph_traits<Graph>::vertex_iterator vertex_iter;
@@ -94,15 +89,15 @@ void add_vertex_property(string name)
 	std::pair<vertex_iter, vertex_iter> vp;
 	for (vp = boost::vertices(*g); vp.first != vp.second; ++vp.first)
 		    put(name,properties,*vp.first,rnd->get());
-
 }
-*/
+
 /* Main program
  */
 int main(int argc, char** argv)
 {
 	int nb_vertices,nb_edges;
 	string infilename, outfilename;
+	string name;
 	istream *infile = NULL;
 	ostream *outfile = NULL;
 	random_options_state rs;
@@ -118,6 +113,7 @@ int main(int argc, char** argv)
 		("output,o", po::value<string>(&outfilename), "Set the output file")
 
 		/* Property options */
+		("name,n",po::value<string>(&name),"Set the property name")
 	;
 
 	po::options_description ro = random_add_options();
@@ -172,7 +168,7 @@ int main(int argc, char** argv)
 	
 	// Add property
 	////////////////////////////////////
-	
+	add_vertex_property(rs.rnd,name);
 	
 	// Write graph
 	////////////////////////////////////	
