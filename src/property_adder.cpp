@@ -35,7 +35,7 @@ Graph *g;
 void add_vertex_property(ggen_rnd* rnd,string name)
 {
 	// iterators
-	typedef std::map< graph_traits<Graph>::vertex_descriptor, double > user_map;
+	typedef std::map< graph_traits<Graph>::vertex_descriptor, std::string > user_map;
 	typedef graph_traits<Graph>::vertex_iterator vertex_iter;
 	typedef boost::associative_property_map< user_map > vertex_map;
 
@@ -46,7 +46,7 @@ void add_vertex_property(ggen_rnd* rnd,string name)
 	// iterate and add random property
 	std::pair<vertex_iter, vertex_iter> vp;
 	for (vp = boost::vertices(*g); vp.first != vp.second; ++vp.first)
-		    put(name,properties,*vp.first,rnd->get());
+		    put(name,properties,*vp.first,boost::lexical_cast<std::string>(rnd->get()));
 }
 
 /* Main program
