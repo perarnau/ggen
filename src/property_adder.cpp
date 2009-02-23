@@ -102,12 +102,12 @@ int main(int argc, char** argv)
 		("help", "produce help message")
 		
 		/* I/O options */
-		("input,i", po::value<string>(), "Set the output file")
+		("input,i", po::value<string>(), "Set the input file")
 		("output,o", po::value<string>(), "Set the output file")
 
 		/* Property options */
 		("name,n",po::value<string>(),"Set the property name")
-		("edge,e",po::bool_switch(),"Add an edge property instead of a vertex one")
+		("edge,e",po::value<bool>()->zero_tokens(),"Add an edge property instead of a vertex one")
 	;
 
 	po::options_description ro = random_add_options();
