@@ -2,21 +2,40 @@
 
 using namespace boost;
 
-void create_default_vertex_property(dynamic_properties& dp, Graph& g,const char *name /*= "node_id"*/)
+void add_property(dynamic_properties& dp, Graph& g,const char *name /*= "node_id"*/, bool vertex_or_edge)
 {
-	typedef std::map< graph_traits<Graph>::vertex_descriptor, int>  user_map;
-	typedef boost::associative_property_map< user_map > name_map;
-	typedef graph_traits<Graph>::vertex_iterator vertex_iter;
-	user_map *map = new  user_map();
-	name_map * bmap = new name_map(*map);
-	dp.property(name,*bmap);
-	
-	std::pair<vertex_iter, vertex_iter> vp;
-	int i =0;
-	for (vp = boost::vertices(g); vp.first != vp.second; ++vp.first)
+	if(vertex_or_edge)
 	{
-		put(name,dp,*vp.first,i++);
+		vertex_std_map* map = new  vertex_std_map();
+		vertex_assoc_map* amap = new vertex_assoc_map(*map);
+		dp.property(name,*amap);
 	}
-
+	else
+	{
+		edge_std_map* map = new  edge_std_map();
+		edge_assoc_map* amap = new edge_assoc_map(*map);
+		dp.property(name,*amap);
+	}
 }
 
+std::auto_ptr<dynamic_property_map> create_property_map (const std::string&, const boost::any& key, const boost::any& value)
+{
+	if( key.type() == typeid(Vertex) )
+	{
+		vertex_std_map* mymap = new vertex_std_map(); // hint: leaky memory here!
+		vertex_assoc_map property_map(*mymap);
+		std::auto_ptr<boost::dynamic_property_map> pm(
+			new boost::detail::dynamic_property_map_adaptor<vertex_assoc_map>(property_map));
+		return pm;
+	}
+	else if ( key.type() == typeid(Edge) )
+	{
+		edge_std_map* mymap = new edge_std_map(); // hint: leaky memory here!
+		edge_assoc_map property_map(*mymap);
+		std::auto_ptr<boost::dynamic_property_map> pm(
+			new boost::detail::dynamic_property_map_adaptor<edge_assoc_map>(property_map));
+		return pm;
+	}
+	else
+		return std::auto_ptr<dynamic_property_map> (0); //TODO error handling
+}

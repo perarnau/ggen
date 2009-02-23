@@ -29,54 +29,29 @@ using namespace std;
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace po = boost::program_options;
-dynamic_properties properties;
+dynamic_properties properties(&create_property_map);
 Graph *g;
 
 void add_vertex_property(ggen_rnd* rnd,string name)
 {
-	// iterators
-	typedef std::map< graph_traits<Graph>::vertex_descriptor, std::string > user_map;
-	typedef graph_traits<Graph>::vertex_iterator vertex_iter;
-	typedef boost::associative_property_map< user_map > vertex_map;
-
-	user_map* map = new user_map();
-	vertex_map * bmap = new vertex_map(*map);
-	properties.property(name,*bmap);
+	vertex_std_map* map = new vertex_std_map();
+	vertex_assoc_map * amap = new vertex_assoc_map(*map);
+	properties.property(name,*amap);
 		
 	// iterate and add random property
-	std::pair<vertex_iter, vertex_iter> vp;
+	std::pair<Vertex_iter, Vertex_iter> vp;
 	for (vp = boost::vertices(*g); vp.first != vp.second; ++vp.first)
 		    put(name,properties,*vp.first,boost::lexical_cast<std::string>(rnd->get()));
 }
 
-
-// UGLY & BAD HACK : we need to create a map with edge_descriptor as Key but this
-// type doesn't implement the required '<' operator.
-// see http://www.nabble.com/BGL:-std::map<Edge,-int>-needs-the-<-operator-td4019596.html  for more details
-
-struct cmp_edge :
-	public std::binary_function<graph_traits<Graph>::edge_descriptor,graph_traits<Graph>::edge_descriptor, bool>
-{
-		bool operator()(const graph_traits<Graph>::edge_descriptor &e1, const graph_traits<Graph>::edge_descriptor &e2) const
-		{
-			return e1.get_property() < e2.get_property();
-		}
-}; 
-
-
 void add_edge_property(ggen_rnd* rnd,string name)
 {
-	// iterators
-	typedef std::map < graph_traits<Graph>::edge_descriptor, std::string, cmp_edge > user_map;
-	typedef graph_traits<Graph>::edge_iterator edge_iter;
-	typedef boost::associative_property_map< user_map > edge_map;
-
-	user_map* map = new user_map();
-	edge_map * bmap = new edge_map(*map);
-	properties.property(name,*bmap);
+	edge_std_map* map = new edge_std_map();
+	edge_assoc_map * amap = new edge_assoc_map(*map);
+	properties.property(name,*amap);
 
 	// iterate and add random property
-	std::pair<edge_iter, edge_iter> ep;
+	std::pair<Edge_iter, Edge_iter> ep;
 	for (ep = boost::edges(*g); ep.first != ep.second; ++ep.first)
 		    put(name,properties,*ep.first,boost::lexical_cast<std::string>(rnd->get()));
 	
@@ -167,9 +142,6 @@ int main(int argc, char** argv)
 	
 	g = new Graph();
 
-	// Handle default property needed for dot parsing
-	create_default_vertex_property(properties,*g);
-	
 	// Read graph
 	////////////////////////////////////	
 	read_graphviz(*infile, *g,properties);
