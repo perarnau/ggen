@@ -57,6 +57,7 @@ class ggen_rnd {
 		~ggen_rnd();
 		void read(std::string filename);
 		void write(std::string filename);
+		void choose(boost::any *dest, size_t k, boost::any* src, size_t n,size_t size);
 
 		static ggen_rnd* create_rnd(const unsigned int ggen_rnd_type, const unsigned int rng_type, unsigned long int seed, std::vector<std::string> args);
 		static ggen_rnd* create_rnd(const unsigned int rng_type, unsigned long int seed);

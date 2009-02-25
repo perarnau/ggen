@@ -103,6 +103,11 @@ void ggen_rnd::write(std::string filename)
 	}
 }
 
+void ggen_rnd::choose(boost::any *dest, size_t k, boost::any* src, size_t n,size_t size)
+{
+	gsl_ran_choose(rng,dest,k,src,n,size);
+}
+
 /* Gaussian Distribution 
  ************************/
 
