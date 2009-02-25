@@ -49,14 +49,6 @@ ggen_rnd* ggen_rnd::create_rnd(const unsigned int ggen_rnd_type, const unsigned 
 	}
 }
 
-ggen_rnd* ggen_rnd::create_rnd(const unsigned int rng_type, unsigned long int seed)
-{
-	std::vector<std::string> args;
-	args.push_back("0.0");
-	args.push_back("1.0");
-	return create_rnd(GGEN_RND_DEFAULT,rng_type,seed,args);
-}
-
 /* this constructor allows centralized creation of the rng associated with each rnd */
 ggen_rnd::ggen_rnd(const unsigned int rng_type, unsigned long int seed)
 {
