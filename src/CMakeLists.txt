@@ -55,3 +55,6 @@ target_link_libraries(property_adder ${Boost_LIBRARIES} ${GSL_LIBRARIES})
 ADD_EXECUTABLE(property_analysis property_analysis.cpp dynamic_properties.cpp)
 TARGET_LINK_LIBRARIES(property_analysis ${Boost_LIBRARIES} ${GSL_LIBRARIES})
 
+ADD_EXECUTABLE(graph_analysis graph_analysis.cpp dynamic_properties.cpp)
+TARGET_LINK_LIBRARIES(graph_analysis ${Boost_LIBRARIES} ${GSL_LIBRARIES})
+
