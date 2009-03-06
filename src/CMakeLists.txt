@@ -52,6 +52,6 @@ ADD_EXECUTABLE(graph_generator graph_generator.cpp dynamic_properties.cpp random
 ADD_EXECUTABLE(property_adder property_adder.cpp random.cpp  dynamic_properties.cpp)
 TARGET_LINK_LIBRARIES(graph_generator ${Boost_LIBRARIES} ${GSL_LIBRARIES})
 target_link_libraries(property_adder ${Boost_LIBRARIES} ${GSL_LIBRARIES})
-ADD_EXECUTABLE(analysis analysis.cpp dynamic_properties.cpp)
-TARGET_LINK_LIBRARIES(analysis ${Boost_LIBRARIES} ${GSL_LIBRARIES})
+ADD_EXECUTABLE(property_analysis property_analysis.cpp dynamic_properties.cpp)
+TARGET_LINK_LIBRARIES(property_analysis ${Boost_LIBRARIES} ${GSL_LIBRARIES})
 
