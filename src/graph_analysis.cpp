@@ -57,6 +57,9 @@
 #include <boost/graph/prim_minimum_spanning_tree.hpp>
 #include <boost/program_options.hpp>
 
+// lets try using gsl_histograms
+#include <gsl/gsl_histogram.h>
+
 #include "ggen.hpp"
 #include "dynamic_properties.hpp"
 
@@ -106,6 +109,23 @@ void minimum_spanning_tree(Graph g)
 		else
 			std::cout << "parent[" << i << "] = no parent" << std::endl;
 
+}
+
+// compute several standard statistics like mean degree, ...
+void generic_stats(Graph g,std::string format)
+{
+	gsl_histogram *h = gsl_histogram_alloc(num_vertices(g));
+	gsl_histogram_set_ranges_uniform(h,0,num_edges(g));
+
+
+	std::pair< Vertex_iter, Vertex_iter> vp;
+	for (vp = boost::vertices(g); vp.first != vp.second; ++vp.first)
+	{
+		gsl_histogram_increment(h,out_degree(*vp.first,g));
+	}
+
+	gsl_histogram_fprintf (stdout, h, "%g", "%g");
+	gsl_histogram_free(h);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -168,8 +188,8 @@ int main(int argc, char** argv)
 	read_graphviz(*infile, *g,properties);
 
 	// Generate the minimum spanning tree
-	minimum_spanning_tree(*g);
-
+	//minimum_spanning_tree(*g);
+	generic_stats(*g,std::string(""));
 
 	return EXIT_SUCCESS;
 }
