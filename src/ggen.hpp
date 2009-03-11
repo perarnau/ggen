@@ -67,4 +67,11 @@ using namespace boost;
  */
 typedef adjacency_list < setS, vecS, bidirectionalS, dynamic_properties, dynamic_properties > Graph;
 
+/* typedefs for vertex and edge properties manipulations */
+typedef graph_traits<Graph>::vertex_descriptor Vertex;
+typedef graph_traits<Graph>::edge_descriptor Edge;
+typedef graph_traits<Graph>::vertex_iterator Vertex_iter; 
+typedef graph_traits<Graph>::edge_iterator Edge_iter; 
+typedef graph_traits<Graph>::in_edge_iterator In_edge_iter; 
+
 #endif

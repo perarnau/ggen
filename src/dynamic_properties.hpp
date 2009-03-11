@@ -42,11 +42,6 @@
 
 #include "ggen.hpp"
 
-/* typedefs for vertex and edge properties manipulations */
-typedef graph_traits<Graph>::vertex_descriptor Vertex;
-typedef graph_traits<Graph>::edge_descriptor Edge;
-typedef graph_traits<Graph>::vertex_iterator Vertex_iter; 
-typedef graph_traits<Graph>::edge_iterator Edge_iter; 
 
 // UGLY & BAD HACK : we need to create a map with edge_descriptor as Key but this
 // type doesn't implement the required '<' operator.
