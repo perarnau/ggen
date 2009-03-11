@@ -48,13 +48,21 @@ FIND_PACKAGE(Boost REQUIRED regex program_options graph)
 # For GSL
 find_package(GSL)
 
-ADD_EXECUTABLE(graph_generator graph_generator.cpp dynamic_properties.cpp random.cpp)
-ADD_EXECUTABLE(property_adder property_adder.cpp random.cpp  dynamic_properties.cpp)
-TARGET_LINK_LIBRARIES(graph_generator ${Boost_LIBRARIES} ${GSL_LIBRARIES})
-target_link_libraries(property_adder ${Boost_LIBRARIES} ${GSL_LIBRARIES})
-ADD_EXECUTABLE(property_analysis property_analysis.cpp dynamic_properties.cpp)
-TARGET_LINK_LIBRARIES(property_analysis ${Boost_LIBRARIES} ${GSL_LIBRARIES})
 
-ADD_EXECUTABLE(graph_analysis graph_analysis.cpp dynamic_properties.cpp)
-TARGET_LINK_LIBRARIES(graph_analysis ${Boost_LIBRARIES} ${GSL_LIBRARIES})
+# Executables
+set(EXECS_WITH_RANDOM graph_generator property_adder)
+set(EXECS graph_analysis property_analysis)
 
+# commom files dependencies
+set(COMMON_DEPS dynamic_properties.cpp)
+
+# add execs and link
+foreach(it ${EXECS_WITH_RANDOM})
+	add_executable(${it} ${it}.cpp ${COMMON_DEPS} random.cpp)
+	target_link_libraries(${it} ${Boost_LIBRARIES} ${GSL_LIBRARIES})
+endforeach(it ${EXECS_WITH_RANDOM})
+
+foreach(it ${EXECS})
+	add_executable(${it} ${it}.cpp ${COMMON_DEPS})
+	target_link_libraries(${it} ${Boost_LIBRARIES} ${GSL_LIBRARIES})
+endforeach(it ${EXECS})
