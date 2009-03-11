@@ -99,10 +99,12 @@ void minimum_spanning_tree(Graph g)
 		dmap.insert(make_pair(*vp.first,0));
 	}
 
-	
+	//compute MST	
 	prim_minimum_spanning_tree(g,*vertices(g).first,&p[0],distancemap,weightmap,indexmap,default_dijkstra_visitor());
 
-	std::cout << "source : " << *vertices(g).first << std::endl;
+	// output the MST
+	std::cout << "Minimum Spanning Tree:" << std::endl;
+	std::cout << "source: " << *vertices(g).first << std::endl;
 	for (std::size_t i = 0; i != p.size(); ++i)
 		if (p[i] != i)
 			std::cout << "parent[" << i << "] = " << p[i] << std::endl;
@@ -112,19 +114,31 @@ void minimum_spanning_tree(Graph g)
 }
 
 // compute several standard statistics like mean degree, ...
-void generic_stats(Graph g,std::string format)
+void degree_stats(Graph g)
 {
+	// allocate an histogram to accumulate data
 	gsl_histogram *h = gsl_histogram_alloc(num_vertices(g));
 	gsl_histogram_set_ranges_uniform(h,0,num_edges(g));
 
-
+	// add each degree of each vertex
 	std::pair< Vertex_iter, Vertex_iter> vp;
 	for (vp = boost::vertices(g); vp.first != vp.second; ++vp.first)
 	{
 		gsl_histogram_increment(h,out_degree(*vp.first,g));
 	}
+	
+	// print basic stats
+	std::cout << "Degree Distribution:" 			<< std::endl;
+	std::cout << "Min: "	<< gsl_histogram_min_val(h) 	<< std::endl;
+	std::cout << "Max: "	<< gsl_histogram_max_val(h) 	<< std::endl;
+	std::cout << "Mean: "	<< gsl_histogram_mean(h) 	<< std::endl;
+	std::cout << "Std Dev: "<< gsl_histogram_sigma(h) 	<< std::endl;
 
+
+	// print histogram
+	std::cout << "Histogram:" << std::endl;
 	gsl_histogram_fprintf (stdout, h, "%g", "%g");
+	
 	gsl_histogram_free(h);
 }
 
@@ -155,6 +169,8 @@ int main(int argc, char** argv)
 		/* Analysis options */
 		("nb-vertices,n", po::value<bool>()->zero_tokens(), "Output the number of vertices in the graph")
 		("nb-edges,m", po::value<bool>()->zero_tokens(), "Output the number of edges in the graph")
+		("degree-stats,d", po::value<bool>()->zero_tokens(),"Compute various statistics of the vertices degrees")
+		("mst", po::value<bool>()->zero_tokens(),"Compute the Minimum Spanning Tree of the graph")
 		;
 		
 	po::options_description all;
@@ -204,9 +220,15 @@ int main(int argc, char** argv)
 		std::cout << "Nb Edges: " << num_edges(*g) << std::endl;
 	}
 
-	// Generate the minimum spanning tree
-	//minimum_spanning_tree(*g);
-	generic_stats(*g,std::string(""));
+	if(vm.count("degree-stats"))
+	{
+		degree_stats(*g);
+	}
+
+	if(vm.count("mst"))
+	{
+		minimum_spanning_tree(*g);
+	}
 
 	return EXIT_SUCCESS;
 }
