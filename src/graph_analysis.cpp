@@ -154,7 +154,7 @@ int main(int argc, char** argv)
 		
 		/* Analysis options */
 		("nb-vertices,n", po::value<bool>()->zero_tokens(), "Output the number of vertices in the graph")
-		
+		("nb-edges,m", po::value<bool>()->zero_tokens(), "Output the number of edges in the graph")
 		;
 		
 	po::options_description all;
@@ -197,6 +197,11 @@ int main(int argc, char** argv)
 	if(vm.count("nb-vertices"))
 	{
 		std::cout << "Nb Vertices: " << num_vertices(*g) << std::endl;
+	}
+
+	if(vm.count("nb-edges"))
+	{
+		std::cout << "Nb Edges: " << num_edges(*g) << std::endl;
 	}
 
 	// Generate the minimum spanning tree
