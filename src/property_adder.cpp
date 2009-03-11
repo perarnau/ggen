@@ -44,6 +44,10 @@
 
 
 #include <iostream>
+#include <sys/types.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 /* We use extensively the BOOST library for 
  * handling output, program options and random generators
@@ -99,10 +103,7 @@ void add_edge_property(ggen_rnd* rnd,string name)
 int main(int argc, char** argv)
 {
 	int nb_vertices,nb_edges;
-	string infilename, outfilename;
 	string name;
-	istream *infile = NULL;
-	ostream *outfile = NULL;
 	random_options_state rs;
 	bool edge_property;
 
@@ -140,21 +141,23 @@ int main(int argc, char** argv)
 
 	if (vm.count("input")) 
 	{
-		filebuf *fb = new filebuf();
-		fb->open(vm["input"].as<std::string>().c_str(),ios::in);
-		infile = new istream(fb);
+		// open the file for reading
+		int in = open(vm["input"].as<std::string>().c_str(),O_RDONLY);
+	
+		// redirect stdout to it
+		dup2(in,STDIN_FILENO);
+		close(in);
 	}
-	else
-		infile = &cin;
 	
 	if (vm.count("output")) 
 	{
-		filebuf *fb = new filebuf();
-		fb->open(vm["output"].as<std::string>().c_str(),ios::out);
-		outfile = new ostream(fb);
+		// create a new file with 344 file permissions
+		int out = open(vm["output"].as<std::string>().c_str(),O_RDWR | O_CREAT,S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH );
+	
+		// redirect stdout to it
+		dup2(out,STDOUT_FILENO);
+		close(out);
 	}
-	else
-		outfile = &cout;
 
 	if(vm.count("name"))
 	{
@@ -180,7 +183,7 @@ int main(int argc, char** argv)
 
 	// Read graph
 	////////////////////////////////////	
-	read_graphviz(*infile, *g,properties);
+	read_graphviz(std::cin, *g,properties);
 
 	
 	// Add property
@@ -192,7 +195,7 @@ int main(int argc, char** argv)
 	
 	// Write graph
 	////////////////////////////////////	
-	write_graphviz(*outfile, *g,properties);
+	write_graphviz(std::cout, *g,properties);
 	
 	random_options_end(vm,rs);
 
