@@ -151,8 +151,12 @@ int main(int argc, char** argv)
 
 		/* I/O options */
 		("input,i", po::value<string>(), "Set the input file")
+		
+		/* Analysis options */
+		("nb-vertices,n", po::value<bool>()->zero_tokens(), "Output the number of vertices in the graph")
+		
 		;
-
+		
 	po::options_description all;
 	all.add(desc);
 
@@ -184,8 +188,16 @@ int main(int argc, char** argv)
 	g = new Graph();
 
 	// Read graph
-	////////////////////////////////////	
+	////////////////////////////////	
 	read_graphviz(*infile, *g,properties);
+
+
+	// Analyse the graph
+	////////////////////////////////
+	if(vm.count("nb-vertices"))
+	{
+		std::cout << "Nb Vertices: " << num_vertices(*g) << std::endl;
+	}
 
 	// Generate the minimum spanning tree
 	//minimum_spanning_tree(*g);
