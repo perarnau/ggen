@@ -102,7 +102,7 @@ void minimum_spanning_tree(Graph g)
 		dmap.insert(make_pair(*vp.first,0));
 	}
 	
-	// Find a source a this graph
+	// Find a source of this graph
 	for (vp = boost::vertices(g); vp.first != vp.second; ++vp.first)
 	{
 		std::pair< In_edge_iter, In_edge_iter> ip = in_edges(*vp.first,g);
@@ -117,14 +117,22 @@ void minimum_spanning_tree(Graph g)
 	prim_minimum_spanning_tree(g,source,&p[0],distancemap,weightmap,indexmap,default_dijkstra_visitor());
 
 	// output the MST
-	std::cout << "Minimum Spanning Tree:" << std::endl;
+	/*std::cout << "Minimum Spanning Tree:" << std::endl;
 	std::cout << "source: " << source << std::endl;
 	for (std::size_t i = 0; i != p.size(); ++i)
 		if (p[i] != i)
 			std::cout << "parent[" << i << "] = " << p[i] << std::endl;
 		else
 			std::cout << "parent[" << i << "] = no parent" << std::endl;
-
+	*/
+	// In DOT format
+	std::cout << "digraph MST { " << std::endl;
+	for (i = 0; i != p.size(); ++i)
+		std::cout << i << ";" << std::endl;
+	for (i = 0; i != p.size(); ++i)
+		if (p[i] != i)
+			std::cout <<  p[i] << " -> " << i << ";" << std::endl;
+	std::cout << "}" << std::endl;
 }
 
 // compute several standard statistics like mean degree, ...
