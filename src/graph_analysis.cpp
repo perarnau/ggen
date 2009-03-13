@@ -73,6 +73,7 @@ dynamic_properties properties(&create_property_map);
 
 void minimum_spanning_tree(Graph g)
 {
+	Vertex source = *vertices(g).first;
 	// We need a vector to store the spanning tree 
 	std::vector < Vertex > p(num_vertices(g));
 
@@ -92,19 +93,31 @@ void minimum_spanning_tree(Graph g)
 	std::map< Vertex, int > dmap;
 	boost::associative_property_map< std::map < Vertex, int> > distancemap(dmap);
 
+	// Update maps
 	std::pair<Vertex_iter, Vertex_iter> vp;
 	for (vp = boost::vertices(g); vp.first != vp.second; ++vp.first)
 	{
 		imap.insert(make_pair(*vp.first,i++));
 		dmap.insert(make_pair(*vp.first,0));
 	}
+	
+	// Find a source a this graph
+	for (vp = boost::vertices(g); vp.first != vp.second; ++vp.first)
+	{
+		std::pair< In_edge_iter, In_edge_iter> ip = in_edges(*vp.first,g);
+		if(ip.first == ip.second)
+		{
+			source = *vp.first;
+			break;
+		}
+	}
 
 	//compute MST	
-	prim_minimum_spanning_tree(g,*vertices(g).first,&p[0],distancemap,weightmap,indexmap,default_dijkstra_visitor());
+	prim_minimum_spanning_tree(g,source,&p[0],distancemap,weightmap,indexmap,default_dijkstra_visitor());
 
 	// output the MST
 	std::cout << "Minimum Spanning Tree:" << std::endl;
-	std::cout << "source: " << *vertices(g).first << std::endl;
+	std::cout << "source: " << source << std::endl;
 	for (std::size_t i = 0; i != p.size(); ++i)
 		if (p[i] != i)
 			std::cout << "parent[" << i << "] = " << p[i] << std::endl;
