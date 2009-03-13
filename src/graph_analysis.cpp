@@ -55,6 +55,7 @@
 #include <boost/graph/graphviz.hpp>
 #include <boost/graph/properties.hpp>
 #include <boost/graph/prim_minimum_spanning_tree.hpp>
+#include <boost/graph/topological_sort.hpp>
 #include <boost/program_options.hpp>
 
 // lets try using gsl_histograms
@@ -155,6 +156,62 @@ void degree_stats(Graph g)
 	gsl_histogram_free(h);
 }
 
+// critical path
+void longest_path(Graph g)
+{
+	// Index map
+	int i = 0;
+	std::map < Vertex, int > imap;
+	std::map< Vertex, int> lpath;
+	boost::associative_property_map< std::map< Vertex, int> > indexmap(imap);
+
+	// Update map
+	std::pair<Vertex_iter, Vertex_iter> vp;
+	for (vp = boost::vertices(g); vp.first != vp.second; ++vp.first)
+	{
+		imap.insert(make_pair(*vp.first,i++));
+		lpath.insert(make_pair(*vp.first,0));
+	}
+	
+	// result
+	std::list< Vertex> list;
+	std::insert_iterator< std::list<Vertex> > il(list,list.begin());
+
+	// sort topologically 
+	boost::topological_sort(g,il);
+	
+	std::map< Vertex, Vertex> pmap;
+	Vertex maxv;
+	std::list< Vertex >::reverse_iterator it;
+	for(it = list.rbegin(),maxv=*it; it != list.rend(); ++it)
+	{
+		// for each successor of this node, test if we are the best successor	
+		std::pair< Out_edge_iter, Out_edge_iter> ep;
+		for(ep= boost::out_edges(*it,g); ep.first != ep.second; ++ep.first)
+		{
+			Vertex w = target(*ep.first,g);
+			if(lpath[w] < lpath[*it] + 1)
+			{
+				lpath[w] = lpath[*it] + 1;
+				pmap[w] = *it;
+			}
+			if(lpath[w] > lpath[maxv])
+				maxv = w;
+		}
+	}
+	
+	// Longest path
+	std::cout << "Longest Path:" << std::endl;
+	std::cout << "Size: " << lpath[maxv] << std::endl;
+	Vertex s;
+	while(pmap.find(maxv) != pmap.end())
+	{
+		s = pmap[maxv];
+		std::cout << s << " -> " << maxv << std::endl;
+		maxv = s;
+	}
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // MAIN
 ////////////////////////////////////////////////////////////////////////////////
@@ -184,6 +241,7 @@ int main(int argc, char** argv)
 		("nb-edges,m", po::value<bool>()->zero_tokens(), "Output the number of edges in the graph")
 		("degree-stats,d", po::value<bool>()->zero_tokens(),"Compute various statistics of the vertices degrees")
 		("mst", po::value<bool>()->zero_tokens(),"Compute the Minimum Spanning Tree of the graph")
+		("lp", po::value<bool>()->zero_tokens(),"Compute the Longest Path of the graph")
 		;
 		
 	po::options_description all;
@@ -241,6 +299,10 @@ int main(int argc, char** argv)
 	if(vm.count("mst"))
 	{
 		minimum_spanning_tree(*g);
+	}
+	if(vm.count("lp"))
+	{
+		longest_path(*g);
 	}
 
 	return EXIT_SUCCESS;

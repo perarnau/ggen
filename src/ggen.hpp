@@ -73,5 +73,6 @@ typedef graph_traits<Graph>::edge_descriptor Edge;
 typedef graph_traits<Graph>::vertex_iterator Vertex_iter; 
 typedef graph_traits<Graph>::edge_iterator Edge_iter; 
 typedef graph_traits<Graph>::in_edge_iterator In_edge_iter; 
+typedef graph_traits<Graph>::out_edge_iterator Out_edge_iter; 
 
 #endif
