@@ -65,7 +65,7 @@ using namespace boost;
  *	* The graph is bidirectional
  *	* We don't have any additional properties on vertices or edges
  */
-typedef adjacency_list < setS, vecS, bidirectionalS, dynamic_properties, dynamic_properties > Graph;
+typedef adjacency_list < listS, listS, bidirectionalS, dynamic_properties, dynamic_properties > Graph;
 
 /* typedefs for vertex and edge properties manipulations */
 typedef graph_traits<Graph>::vertex_descriptor Vertex;

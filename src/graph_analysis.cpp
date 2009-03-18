@@ -68,15 +68,17 @@ using namespace boost;
 using namespace std;
 
 dynamic_properties properties(&create_property_map);
+
 ////////////////////////////////////////////////////////////////////////////////
 // Analysis Function
 ////////////////////////////////////////////////////////////////////////////////
 
-void minimum_spanning_tree(Graph g)
+void minimum_spanning_tree(const Graph& g)
 {
 	Vertex source = *vertices(g).first;
-	// We need a vector to store the spanning tree 
-	std::vector < Vertex > p(num_vertices(g));
+	// We need a map to store the spanning tree 
+	std::map< Vertex, Vertex> vvmap;
+	boost::associative_property_map< std::map< Vertex, Vertex> > predmap(vvmap);
 
 	// Weight map
 	std::map < Edge, int, cmp_edge> wmap;
@@ -114,25 +116,24 @@ void minimum_spanning_tree(Graph g)
 	}
 
 	//compute MST	
-	prim_minimum_spanning_tree(g,source,&p[0],distancemap,weightmap,indexmap,default_dijkstra_visitor());
+	prim_minimum_spanning_tree(g,predmap,root_vertex(source).weight_map(weightmap).vertex_index_map(indexmap).visitor(default_dijkstra_visitor()));
 
-	// output the MST
-	/*std::cout << "Minimum Spanning Tree:" << std::endl;
-	std::cout << "source: " << source << std::endl;
-	for (std::size_t i = 0; i != p.size(); ++i)
-		if (p[i] != i)
-			std::cout << "parent[" << i << "] = " << p[i] << std::endl;
-		else
-			std::cout << "parent[" << i << "] = no parent" << std::endl;
-	*/
-	// In DOT format
-	std::cout << "digraph MST { " << std::endl;
-	for (i = 0; i != p.size(); ++i)
-		std::cout << i << ";" << std::endl;
-	for (i = 0; i != p.size(); ++i)
-		if (p[i] != i)
-			std::cout <<  p[i] << " -> " << i << ";" << std::endl;
-	std::cout << "}" << std::endl;
+	// Output in DOT format, to do so we contruct a graph
+	Graph mst;
+	dynamic_properties p(&create_property_map);
+	std::map< Vertex, Vertex > o2n;
+	for (vp = boost::vertices(g); vp.first != vp.second; ++vp.first)
+	{
+		o2n[*vp.first] = add_vertex(mst);
+		std::string name = get("node_id",properties,*vp.first);
+		put("node_id",p,o2n[*vp.first],name);
+	}
+	for (vp = boost::vertices(g); vp.first != vp.second; ++vp.first)
+	{
+		if (predmap[*vp.first] != *vp.first)
+			add_edge(o2n[predmap[*vp.first]],o2n[*vp.first],mst);
+	}
+	write_graphviz(std::cout,mst,p);
 }
 
 // compute several standard statistics like mean degree, ...
@@ -165,7 +166,7 @@ void degree_stats(Graph g)
 }
 
 // critical path
-void longest_path(Graph g)
+void longest_path(const Graph& g)
 {
 	// Index map
 	int i = 0;
@@ -186,7 +187,7 @@ void longest_path(Graph g)
 	std::insert_iterator< std::list<Vertex> > il(list,list.begin());
 
 	// sort topologically 
-	boost::topological_sort(g,il);
+	boost::topological_sort(g,il,vertex_index_map(indexmap));
 	
 	std::map< Vertex, Vertex> pmap;
 	Vertex maxv;
@@ -215,7 +216,7 @@ void longest_path(Graph g)
 	while(pmap.find(maxv) != pmap.end())
 	{
 		s = pmap[maxv];
-		std::cout << s << " -> " << maxv << std::endl;
+		std::cout << get("node_id",properties,s) << " -> " << get("node_id",properties,maxv) << std::endl;
 		maxv = s;
 	}
 }
@@ -226,13 +227,13 @@ void longest_path(Graph g)
 
 namespace po = boost::program_options;
 
-Graph *g;
 
 
 /* Main program
 */
 int main(int argc, char** argv)
 {
+	Graph *g;
 	istream *infile = NULL;
 
 	// Handle command line arguments
@@ -286,7 +287,6 @@ int main(int argc, char** argv)
 	////////////////////////////////	
 	read_graphviz(*infile, *g,properties);
 
-
 	// Analyse the graph
 	////////////////////////////////
 	if(vm.count("nb-vertices"))
@@ -312,6 +312,7 @@ int main(int argc, char** argv)
 	{
 		longest_path(*g);
 	}
-
+	
+	delete g;
 	return EXIT_SUCCESS;
 }
