@@ -174,12 +174,14 @@ int main(int argc, char** argv)
 
 	double *data = new double [values.size()];
 	copy( values.begin(), values.end(), data);
-	
+	double min,max;
        	mean = gsl_stats_mean(data, 1, values.size());
-	
-	std::cout << "Statistics for property " << name << " \n";
-	std::cout << "Mean : " << mean << " \n";
-	std::cout << "Standard Deviation : " << gsl_stats_sd_m(data,1,values.size(),mean) << " \n";	
+	gsl_stats_minmax(&min,&max,data,1, values.size());
+	std::cout << "Statistics for property " << name << std::endl;
+	std::cout << "Min: " << min << std::endl;
+	std::cout << "Max: " << max << std::endl;
+	std::cout << "Mean: " << mean << std::endl;
+	std::cout << "Standard Deviation: " << gsl_stats_sd_m(data,1,values.size(),mean) << std::endl;
 
 	delete [] data;
 	delete g;
