@@ -152,7 +152,7 @@ int main(int argc, char** argv)
 	po::notify(vm);
 	
 	if (vm.count("help")) {
-		std::cout << desc << "\n";
+		std::cout << all << "\n";
 		        return 1;
 	}
 
