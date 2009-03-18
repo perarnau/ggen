@@ -51,7 +51,7 @@ find_package(GSL)
 
 # Executables
 set(EXECS_WITH_RANDOM graph_generator property_adder)
-set(EXECS graph_analysis property_analysis)
+set(EXECS graph_analysis graph_transform property_analysis)
 
 # commom files dependencies
 set(COMMON_DEPS dynamic_properties.cpp)
