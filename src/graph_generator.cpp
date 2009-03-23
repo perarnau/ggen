@@ -44,6 +44,10 @@
 
 
 #include <iostream>
+#include <sys/types.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 
 /* We use extensively the BOOST library for 
  * handling output, program options and random generators
@@ -136,6 +140,11 @@ int main(int argc, char** argv)
 	po::options_description desc("Allowed options");
 	desc.add_options()
 		("help", "produce help message")
+		
+		/* I/O options */
+		("output,o", po::value<std::string>(), "Set the output file")
+	
+		/* Generation options */
 		("nb-vertices,n", po::value<int>(&nb_vertices)->default_value(10),"set the number of vertices in the generated graph")
 		("nb-edges,m", po::value<int>(&nb_edges)->default_value(10),"set the number of edges in the generated graph")
 	;
@@ -155,6 +164,16 @@ int main(int argc, char** argv)
 		std::cout << all << "\n";
 		        return 1;
 	}
+	
+	if (vm.count("output")) 
+	{
+		// create a new file with 344 file permissions
+		int out = open(vm["output"].as<std::string>().c_str(),O_RDWR | O_CREAT,S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH );
+	
+		// redirect stdout to it
+		dup2(out,STDOUT_FILENO);
+		close(out);
+	}
 
 	random_options_state rs;
 	random_options_start(vm,rs);
@@ -164,9 +183,9 @@ int main(int argc, char** argv)
 	
 	g = new Graph();
 
-	gg_random_vertex_pairs(*g,nb_vertices,nb_edges,*rs.rnd);
+	//gg_random_vertex_pairs(*g,nb_vertices,nb_edges,*rs.rnd);
 	
-	// since we created the graph from scratch we need to do add a property for the vertices
+	// since we created the graph from scratch we need to add a property for the vertices
 	std::string name("node_id");
 	vertex_std_map *m = new vertex_std_map();
 	vertex_assoc_map *am = new vertex_assoc_map(*m);
@@ -180,6 +199,9 @@ int main(int argc, char** argv)
 	// Write graph
 	////////////////////////////////////	
 	write_graphviz(std::cout, *g,properties);
+
+	random_options_end(vm,rs);
+	
 	delete g;
 	return 0;
 }
