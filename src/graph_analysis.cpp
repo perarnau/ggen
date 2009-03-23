@@ -179,6 +179,71 @@ void degree_stats(Graph g)
 	gsl_histogram_free(h);
 }
 
+// this metric doesn't have a nice name for now
+// the idea is to compute, for each i the number of nodes at a maximum distance (longest path) i of the source
+// that is a kind of "number of nodes per layer"
+// THIS MIGHT NOT WORK PROPERLY WITH NOT FULLY CONNECTED GRAPHS !!
+void nodes_per_layer(const Graph& g)
+{
+	std::set< Vertex> src;
+	std::pair< Vertex_iter, Vertex_iter> vp;
+
+	// find all sources
+	for(vp = vertices(g); vp.first != vp.second; ++vp.first)
+	{
+		if(in_degree(*vp.first,g) == 0)
+		{
+			src.insert(*vp.first);
+		}
+	}
+
+	// now we want to compute our metric
+	// run through the nodes beginning by the source and listing its successors
+	// iff all the predecessors have been visited
+	std::set< Vertex > cur,next;
+	std::set< Vertex > visited;
+	std::set<Vertex>::iterator it;
+	unsigned int i = 0;
+	std::cout << "Nodes Per Layer:" << std::endl;
+	cur = src;
+	while( cur.size() != 0 )
+	{
+		std::cout << "Layer " << i++ << ":";
+		for(it = cur.begin(); it != cur.end(); it++)
+		{
+			// we visited the node
+			std::cout << " " << get("node_id",properties,*it);
+			visited.insert(*it);
+			
+			// look for its successors
+			std::pair< Out_edge_iter, Out_edge_iter> ep;
+			for(ep = out_edges(*it,g); ep.first != ep.second; *ep.first++)
+			{
+				Vertex suc = boost::target(*ep.first,g);
+				// have all the predecessors of this node been visited ?
+				bool v = true;
+				std::pair< In_edge_iter, In_edge_iter> ip;
+				for(ip = in_edges(suc,g); ip.first != ip.second; *ip.first++)
+				{
+					if(visited.count(boost::source(*ip.first,g)) == 0)
+					{
+						if(cur.count(boost::source(*ip.first,g)) == 0)
+						{
+							v = false;
+							break;
+						}
+					}
+				}
+				if(v)
+					next.insert(suc);
+			}
+		}
+		std::cout << std::endl;
+		cur = next;
+		next.clear();
+	}
+}
+
 // critical path
 void longest_path(const Graph& g)
 {
@@ -265,6 +330,7 @@ int main(int argc, char** argv)
 		("degree-stats,d", po::value<bool>()->zero_tokens(),"Compute various statistics of the vertices degrees")
 		("mst", po::value<bool>()->zero_tokens(),"Compute the Minimum Spanning Tree of the graph")
 		("lp", po::value<bool>()->zero_tokens(),"Compute the Longest Path of the graph")
+		("npl",po::value<bool>()->zero_tokens(),"Compute the Nodes Per Layer of the graph")
 		;
 		
 	po::options_description all;
@@ -325,6 +391,10 @@ int main(int argc, char** argv)
 	if(vm.count("lp"))
 	{
 		longest_path(*g);
+	}
+	if(vm.count("npl"))
+	{
+		nodes_per_layer(*g);
 	}
 	
 	delete g;
