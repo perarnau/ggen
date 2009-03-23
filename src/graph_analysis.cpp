@@ -141,10 +141,24 @@ void degree_stats(Graph g)
 {
 	// allocate an histogram to accumulate data
 	gsl_histogram *h = gsl_histogram_alloc(num_vertices(g));
-	gsl_histogram_set_ranges_uniform(h,0,num_edges(g));
+
+	// set range to make a nice histogram
+	// the first idea was 0..num_edges(g) but that's bad
+	// so let's find the min and max degree, and use it. 
+	// A little bit inefficient...
+	unsigned int max = 0,min = ULONG_MAX;
+	std::pair< Vertex_iter, Vertex_iter> vp;
+	for (vp = boost::vertices(g); vp.first != vp.second; ++vp.first)
+	{
+		unsigned int d = out_degree(*vp.first,g);
+		if(d > max)
+			max = d;
+		if(d < min)
+			min = d;
+	}
+	gsl_histogram_set_ranges_uniform(h,min,max);
 
 	// add each degree of each vertex
-	std::pair< Vertex_iter, Vertex_iter> vp;
 	for (vp = boost::vertices(g); vp.first != vp.second; ++vp.first)
 	{
 		gsl_histogram_increment(h,out_degree(*vp.first,g));
@@ -152,8 +166,8 @@ void degree_stats(Graph g)
 	
 	// print basic stats
 	std::cout << "Degree Distribution:" 			<< std::endl;
-	std::cout << "Min: "	<< gsl_histogram_min_val(h) 	<< std::endl;
-	std::cout << "Max: "	<< gsl_histogram_max_val(h) 	<< std::endl;
+	std::cout << "Min: "	<< min 				<< std::endl;
+	std::cout << "Max: "	<< max			 	<< std::endl;
 	std::cout << "Mean: "	<< gsl_histogram_mean(h) 	<< std::endl;
 	std::cout << "Std Dev: "<< gsl_histogram_sigma(h) 	<< std::endl;
 
