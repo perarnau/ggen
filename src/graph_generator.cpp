@@ -79,9 +79,45 @@ using namespace boost;
 /* Random generation by the adjacency matrix method :
  * Run through the adjacency matrix
  * and at each i,j decide if matrix[i][j] is an edge by tossing a coin
+ * WARNING: Currently we consider num_edges irrelevant
  */
-void gg_adjacency_matrix(Graph& g,int num_vertices,int num_edges, ggen_rnd& rnd, bool allow_parallel /*= false*/, bool self_edges /*= false*/);
+void gg_adjacency_matrix(Graph& g,int num_vertices,int num_edges, ggen_rnd& rnd)
+{
+	// generate the matrix
+	bool matrix[num_vertices][num_vertices];
+	int i,j;
+	boost::any *coin = new boost::any[2];
+	coin[0] = boost::any(true);
+	coin[1] = boost::any(false);
+	boost::any toss;
+	for(i=0; i < num_vertices; i++)
+	{
+		for(j = 0; j < num_vertices ; j++)
+		{
+			if(i < j)
+			{
+				rnd.choose(&toss,1,coin,2,sizeof(boost::any));
+				matrix[i][j] = boost::any_cast<bool>(toss);
+			}
+			else
+				matrix[i][j] = false;
+		}
+	}
 
+	// translate the matrix to a graph
+	g = Graph(num_vertices);
+	std::map < int, Vertex > vmap;
+	std::pair < Vertex_iter, Vertex_iter > vp;
+	i = 0;
+	for(vp = boost::vertices(g); vp.first != vp.second; vp.first++)
+		vmap[i++] = *vp.first;
+
+	for(i=0;i < num_vertices; i++)
+		for(j=0; j < num_vertices; j++)
+			if(matrix[i][j])
+				add_edge(vmap[i],vmap[j],g);
+
+}
 
 /* Random generation by choosing pairs of vertices.
 */ 
@@ -147,6 +183,7 @@ int main(int argc, char** argv)
 		/* Generation options */
 		("nb-vertices,n", po::value<int>(&nb_vertices)->default_value(10),"set the number of vertices in the generated graph")
 		("nb-edges,m", po::value<int>(&nb_edges)->default_value(10),"set the number of edges in the generated graph")
+		("matrix", po::value<bool>()->zero_tokens(),"Generate with the adjacency matrix method")
 	;
 
 	po::options_description all;
@@ -182,6 +219,11 @@ int main(int argc, char** argv)
 	////////////////////////////////
 	
 	g = new Graph();
+	
+	if(vm.count("matrix"))
+	{	
+		gg_adjacency_matrix(*g,nb_vertices,nb_edges,*rs.rnd);
+	}
 
 	//gg_random_vertex_pairs(*g,nb_vertices,nb_edges,*rs.rnd);
 	
