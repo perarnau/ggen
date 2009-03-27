@@ -71,6 +71,63 @@ dynamic_properties properties(&create_property_map);
 // TRANFORM FUNCTIONS
 ////////////////////////////////////////////////////////////////////////////////
 
+// if there is more than one source, create a new node and make it the only source.
+void add_dummy_source(Graph *g,dynamic_properties* dp,std::string name)
+{
+	// list of sources
+	std::list< Vertex > sources;
+
+	// identify the sources
+	std::pair <Vertex_iter, Vertex_iter> vp;
+	for(vp = vertices(*g);vp.first != vp.second; vp.first++)
+	{
+		if(in_degree(*vp.first,*g) == 0)
+		{
+			sources.push_back(*vp.first);
+		}
+	}
+
+	if(sources.size() > 1)
+	{
+		Vertex v = add_vertex(*g);
+		put("node_id",*dp,v,name);
+		std::list< Vertex >::iterator it;
+		for(it = sources.begin(); it != sources.end(); it++)
+		{
+			add_edge(v,*it,*g);
+		}
+	}
+}
+
+// if there is more than one sink, create a new node and make it the only one.
+void add_dummy_sink(Graph *g,dynamic_properties* dp,std::string name)
+{
+	// list of sinks
+	std::list< Vertex > sinks;
+
+	// identify the sinks
+	std::pair <Vertex_iter, Vertex_iter> vp;
+	for(vp = vertices(*g);vp.first != vp.second; vp.first++)
+	{
+		if(out_degree(*vp.first,*g) == 0)
+		{
+			sinks.push_back(*vp.first);
+		}
+	}
+
+	if(sinks.size() > 1)
+	{
+		Vertex v = add_vertex(*g);
+		put("node_id",*dp,v,name);
+		std::list< Vertex >::iterator it;
+		for(it = sinks.begin(); it != sinks.end(); it++)
+		{
+			add_edge(*it,v,*g);
+		}
+	}
+}
+
+
 // Remove the sources present in the graph when it is passed to the function.
 // We must be carefull to not remove too many nodes
 void remove_sources(Graph* g)
@@ -82,8 +139,7 @@ void remove_sources(Graph* g)
 	std::pair <Vertex_iter, Vertex_iter> vp;
 	for(vp = vertices(*g);vp.first != vp.second; vp.first++)
 	{
-		std::pair < In_edge_iter, In_edge_iter > ep = in_edges(*vp.first,*g);
-		if(ep.first == ep.second)
+		if(in_degree(*vp.first,*g) == 0)
 		{
 			sources.push_back(*vp.first);
 		}
@@ -109,8 +165,7 @@ void remove_sinks(Graph* g)
 	std::pair <Vertex_iter, Vertex_iter> vp;
 	for(vp = vertices(*g);vp.first != vp.second; ++vp.first)
 	{
-		std::pair < Out_edge_iter, Out_edge_iter > ep = out_edges(*vp.first,*g);
-		if(ep.first == ep.second)
+		if(out_degree(*vp.first,*g) == 0)
 		{
 			sinks.push_back(*vp.first);
 		}
@@ -152,6 +207,8 @@ int main(int argc, char** argv)
 		/* Transform options */
 		("remove-sinks", po::value<bool>()->zero_tokens(), "Remove all sinks from the graph")
 		("remove-sources", po::value<bool>()->zero_tokens(), "Remove all sources from the graph")
+		("add-sink", po::value<std::string>(), "Make all sinks from the graph point to a dummy node")
+		("add-source", po::value<std::string>(), "Make a dummy node point to all all sources of the graph")
 		;
 		
 	po::options_description all;
@@ -213,6 +270,15 @@ int main(int argc, char** argv)
 	if(vm.count("remove-sinks"))
 	{
 		remove_sinks(g);
+	}
+	if(vm.count("add-source"))
+	{
+		add_dummy_source(g,&properties,vm["add-source"].as<std::string>());
+	}
+	
+	if(vm.count("add-sink"))
+	{
+		add_dummy_sink(g,&properties,vm["add-sink"].as<std::string>());
 	}
 
 	// Output graph
