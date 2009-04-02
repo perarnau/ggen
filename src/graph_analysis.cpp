@@ -136,47 +136,15 @@ void minimum_spanning_tree(const Graph& g)
 	write_graphviz(std::cout,mst,p);
 }
 
-// compute several standard statistics like mean degree, ...
-void degree_stats(Graph g)
+// just output the out_degree of each node
+void out_degree(const Graph& g)
 {
-	// allocate an histogram to accumulate data
-	gsl_histogram *h = gsl_histogram_alloc(num_vertices(g));
-
-	// set range to make a nice histogram
-	// the first idea was 0..num_edges(g) but that's bad
-	// so let's find the min and max degree, and use it. 
-	// A little bit inefficient...
-	unsigned int max = 0,min = ULONG_MAX;
-	std::pair< Vertex_iter, Vertex_iter> vp;
-	for (vp = boost::vertices(g); vp.first != vp.second; ++vp.first)
+	std::cout << "Vertex\tOut_degree" << std::endl;
+	std::pair<Vertex_iter, Vertex_iter> vp;
+	for(vp = boost::vertices(g); vp.first != vp.second; ++vp.first)
 	{
-		unsigned int d = out_degree(*vp.first,g);
-		if(d > max)
-			max = d;
-		if(d < min)
-			min = d;
+		std::cout << get("node_id",properties, *vp.first) << "\t" << out_degree(*vp.first,g) << std::endl;
 	}
-	gsl_histogram_set_ranges_uniform(h,min,max);
-
-	// add each degree of each vertex
-	for (vp = boost::vertices(g); vp.first != vp.second; ++vp.first)
-	{
-		gsl_histogram_increment(h,out_degree(*vp.first,g));
-	}
-	
-	// print basic stats
-	std::cout << "Degree Distribution:" 			<< std::endl;
-	std::cout << "Min: "	<< min 				<< std::endl;
-	std::cout << "Max: "	<< max			 	<< std::endl;
-	std::cout << "Mean: "	<< gsl_histogram_mean(h) 	<< std::endl;
-	std::cout << "Std Dev: "<< gsl_histogram_sigma(h) 	<< std::endl;
-
-
-	// print histogram
-	std::cout << "Histogram:" << std::endl;
-	gsl_histogram_fprintf (stdout, h, "%g", "%g");
-	
-	gsl_histogram_free(h);
 }
 
 // this metric doesn't have a nice name for now
@@ -327,10 +295,10 @@ int main(int argc, char** argv)
 		/* Analysis options */
 		("nb-vertices,n", po::value<bool>()->zero_tokens(), "Output the number of vertices in the graph")
 		("nb-edges,m", po::value<bool>()->zero_tokens(), "Output the number of edges in the graph")
-		("degree-stats,d", po::value<bool>()->zero_tokens(),"Compute various statistics of the vertices degrees")
 		("mst", po::value<bool>()->zero_tokens(),"Compute the Minimum Spanning Tree of the graph")
 		("lp", po::value<bool>()->zero_tokens(),"Compute the Longest Path of the graph")
 		("npl",po::value<bool>()->zero_tokens(),"Compute the Nodes Per Layer of the graph")
+		("out-degree", po::value<bool>()->zero_tokens(),"Gives the out_degree of each vertex")
 		;
 		
 	po::options_description all;
@@ -379,11 +347,6 @@ int main(int argc, char** argv)
 		std::cout << "Nb Edges: " << num_edges(*g) << std::endl;
 	}
 
-	if(vm.count("degree-stats"))
-	{
-		degree_stats(*g);
-	}
-
 	if(vm.count("mst"))
 	{
 		minimum_spanning_tree(*g);
@@ -395,6 +358,10 @@ int main(int argc, char** argv)
 	if(vm.count("npl"))
 	{
 		nodes_per_layer(*g);
+	}
+	if(vm.count("out-degree"))
+	{
+		out_degree(*g);
 	}
 	
 	delete g;
