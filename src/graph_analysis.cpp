@@ -212,7 +212,7 @@ void nodes_per_layer(const Graph& g)
 	}
 }
 
-// critical path
+// computes the longuest path present in the graph, this without weights on nodes nor edges
 void longest_path(const Graph& g)
 {
 	// Index map
@@ -268,6 +268,82 @@ void longest_path(const Graph& g)
 	}
 }
 
+// recursive function for the max_independent_set
+void max_i_s_rec(const Graph& g,std::list<std::list<Vertex> > *pset,std::list<Vertex> current,std::set<Vertex> allowed)
+{
+	// stop condition, we have marked all the vertices of the graph
+	if(allowed.empty())
+	{
+		//std::cerr << "debug,pset " << "current " << current.size() << std::endl;
+		pset->push_back(current);
+		return;
+	}
+	else // standard case, we choose either to insert a new vertex or not
+	{
+		// choose a vertex, one in allowed
+		std::set<Vertex>::iterator it = allowed.begin();
+		Vertex c = *it;
+		// remove from allowed
+		allowed.erase(c);
+		
+		// std::cerr<< "debug,1 " << get("node_id",properties,c)  << " current " << current.size() << " allowed " << allowed.size() << std::endl;
+		// first recursion, we don't add the vertex to current
+		max_i_s_rec(g,pset,current,allowed);
+
+		// second case, we add the vertex, and remove all its adjacent vertices from the graph as they do not comply with
+		// the independent set property
+		current.push_back(c);
+		
+		// find the adjacent vertices and do not allow them, we consider the graph undirected here
+		std::list<Vertex> adj;
+		std::pair<In_edge_iter, In_edge_iter> ip;
+		for(ip = in_edges(c,g); ip.first != ip.second; ++ip.first)
+		{
+			Vertex v = source(*ip.first,g);
+			allowed.erase(v);
+		}
+		std::pair<Out_edge_iter, Out_edge_iter> op;
+		for(op = out_edges(c,g); op.first != op.second; ++op.first)
+		{
+			Vertex v = target(*op.first,g);
+			allowed.erase(v);
+		}
+		// std::cerr<< "debug,2 " << get("node_id",properties,c)  << " current " << current.size() << " allowed " << allowed.size() << std::endl;
+		max_i_s_rec(g,pset,current,allowed);
+	}
+}
+
+// stupid "powerset" algorithm to computes the maximum independent set of the graph
+// recursively compute all possible independent sets and find the maximum one
+void max_independent_set(const Graph& g)
+{
+	// the list of sets
+	std::list< std::list< Vertex > > *powerset = new  std::list< std::list< Vertex > >();
+	// the current list computed
+	std::list< Vertex > empty;
+	// the set of allowed vertices, these can be added to a set
+	std::pair<Vertex_iter,Vertex_iter> vp = vertices(g);
+	std::set<Vertex> a(vp.first,vp.second);
+	// launch the recursion
+	max_i_s_rec(g,powerset,empty,a);
+
+	// find the maximum set
+	std::list< std::list< Vertex > >::iterator it;
+	std::list<Vertex> max;
+	for(it= powerset->begin(); it != powerset->end(); it++)
+	{
+		if(it->size() > max.size())
+			max = *it;
+	}
+
+	// display the max independent set
+	std::list<Vertex>::iterator vit;
+	for(vit= max.begin(); vit != max.end(); vit++)
+	{
+		std::cout << get("node_id",properties,*vit) << std::endl;
+	}
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // MAIN
 ////////////////////////////////////////////////////////////////////////////////
@@ -299,6 +375,7 @@ int main(int argc, char** argv)
 		("lp", po::value<bool>()->zero_tokens(),"Compute the Longest Path of the graph")
 		("npl",po::value<bool>()->zero_tokens(),"Compute the Nodes Per Layer of the graph")
 		("out-degree", po::value<bool>()->zero_tokens(),"Gives the out_degree of each vertex")
+		("max-independent-set",po::value<bool>()->zero_tokens(),"Gives a maximum independent set of the graph")
 		;
 		
 	po::options_description all;
@@ -362,6 +439,10 @@ int main(int argc, char** argv)
 	if(vm.count("out-degree"))
 	{
 		out_degree(*g);
+	}
+	if(vm.count("max-independent-set"))
+	{
+		max_independent_set(*g);
 	}
 	
 	delete g;
