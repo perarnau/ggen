@@ -269,14 +269,22 @@ void longest_path(const Graph& g)
 }
 
 // recursive function for the max_independent_set
-void max_i_s_rec(const Graph& g,std::list<std::list<Vertex> > *pset,std::list<Vertex> current,std::set<Vertex> allowed)
+void max_i_s_rec(const Graph& g,std::list<Vertex> *max,std::list<Vertex> current,std::set<Vertex> allowed)
 {
+	// optimization, if there is not enough available nodes for current
+	// to grow bigger than current max, we can stop
+	if(current.size() + allowed.size() <= max->size())
+		return;
+	
 	// stop condition, we have marked all the vertices of the graph
 	if(allowed.empty())
 	{
 		//std::cerr << "debug,pset " << "current " << current.size() << std::endl;
-		pset->push_back(current);
-		return;
+		if(max->size() < current.size())
+		{
+			delete max;
+			max = new std::list<Vertex>(current);
+		}
 	}
 	else // standard case, we choose either to insert a new vertex or not
 	{
@@ -288,7 +296,7 @@ void max_i_s_rec(const Graph& g,std::list<std::list<Vertex> > *pset,std::list<Ve
 		
 		// std::cerr<< "debug,1 " << get("node_id",properties,c)  << " current " << current.size() << " allowed " << allowed.size() << std::endl;
 		// first recursion, we don't add the vertex to current
-		max_i_s_rec(g,pset,current,allowed);
+		max_i_s_rec(g,max,current,allowed);
 
 		// second case, we add the vertex, and remove all its adjacent vertices from the graph as they do not comply with
 		// the independent set property
@@ -309,7 +317,7 @@ void max_i_s_rec(const Graph& g,std::list<std::list<Vertex> > *pset,std::list<Ve
 			allowed.erase(v);
 		}
 		// std::cerr<< "debug,2 " << get("node_id",properties,c)  << " current " << current.size() << " allowed " << allowed.size() << std::endl;
-		max_i_s_rec(g,pset,current,allowed);
+		max_i_s_rec(g,max,current,allowed);
 	}
 }
 
@@ -318,27 +326,18 @@ void max_i_s_rec(const Graph& g,std::list<std::list<Vertex> > *pset,std::list<Ve
 void max_independent_set(const Graph& g)
 {
 	// the list of sets
-	std::list< std::list< Vertex > > *powerset = new  std::list< std::list< Vertex > >();
+	std::list< Vertex > *max = new  std::list< Vertex >();
 	// the current list computed
 	std::list< Vertex > empty;
 	// the set of allowed vertices, these can be added to a set
 	std::pair<Vertex_iter,Vertex_iter> vp = vertices(g);
 	std::set<Vertex> a(vp.first,vp.second);
 	// launch the recursion
-	max_i_s_rec(g,powerset,empty,a);
-
-	// find the maximum set
-	std::list< std::list< Vertex > >::iterator it;
-	std::list<Vertex> max;
-	for(it= powerset->begin(); it != powerset->end(); it++)
-	{
-		if(it->size() > max.size())
-			max = *it;
-	}
+	max_i_s_rec(g,max,empty,a);
 
 	// display the max independent set
 	std::list<Vertex>::iterator vit;
-	for(vit= max.begin(); vit != max.end(); vit++)
+	for(vit= max->begin(); vit != max->end(); vit++)
 	{
 		std::cout << get("node_id",properties,*vit) << std::endl;
 	}
