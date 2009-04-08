@@ -269,7 +269,7 @@ void longest_path(const Graph& g)
 }
 
 // recursive function for the max_independent_set
-void max_i_s_rec(const Graph& g,std::list<Vertex> *max,std::list<Vertex> current,std::set<Vertex> allowed)
+void max_i_s_rec(const Graph& g,std::set<Vertex> *max,std::set<Vertex> current,std::set<Vertex> allowed)
 {
 	// optimization, if there is not enough available nodes for current
 	// to grow bigger than current max, we can stop
@@ -283,7 +283,7 @@ void max_i_s_rec(const Graph& g,std::list<Vertex> *max,std::list<Vertex> current
 		if(max->size() < current.size())
 		{
 			delete max;
-			max = new std::list<Vertex>(current);
+			max = new std::set<Vertex>(current);
 		}
 	}
 	else // standard case, we choose either to insert a new vertex or not
@@ -303,7 +303,6 @@ void max_i_s_rec(const Graph& g,std::list<Vertex> *max,std::list<Vertex> current
 		current.push_back(c);
 		
 		// find the adjacent vertices and do not allow them, we consider the graph undirected here
-		std::list<Vertex> adj;
 		std::pair<In_edge_iter, In_edge_iter> ip;
 		for(ip = in_edges(c,g); ip.first != ip.second; ++ip.first)
 		{
@@ -326,9 +325,9 @@ void max_i_s_rec(const Graph& g,std::list<Vertex> *max,std::list<Vertex> current
 void max_independent_set(const Graph& g)
 {
 	// the list of sets
-	std::list< Vertex > *max = new  std::list< Vertex >();
+	std::set< Vertex > *max = new  std::set< Vertex >();
 	// the current list computed
-	std::list< Vertex > empty;
+	std::set< Vertex > empty;
 	// the set of allowed vertices, these can be added to a set
 	std::pair<Vertex_iter,Vertex_iter> vp = vertices(g);
 	std::set<Vertex> a(vp.first,vp.second);
