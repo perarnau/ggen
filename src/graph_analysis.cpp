@@ -293,29 +293,31 @@ void max_i_s_rec(const Graph& g,std::set<Vertex> *max,std::set<Vertex> current,s
 		Vertex c = *it;
 		// remove from allowed
 		allowed.erase(c);
-		
-		// std::cerr<< "debug,1 " << get("node_id",properties,c)  << " current " << current.size() << " allowed " << allowed.size() << std::endl;
-		// first recursion, we don't add the vertex to current
-		max_i_s_rec(g,max,current,allowed);
-
-		// second case, we add the vertex, and remove all its adjacent vertices from the graph as they do not comply with
+	
+		// first case, we add the vertex, and remove all its adjacent vertices from the graph as they do not comply with
 		// the independent set property
-		current.insert(c);
+		std::set<Vertex> c2(current);
+		c2.insert(c);
 		
+		std::set<Vertex> a2(allowed);
 		// find the adjacent vertices and do not allow them, we consider the graph undirected here
 		std::pair<In_edge_iter, In_edge_iter> ip;
 		for(ip = in_edges(c,g); ip.first != ip.second; ++ip.first)
 		{
 			Vertex v = source(*ip.first,g);
-			allowed.erase(v);
+			a2.erase(v);
 		}
 		std::pair<Out_edge_iter, Out_edge_iter> op;
 		for(op = out_edges(c,g); op.first != op.second; ++op.first)
 		{
 			Vertex v = target(*op.first,g);
-			allowed.erase(v);
+			a2.erase(v);
 		}
 		// std::cerr<< "debug,2 " << get("node_id",properties,c)  << " current " << current.size() << " allowed " << allowed.size() << std::endl;
+		max_i_s_rec(g,max,c2,a2);
+
+		// std::cerr<< "debug,1 " << get("node_id",properties,c)  << " current " << current.size() << " allowed " << allowed.size() << std::endl;
+		// second recursion, we don't add the vertex to current set
 		max_i_s_rec(g,max,current,allowed);
 	}
 }
