@@ -300,7 +300,7 @@ void max_i_s_rec(const Graph& g,std::set<Vertex> *max,std::set<Vertex> current,s
 
 		// second case, we add the vertex, and remove all its adjacent vertices from the graph as they do not comply with
 		// the independent set property
-		current.push_back(c);
+		current.insert(c);
 		
 		// find the adjacent vertices and do not allow them, we consider the graph undirected here
 		std::pair<In_edge_iter, In_edge_iter> ip;
@@ -335,7 +335,7 @@ void max_independent_set(const Graph& g)
 	max_i_s_rec(g,max,empty,a);
 
 	// display the max independent set
-	std::list<Vertex>::iterator vit;
+	std::set<Vertex>::iterator vit;
 	for(vit= max->begin(); vit != max->end(); vit++)
 	{
 		std::cout << get("node_id",properties,*vit) << std::endl;
