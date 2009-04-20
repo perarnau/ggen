@@ -55,6 +55,8 @@
 #include <boost/graph/graphviz.hpp>
 #include <boost/graph/properties.hpp>
 #include <boost/graph/prim_minimum_spanning_tree.hpp>
+#include <boost/graph/connected_components.hpp>
+#include <boost/graph/strong_components.hpp>
 #include <boost/graph/topological_sort.hpp>
 #include <boost/program_options.hpp>
 
@@ -344,6 +346,35 @@ void max_independent_set(const Graph& g)
 	}
 }
 
+// computes the list of all connected components. We consider the graph undirected...
+void strong_components(const Graph& g)
+{
+	// create the component map
+	std::map< Vertex, int > com;
+	boost:associative_property_map< std::map< Vertex, int > > comp(com);
+
+	// the index map
+	int i = 0;
+	std::map < Vertex, int > imap;
+	boost::associative_property_map< std::map< Vertex, int> > indexmap(imap);
+
+	// Update map
+	std::pair<Vertex_iter, Vertex_iter> vp;
+	for (vp = boost::vertices(g); vp.first != vp.second; ++vp.first)
+	{
+		imap.insert(make_pair(*vp.first,i++));
+	}
+
+	int num = boost::strong_components(g, comp, vertex_index_map(indexmap));
+
+	std::cout << "Total number of components: " << num << std::endl;
+	std::map< Vertex, int>::iterator it;
+	for(it = com.begin(); it != com.end() ; ++it)
+	{
+		std::cout << "Vertex " <<  get("node_id",properties,it->first) << " is in component " << it->second << std::endl;
+	}
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // MAIN
 ////////////////////////////////////////////////////////////////////////////////
@@ -376,6 +407,7 @@ int main(int argc, char** argv)
 		("npl",po::value<bool>()->zero_tokens(),"Compute the Nodes Per Layer of the graph")
 		("out-degree", po::value<bool>()->zero_tokens(),"Gives the out_degree of each vertex")
 		("max-independent-set",po::value<bool>()->zero_tokens(),"Gives a maximum independent set of the graph")
+		("strong-components",po::value<bool>()->zero_tokens(),"Gives the list of all strong components of the graph")
 		;
 		
 	po::options_description all;
@@ -443,6 +475,10 @@ int main(int argc, char** argv)
 	if(vm.count("max-independent-set"))
 	{
 		max_independent_set(*g);
+	}
+	if(vm.count("strong-components"))
+	{
+		strong_components(*g);
 	}
 	
 	delete g;
