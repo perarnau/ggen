@@ -66,22 +66,42 @@ using namespace boost;
 // Generation Methods
 ////////////////////////////////////////////////////////////////////////////////
 
-/* DEVELOPPERS: 
- * all generation methods must use the same prototype :
- 	
- 	void gg_##method_name##(Graph& g, int num_vertices, int num_edges, base_generator_type& gen, bool allow_parallel = false, bool self_edges = false)
- 
- * This prototype come from BOOST and seem to handle all the complexity a generation method can have.
+///////////////////////////////////////
+// Utils
+// Methods for standard pre or post operations on graphs
+// Contains :
+// 	-- edge elimination
+///////////////////////////////////////
+
+/* There is probably a number of questions that need to be asked before considering
+ * this good code.
  */
+void edge_limitation(Graph& g,int wanted_edge_number)
+{
+	if(num_edges(g) > wanted_edge_number)
+	{
+		// choose randomly an edge
+
+		// delete it
+	}
+}
 
 
+
+///////////////////////////////////////
+// Adjacency Matrix
+// Standard procedure to generate a graph
+// Supports :
+// 	-- dag option
+// 	-- limited edge number by edge by post edge elimination
+// 	-- adding edges (TODO, how ??)
+///////////////////////////////////////
 
 /* Random generation by the adjacency matrix method :
  * Run through the adjacency matrix
  * and at each i,j decide if matrix[i][j] is an edge by tossing a coin
- * WARNING: Currently we consider num_edges irrelevant
  */
-void gg_adjacency_matrix(Graph& g,int num_vertices,int num_edges, ggen_rnd& rnd)
+void gg_matrix_do(Graph& g,int num_vertices,ggen_rnd& rnd, bool do_dag)
 {
 	// generate the matrix
 	bool matrix[num_vertices][num_vertices];
@@ -89,12 +109,15 @@ void gg_adjacency_matrix(Graph& g,int num_vertices,int num_edges, ggen_rnd& rnd)
 	boost::any *coin = new boost::any[2];
 	coin[0] = boost::any(true);
 	coin[1] = boost::any(false);
+	// coin toss at each (i,j)
 	boost::any toss;
 	for(i=0; i < num_vertices; i++)
 	{
 		for(j = 0; j < num_vertices ; j++)
 		{
-			if(i < j)
+			// this test activate always if do_dag is false,
+			// only if i < j if do_dag is true
+			if(i < j || !do_dag)
 			{
 				rnd.choose(&toss,1,coin,2,sizeof(boost::any));
 				matrix[i][j] = boost::any_cast<bool>(toss);
@@ -118,6 +141,25 @@ void gg_adjacency_matrix(Graph& g,int num_vertices,int num_edges, ggen_rnd& rnd)
 				add_edge(vmap[i],vmap[j],g);
 
 }
+
+/* Wrapper function aroud gg_matrix_do and edge_elmination
+ * This is what we call for a generation by adjacency matrix
+ */
+void gg_adjacency_matrix(Graph& g, int num_vertices, int num_edges, ggen_rnd& rnd, bool do_dag)
+{
+	gg_matrix_do(g,num_vertices,rnd,do_dag);
+	edge_limitation(g,num_edges);
+}
+
+///////////////////////////////////////
+// Random Vertex Pairs
+// choose randomly two vertices to add an edge to
+// Supports :
+// 	-- dag option
+// 	-- limited edge number by edge by post edge elminitation
+// 	-- adding edges (TODO, how ??)
+///////////////////////////////////////
+
 
 /* Random generation by choosing pairs of vertices.
 */ 
@@ -170,6 +212,7 @@ Graph *g;
 int main(int argc, char** argv)
 {
 	int nb_vertices,nb_edges;
+	bool do_dag;
 
 	// Handle command line arguments
 	////////////////////////////////////
@@ -183,6 +226,8 @@ int main(int argc, char** argv)
 		/* Generation options */
 		("nb-vertices,n", po::value<int>(&nb_vertices)->default_value(10),"set the number of vertices in the generated graph")
 		("nb-edges,m", po::value<int>(&nb_edges)->default_value(10),"set the number of edges in the generated graph")
+		("dag", po::value<bool>(&do_dag)->zero_tokens()->default_value(false),"When possible, alter the generation method to only generate Directed Acyclic Graphs")
+		/* Generation methods */
 		("matrix", po::value<bool>()->zero_tokens(),"Generate with the adjacency matrix method")
 	;
 
@@ -222,7 +267,7 @@ int main(int argc, char** argv)
 	
 	if(vm.count("matrix"))
 	{	
-		gg_adjacency_matrix(*g,nb_vertices,nb_edges,*rs.rnd);
+		gg_adjacency_matrix(*g,nb_vertices,nb_edges,*rs.rnd,do_dag);
 	}
 
 	//gg_random_vertex_pairs(*g,nb_vertices,nb_edges,*rs.rnd);
