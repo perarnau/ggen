@@ -1,0 +1,18 @@
+This file is here to keep track of a number of design choices that were made.
+As this work depends highly on random generators and statistical properties
+a number of functions were coded in a way respectful of the wanted statiscal properties.
+
+Anyone that have questions on chosen algorithms or if an operation risk to affect the
+properties of the generated graphs need to:
+	-- ask an "expert" and write here the result of the discussion
+	-- in the future the dev mailing list should be a good way to keep track
+	of the design choices.
+
+
+
+QUESTIONS TO BE ASKED:
+	-- how to:
+		-- eliminate edges from a graph without changing its properties
+		-- add edges to a graph without ...
+
+	-- are adjacency matrix and random vertex pairs the same ??
