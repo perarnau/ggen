@@ -211,7 +211,7 @@ Graph *g;
  */
 int main(int argc, char** argv)
 {
-	int nb_vertices,nb_edges;
+	int nb_vertices,nb_edges,mean_degree;
 	bool do_dag;
 
 	// Handle command line arguments
@@ -226,6 +226,7 @@ int main(int argc, char** argv)
 		/* Generation options */
 		("nb-vertices,n", po::value<int>(&nb_vertices)->default_value(10),"set the number of vertices in the generated graph")
 		("nb-edges,m", po::value<int>(&nb_edges)->default_value(10),"set the number of edges in the generated graph")
+		("mean-degree", po::value<int>(),"Set the mean degree expected for the graph")
 		("dag", po::value<bool>(&do_dag)->zero_tokens()->default_value(false),"When possible, alter the generation method to only generate Directed Acyclic Graphs")
 		/* Generation methods */
 		("matrix", po::value<bool>()->zero_tokens(),"Generate with the adjacency matrix method")
@@ -260,6 +261,19 @@ int main(int argc, char** argv)
 	random_options_state rs;
 	random_options_start(vm,rs);
 	
+	// Graph options handling
+	////////////////////////////////
+	
+	// This option force the number of edges, so if both are activated and values differ, we need to crash
+	if(vm.count("mean-degree"))
+	{
+		if(vm.count("nb-edges"))
+			if(vm["nb-edges"].as<int>() / nb_vertices != vm["mean-degree"].as<int>())
+				exit(3); // TODO ERROR
+		
+		nb_edges = vm["mean-degree"].as<int>() / nb_vertices;
+	}
+
 	// Graph generation
 	////////////////////////////////
 	
