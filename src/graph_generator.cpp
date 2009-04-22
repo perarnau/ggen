@@ -63,6 +63,13 @@
 using namespace boost;
 
 ////////////////////////////////////////////////////////////////////////////////
+// Global definitions
+////////////////////////////////////////////////////////////////////////////////
+
+// a random number generator for all our random stuff, initialized in main
+ggen_rng* global_rng;
+
+////////////////////////////////////////////////////////////////////////////////
 // Generation Methods
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -101,11 +108,12 @@ void edge_limitation(Graph& g,int wanted_edge_number)
  * Run through the adjacency matrix
  * and at each i,j decide if matrix[i][j] is an edge by tossing a coin
  */
-void gg_matrix_do(Graph& g,int num_vertices,ggen_rnd& rnd, bool do_dag)
+void gg_matrix_do(Graph& g,int num_vertices, bool do_dag)
 {
 	// generate the matrix
 	bool matrix[num_vertices][num_vertices];
 	int i,j;
+	//TODO: use ggen_rng::coin_flip instead
 	boost::any *coin = new boost::any[2];
 	coin[0] = boost::any(true);
 	coin[1] = boost::any(false);
@@ -119,7 +127,7 @@ void gg_matrix_do(Graph& g,int num_vertices,ggen_rnd& rnd, bool do_dag)
 			// only if i < j if do_dag is true
 			if(i < j || !do_dag)
 			{
-				rnd.choose(&toss,1,coin,2,sizeof(boost::any));
+				global_rng->choose(&toss,1,coin,2,sizeof(boost::any));
 				matrix[i][j] = boost::any_cast<bool>(toss);
 			}
 			else
@@ -145,9 +153,9 @@ void gg_matrix_do(Graph& g,int num_vertices,ggen_rnd& rnd, bool do_dag)
 /* Wrapper function aroud gg_matrix_do and edge_elmination
  * This is what we call for a generation by adjacency matrix
  */
-void gg_adjacency_matrix(Graph& g, int num_vertices, int num_edges, ggen_rnd& rnd, bool do_dag)
+void gg_adjacency_matrix(Graph& g, int num_vertices, int num_edges, bool do_dag)
 {
-	gg_matrix_do(g,num_vertices,rnd,do_dag);
+	gg_matrix_do(g,num_vertices,do_dag);
 	edge_limitation(g,num_edges);
 }
 
@@ -163,7 +171,7 @@ void gg_adjacency_matrix(Graph& g, int num_vertices, int num_edges, ggen_rnd& rn
 
 /* Random generation by choosing pairs of vertices.
 */ 
-void gg_random_vertex_pairs(Graph& g,int num_vertices, int num_edges, ggen_rnd& rnd, bool allow_parallel = false, bool self_edges = false) {	
+void gg_random_vertex_pairs(Graph& g,int num_vertices, int num_edges, bool allow_parallel = false, bool self_edges = false) {	
 
 	g = Graph(num_vertices);
 
@@ -181,7 +189,7 @@ void gg_random_vertex_pairs(Graph& g,int num_vertices, int num_edges, ggen_rnd& 
 	while(added_edges < num_edges ) {
 		if( !self_edges)
 		{
-			rnd.choose(dest,2,src,num_vertices,sizeof(boost::any));
+			global_rng->choose(dest,2,src,num_vertices,sizeof(boost::any));
 		}
 		else
 		{
@@ -233,7 +241,7 @@ int main(int argc, char** argv)
 	;
 
 	po::options_description all;
-	po::options_description ro = random_add_options();
+	po::options_description ro = random_rng_options();
 
 
 	all.add(desc).add(ro);
@@ -258,8 +266,8 @@ int main(int argc, char** argv)
 		close(out);
 	}
 
-	random_options_state rs;
-	random_options_start(vm,rs);
+	// Random number generator, options hnadling
+	global_rng = random_rng_handle_options_atinit(vm);
 	
 	// Graph options handling
 	////////////////////////////////
@@ -281,10 +289,9 @@ int main(int argc, char** argv)
 	
 	if(vm.count("matrix"))
 	{	
-		gg_adjacency_matrix(*g,nb_vertices,nb_edges,*rs.rnd,do_dag);
+		gg_adjacency_matrix(*g,nb_vertices,nb_edges,do_dag);
 	}
 
-	//gg_random_vertex_pairs(*g,nb_vertices,nb_edges,*rs.rnd);
 	
 	// since we created the graph from scratch we need to add a property for the vertices
 	std::string name("node_id");
@@ -301,7 +308,7 @@ int main(int argc, char** argv)
 	////////////////////////////////////	
 	write_graphviz(std::cout, *g,properties);
 
-	random_options_end(vm,rs);
+	random_rng_handle_options_atexit(vm,global_rng);
 	
 	delete g;
 	return 0;

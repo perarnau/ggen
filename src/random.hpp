@@ -71,8 +71,23 @@
 
 #define GGEN_RNG_DEFAULT GGEN_RNG_RANMAR
 
+/******************************************************************************
+ * GGEN GSL Random Number Generator,
+ * Handle all creation and access to gsl_rng
+******************************************************************************/
 
-
+class ggen_rng {
+	public:
+		ggen_rng(const unsigned int rng_type, unsigned long int seed);
+		~ggen_rng();
+		const gsl_rng* get_gsl();
+		void read(std::string filename);
+		void write(std::string filename);
+		void choose(boost::any *dest, size_t k, boost::any* src, size_t n,size_t size);
+		bool coin_flip();
+	protected:
+		gsl_rng* rng;
+};
 
 /******************************************************************************
  * GGEN GSL Random Number Distribution,
@@ -85,19 +100,15 @@
  * need a gsl_rng to work.
  */
 
-
 class ggen_rnd {
 	public:
-		ggen_rnd(const unsigned int rng_type, unsigned long int seed);
+		ggen_rnd(ggen_rng* r);
 		virtual double get() = 0;
-		~ggen_rnd();
-		void read(std::string filename);
-		void write(std::string filename);
-		void choose(boost::any *dest, size_t k, boost::any* src, size_t n,size_t size);
-
-		static ggen_rnd* create_rnd(const unsigned int ggen_rnd_type, const unsigned int rng_type, unsigned long int seed, std::vector<std::string> args); 
+		~ggen_rnd();		
+		static ggen_rnd* create_rnd(ggen_rng* rng, const unsigned int ggen_rnd_type, std::vector<std::string> args); 
+	
 	protected:
-		gsl_rng *rng;
+		ggen_rng* rng;
 };
 
 /* Gaussian distribution
@@ -105,7 +116,7 @@ class ggen_rnd {
 
 class ggen_rnd_gaussian : public ggen_rnd {
 	public:
-		ggen_rnd_gaussian(const unsigned int rng_type, unsigned long int seed, std::vector<std::string> args);
+		ggen_rnd_gaussian(ggen_rng* rng, std::vector<std::string> args);
 		double get();
 	private:
 		double sigma;
@@ -116,7 +127,7 @@ class ggen_rnd_gaussian : public ggen_rnd {
 
 class ggen_rnd_flat : public ggen_rnd {
 	public:
-		ggen_rnd_flat(const unsigned int rng_type, unsigned long int seed, std::vector<std::string> args);
+		ggen_rnd_flat(ggen_rng* rng, std::vector<std::string> args);
 		double get();
 	private:
 		double min,max;
@@ -128,18 +139,10 @@ class ggen_rnd_flat : public ggen_rnd {
 
 namespace po =  boost::program_options;
 
-typedef struct ro {
-	unsigned int rng_type;
-	ggen_rnd *rnd;
-	std::string filename;
-	unsigned int seed;
-} random_options_state;
-
-
-// add to the list of allowed options random number generator specific command line options
-po::options_description random_add_options();
-
-void random_options_start(const po::variables_map& vm,random_options_state& rs);
-
-void random_options_end(const po::variables_map& vm,random_options_state& rs);
+po::options_description random_rng_options();
+po::options_description random_rnd_options();
+ggen_rng* random_rng_handle_options_atinit(const po::variables_map& vm);
+void random_rng_handle_options_atexit(const po::variables_map& vm,ggen_rng* rng);
+ggen_rnd* random_rnd_handle_options_atinit(const po::variables_map& vm,ggen_rng* rng);
+void random_rnd_handle_options_atexit(const po::variables_map& vm,ggen_rng* rng, ggen_rnd* rnd);
 

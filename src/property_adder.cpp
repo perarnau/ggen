@@ -65,14 +65,22 @@ using namespace boost;
 using namespace std;
 
 ////////////////////////////////////////////////////////////////////////////////
+// Global Definitions
+////////////////////////////////////////////////////////////////////////////////
+
+dynamic_properties properties(&create_property_map);
+Graph *g;
+
+ggen_rng* global_rng;
+ggen_rnd* global_rnd;
+
+////////////////////////////////////////////////////////////////////////////////
 // MAIN
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace po = boost::program_options;
-dynamic_properties properties(&create_property_map);
-Graph *g;
 
-void add_vertex_property(ggen_rnd* rnd,string name)
+void add_vertex_property(string name)
 {
 	vertex_std_map* map = new vertex_std_map();
 	vertex_assoc_map * amap = new vertex_assoc_map(*map);
@@ -81,10 +89,10 @@ void add_vertex_property(ggen_rnd* rnd,string name)
 	// iterate and add random property
 	std::pair<Vertex_iter, Vertex_iter> vp;
 	for (vp = boost::vertices(*g); vp.first != vp.second; ++vp.first)
-		    put(name,properties,*vp.first,boost::lexical_cast<std::string>(rnd->get()));
+		    put(name,properties,*vp.first,boost::lexical_cast<std::string>(global_rnd->get()));
 }
 
-void add_edge_property(ggen_rnd* rnd,string name)
+void add_edge_property(string name)
 {
 	edge_std_map* map = new edge_std_map();
 	edge_assoc_map * amap = new edge_assoc_map(*map);
@@ -93,7 +101,7 @@ void add_edge_property(ggen_rnd* rnd,string name)
 	// iterate and add random property
 	std::pair<Edge_iter, Edge_iter> ep;
 	for (ep = boost::edges(*g); ep.first != ep.second; ++ep.first)
-		    put(name,properties,*ep.first,boost::lexical_cast<std::string>(rnd->get()));
+		    put(name,properties,*ep.first,boost::lexical_cast<std::string>(global_rnd->get()));
 	
 }
 
@@ -104,7 +112,6 @@ int main(int argc, char** argv)
 {
 	int nb_vertices,nb_edges;
 	string name;
-	random_options_state rs;
 	bool edge_property;
 
 	// Handle command line arguments
@@ -122,9 +129,10 @@ int main(int argc, char** argv)
 		("edge,e",po::value<bool>()->zero_tokens(),"Add an edge property instead of a vertex one")
 	;
 
-	po::options_description ro = random_add_options();
+	po::options_description rngo = random_rng_options();
+	po::options_description rndo = random_rnd_options();
 	po::options_description all;
-	all.add(desc).add(ro);
+	all.add(desc).add(rngo).add(rndo);
 	
 	
 	// Parse command line options
@@ -174,7 +182,8 @@ int main(int argc, char** argv)
 		edge_property = false;
 
 
-	random_options_start(vm,rs);
+	global_rng = random_rng_handle_options_atinit(vm);
+	global_rnd = random_rnd_handle_options_atinit(vm,global_rng);
 
 	// Graph generation
 	////////////////////////////////
@@ -189,15 +198,16 @@ int main(int argc, char** argv)
 	// Add property
 	////////////////////////////////////
 	if(edge_property)
-		add_edge_property(rs.rnd,name);
+		add_edge_property(name);
 	else
-		add_vertex_property(rs.rnd,name);
+		add_vertex_property(name);
 	
 	// Write graph
 	////////////////////////////////////	
 	write_graphviz(std::cout, *g,properties);
 	
-	random_options_end(vm,rs);
+	random_rnd_handle_options_atexit(vm,global_rng,global_rnd);
+	random_rng_handle_options_atexit(vm,global_rng);
 
 	delete g;
 	return 0;
