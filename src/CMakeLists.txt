@@ -48,6 +48,14 @@ FIND_PACKAGE(Boost REQUIRED regex program_options graph)
 # For GSL
 find_package(GSL)
 
+# remove deprecated warning about hash_set with gcc 4.3
+ADD_DEFINITIONS(-DBOOST_NO_HASH)
+# Some flags definitions
+set(CMAKE_CXX_FLAGS_DEBUG	" -g -O2 -DDEBUG ")
+set(CMAKE_C_FLAGS_DEBUG       " -g -O2 -DDEBUG ")
+set(CMAKE_CXX_FLAGS_RELEASE       "-O2")
+set(CMAKE_C_FLAGS_RELEASE       "-O2")
+
 
 # Executables
 set(EXECS_WITH_RANDOM graph_generator property_adder)
