@@ -84,7 +84,8 @@ class ggen_rng {
 		void read(std::string filename);
 		void write(std::string filename);
 		void choose(boost::any *dest, size_t k, boost::any* src, size_t n,size_t size);
-		bool coin_flip();
+		bool bernoulli(double p = 0.5);
+		unsigned long int uniform_int(unsigned long int n);
 	protected:
 		gsl_rng* rng;
 };

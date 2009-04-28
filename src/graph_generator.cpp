@@ -152,7 +152,7 @@ void gg_matrix_do(Graph& g,int num_vertices, bool do_dag)
 			if(i < j || !do_dag)
 			{
 				// coin flipping to determine if we add an edge or not
-				matrix[i][j] = global_rng->coin_flip();
+				matrix[i][j] = global_rng->bernoulli();
 			}
 			else
 				matrix[i][j] = false;

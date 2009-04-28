@@ -122,13 +122,19 @@ void ggen_rng::choose(boost::any *dest, size_t k, boost::any* src, size_t n,size
 	gsl_ran_choose(rng,dest,k,src,n,size);
 }
 
-// simple function to do a "coin flip" : return true or false with equal probability
-bool ggen_rng::coin_flip()
+// simple function to do a bernoulli trial : return true with probability p
+bool ggen_rng::bernoulli(double p)
 {
-	if(gsl_rng_uniform(rng) < 0.5)
+	if(gsl_ran_bernoulli(rng,p) == 1)
 		return true;
 	else 
 		return false;
+}
+
+// return an integer between 0 and n-1 all with equal probability
+unsigned long int ggen_rng::uniform_int(unsigned long int n)
+{
+	return gsl_rng_uniform_int(rng,n);
 }
 
 /******************************************************************************
