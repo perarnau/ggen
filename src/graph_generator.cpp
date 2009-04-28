@@ -113,12 +113,7 @@ void gg_matrix_do(Graph& g,int num_vertices, bool do_dag)
 	// generate the matrix
 	bool matrix[num_vertices][num_vertices];
 	int i,j;
-	//TODO: use ggen_rng::coin_flip instead
-	boost::any *coin = new boost::any[2];
-	coin[0] = boost::any(true);
-	coin[1] = boost::any(false);
-	// coin toss at each (i,j)
-	boost::any toss;
+	
 	for(i=0; i < num_vertices; i++)
 	{
 		for(j = 0; j < num_vertices ; j++)
@@ -127,8 +122,8 @@ void gg_matrix_do(Graph& g,int num_vertices, bool do_dag)
 			// only if i < j if do_dag is true
 			if(i < j || !do_dag)
 			{
-				global_rng->choose(&toss,1,coin,2,sizeof(boost::any));
-				matrix[i][j] = boost::any_cast<bool>(toss);
+				// coin flipping to determine if we add an edge or not
+				matrix[i][j] = global_rng->coin_flip();
 			}
 			else
 				matrix[i][j] = false;
