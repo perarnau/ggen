@@ -82,14 +82,43 @@ ggen_rng* global_rng;
 
 /* There is probably a number of questions that need to be asked before considering
  * this good code.
+ * As of today, this code is probably gg_matrix specific
  */
 void edge_limitation(Graph& g,int wanted_edge_number)
 {
+	dbg("Entering edge_limitation: num_edge %d, wanted_edge_number %d\n",num_edges(g),wanted_edge_number);
 	if(num_edges(g) > wanted_edge_number)
 	{
-		// choose randomly an edge
+		// choose randomly a vertex pair
+		// create a two arrays for ggen_rng::choose
+		unsigned int nv = num_vertices(g);
+		boost::any *src = new boost::any[nv];
+		boost::any *dest = new boost::any[2];
+	
+		// add all vertices to src
+		int i = 0;
+		std::pair<Vertex_iter, Vertex_iter> vp;
+		for (vp = boost::vertices(g); vp.first != vp.second; ++vp.first)
+			src[i++] = boost::any_cast<Vertex>(*vp.first);
 
-		// delete it
+		int edges_to_remove = num_edges(g) - wanted_edge_number;
+		std::pair< Edge, bool> edge_present;
+		Vertex u,v;
+		while(edges_to_remove > 0 ) {
+			global_rng->choose(dest,2,src,nv,sizeof(boost::any));
+			
+			u = boost::any_cast<Vertex>(dest[0]);
+			v = boost::any_cast<Vertex>(dest[1]);
+		
+			edge_present = edge(u,v,g);
+			if(edge_present.second)
+			{
+				// remove it
+				remove_edge(edge_present.first,g);
+				edges_to_remove--;			
+			}
+		}
+			
 	}
 }
 
