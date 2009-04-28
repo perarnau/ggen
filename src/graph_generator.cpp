@@ -283,7 +283,7 @@ int main(int argc, char** argv)
 	if (vm.count("output")) 
 	{
 		// create a new file with 344 file permissions
-		int out = open(vm["output"].as<std::string>().c_str(),O_RDWR | O_CREAT,S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH );
+		int out = open(vm["output"].as<std::string>().c_str(),O_WRONLY | O_CREAT | O_TRUNC,S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH );
 	
 		// redirect stdout to it
 		dup2(out,STDOUT_FILENO);
