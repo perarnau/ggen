@@ -75,4 +75,13 @@ typedef graph_traits<Graph>::edge_iterator Edge_iter;
 typedef graph_traits<Graph>::in_edge_iterator In_edge_iter; 
 typedef graph_traits<Graph>::out_edge_iterator Out_edge_iter; 
 
+
+/* Debug macro, usefull for tracing program execution */
+// TODO: debug asserts, use it
+
+#ifdef DEBUG
+#define dbg(format,...) fprintf(stderr, "[file %s, line %d] " format, __FILE__, __LINE__ , __VA_ARGS__)
+#else
+#define dbg(format,...) do { } while(0)
+#endif
 #endif
