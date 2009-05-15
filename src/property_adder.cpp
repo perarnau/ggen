@@ -129,6 +129,8 @@ int main(int argc, char** argv)
 		("edge,e",po::value<bool>()->zero_tokens(),"Add an edge property instead of a vertex one")
 	;
 
+	ADD_DBG_OPTIONS(desc);
+
 	po::options_description rngo = random_rng_options();
 	po::options_description rndo = random_rnd_options();
 	po::options_description all;

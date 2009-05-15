@@ -409,6 +409,7 @@ int main(int argc, char** argv)
 		("max-independent-set",po::value<bool>()->zero_tokens(),"Gives a maximum independent set of the graph")
 		("strong-components",po::value<bool>()->zero_tokens(),"Gives the list of all strong components of the graph")
 		;
+	ADD_DBG_OPTIONS(desc);
 		
 	po::options_description all;
 	all.add(desc);

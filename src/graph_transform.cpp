@@ -210,7 +210,9 @@ int main(int argc, char** argv)
 		("add-sink", po::value<std::string>(), "Make all sinks from the graph point to a dummy node")
 		("add-source", po::value<std::string>(), "Make a dummy node point to all all sources of the graph")
 		;
-		
+	
+	ADD_DBG_OPTIONS(desc);
+
 	po::options_description all;
 	all.add(desc);
 

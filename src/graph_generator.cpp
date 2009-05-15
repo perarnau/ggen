@@ -86,7 +86,7 @@ ggen_rng* global_rng;
  */
 void edge_limitation(Graph& g,int wanted_edge_number)
 {
-	dbg("Entering edge_limitation: num_edge %d, wanted_edge_number %d\n",num_edges(g),wanted_edge_number);
+	dbg(trace,"Entering edge_limitation: num_edge %d, wanted_edge_number %d\n",num_edges(g),wanted_edge_number);
 	if(num_edges(g) > wanted_edge_number)
 	{
 		// choose randomly a vertex pair
@@ -263,6 +263,8 @@ int main(int argc, char** argv)
 		/* Generation methods */
 		("matrix", po::value<bool>()->zero_tokens(),"Generate with the adjacency matrix method")
 	;
+
+	ADD_DBG_OPTIONS(desc);
 
 	po::options_description all;
 	po::options_description ro = random_rng_options();
