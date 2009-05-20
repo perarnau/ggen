@@ -243,9 +243,8 @@ Graph *g;
  */
 int main(int argc, char** argv)
 {
-	int nb_vertices,nb_edges,mean_degree;
-	bool do_dag;
-
+	int nb_vertices;
+	
 	// Handle command line arguments
 	////////////////////////////////////
 	po::options_description desc("Allowed options");
@@ -256,25 +255,29 @@ int main(int argc, char** argv)
 		("output,o", po::value<std::string>(), "Set the output file")
 	
 		/* Generation options */
-		("nb-vertices,n", po::value<int>(&nb_vertices)->default_value(10),"set the number of vertices in the generated graph")
-		("nb-edges,m", po::value<int>(&nb_edges)->default_value(10),"set the number of edges in the generated graph")
-		("mean-degree", po::value<int>(),"Set the mean degree expected for the graph")
-		("dag", po::value<bool>(&do_dag)->zero_tokens()->default_value(false),"When possible, alter the generation method to only generate Directed Acyclic Graphs")
+		("nb-vertices,n", po::value<int>(&nb_vertices)->default_value(10),"Set the number of vertices in the generated graph")
 		/* Generation methods */
-		("matrix", po::value<bool>()->zero_tokens(),"Generate with the adjacency matrix method")
+		("method", po::value<std::string>(),"The generation method to use")
+		("method-args",po::value<std::vector<std::string> >(),"The generation method's arguments")
 	;
 
 	ADD_DBG_OPTIONS(desc);
 
+	// Positional Options
+	///////////////////////////////
+
+	po::positional_options_description p;
+	p.add("method", 1);
+	p.add("method-args",-1);
+
 	po::options_description all;
 	po::options_description ro = random_rng_options();
 
-
 	all.add(desc).add(ro);
 
-
 	po::variables_map vm;
-	po::store(po::parse_command_line(argc,argv,all),vm);
+	po::parsed_options options = po::command_line_parser(argc,argv).options(all).positional(p).allow_unregistered().run();
+	po::store(options,vm);
 	po::notify(vm);
 	
 	if (vm.count("help")) {
@@ -295,27 +298,41 @@ int main(int argc, char** argv)
 	// Random number generator, options hnadling
 	global_rng = random_rng_handle_options_atinit(vm);
 	
-	// Graph options handling
-	////////////////////////////////
-	
-	// This option force the number of edges, so if both are activated and values differ, we need to crash
-	if(vm.count("mean-degree"))
-	{
-		if(vm.count("nb-edges"))
-			if(vm["nb-edges"].as<int>() / nb_vertices != vm["mean-degree"].as<int>())
-				exit(3); // TODO ERROR
-		
-		nb_edges = vm["mean-degree"].as<int>() / nb_vertices;
-	}
-
-	// Graph generation
+	// Graph methods handling
 	////////////////////////////////
 	
 	g = new Graph();
-	
-	if(vm.count("matrix"))
-	{	
-		gg_adjacency_matrix(*g,nb_vertices,nb_edges,do_dag);
+
+	// First we recover all the possible options we did parse until then
+	std::vector< std::string > args = po::collect_unrecognized(options.options,po::exclude_positional);
+
+	if(vm.count("method"))
+	{
+		std::string method = vm["method"].as<std::string>();
+		po::options_description method_options("Method options");
+		
+		if(method == "matrix")
+		{
+			bool do_dag;
+			unsigned int nb_edges = 10000;
+			// parse the options specific to this method
+			method_options.add_options()
+				("dag",po::value<bool>(&do_dag)->default_value(false),"Generate a DAG instead of a classical graph");
+
+			po::store(po::command_line_parser(args).options(method_options).run(),vm);
+			po::notify(vm);
+
+			gg_adjacency_matrix(*g,nb_vertices,nb_edges,do_dag);
+		}
+		else
+		{
+			std::cerr << "Error : you must provide a VALID method name!" << std::endl;
+		}
+	}
+	else
+	{
+		std::cerr << "Error : you must provide a method name !" << std::endl;
+		exit(1);
 	}
 
 	
