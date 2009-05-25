@@ -149,6 +149,18 @@ void out_degree(const Graph& g)
 	}
 }
 
+
+// just output the in_degree of each node
+void in_degree(const Graph& g)
+{
+	std::cout << "Vertex\tIn_degree" << std::endl;
+	std::pair<Vertex_iter, Vertex_iter> vp;
+	for(vp = boost::vertices(g); vp.first != vp.second; ++vp.first)
+	{
+		std::cout << get("node_id",properties, *vp.first) << "\t" << in_degree(*vp.first,g) << std::endl;
+	}
+}
+
 // this metric doesn't have a nice name for now
 // the idea is to compute, for each i the number of nodes at a maximum distance (longest path) i of the source
 // that is a kind of "number of nodes per layer"
@@ -406,6 +418,7 @@ int main(int argc, char** argv)
 		("lp", po::value<bool>()->zero_tokens(),"Compute the Longest Path of the graph")
 		("npl",po::value<bool>()->zero_tokens(),"Compute the Nodes Per Layer of the graph")
 		("out-degree", po::value<bool>()->zero_tokens(),"Gives the out_degree of each vertex")
+		("in-degree", po::value<bool>()->zero_tokens(),"Gives the in_degree of each vertex")
 		("max-independent-set",po::value<bool>()->zero_tokens(),"Gives a maximum independent set of the graph")
 		("strong-components",po::value<bool>()->zero_tokens(),"Gives the list of all strong components of the graph")
 		;
@@ -471,6 +484,10 @@ int main(int argc, char** argv)
 	if(vm.count("out-degree"))
 	{
 		out_degree(*g);
+	}
+	if(vm.count("in-degree"))
+	{
+		in_degree(*g);
 	}
 	if(vm.count("max-independent-set"))
 	{
