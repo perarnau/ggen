@@ -74,70 +74,17 @@ ggen_rng* global_rng;
 ////////////////////////////////////////////////////////////////////////////////
 
 ///////////////////////////////////////
-// Utils
-// Methods for standard pre or post operations on graphs
-// Contains :
-// 	-- edge elimination
-///////////////////////////////////////
-
-/* There is probably a number of questions that need to be asked before considering
- * this good code.
- * As of today, this code is probably gg_matrix specific
- */
-void edge_limitation(Graph& g,int wanted_edge_number)
-{
-	dbg("Entering edge_limitation: num_edge %d, wanted_edge_number %d\n",num_edges(g),wanted_edge_number);
-	if(num_edges(g) > wanted_edge_number)
-	{
-		// choose randomly a vertex pair
-		// create a two arrays for ggen_rng::choose
-		unsigned int nv = num_vertices(g);
-		boost::any *src = new boost::any[nv];
-		boost::any *dest = new boost::any[2];
-	
-		// add all vertices to src
-		int i = 0;
-		std::pair<Vertex_iter, Vertex_iter> vp;
-		for (vp = boost::vertices(g); vp.first != vp.second; ++vp.first)
-			src[i++] = boost::any_cast<Vertex>(*vp.first);
-
-		int edges_to_remove = num_edges(g) - wanted_edge_number;
-		std::pair< Edge, bool> edge_present;
-		Vertex u,v;
-		while(edges_to_remove > 0 ) {
-			global_rng->choose(dest,2,src,nv,sizeof(boost::any));
-			
-			u = boost::any_cast<Vertex>(dest[0]);
-			v = boost::any_cast<Vertex>(dest[1]);
-		
-			edge_present = edge(u,v,g);
-			if(edge_present.second)
-			{
-				// remove it
-				remove_edge(edge_present.first,g);
-				edges_to_remove--;			
-			}
-		}
-			
-	}
-}
-
-
-
-///////////////////////////////////////
-// Adjacency Matrix
-// Standard procedure to generate a graph
+// Erdos-Renyi : G(n,p)
+// One of the simplest way of generating a graph
 // Supports :
 // 	-- dag option
-// 	-- limited edge number by edge by post edge elimination
-// 	-- adding edges (TODO, how ??)
+// 	-- params : number of vertices, probability of an edge
 ///////////////////////////////////////
 
-/* Random generation by the adjacency matrix method :
- * Run through the adjacency matrix
- * and at each i,j decide if matrix[i][j] is an edge by tossing a coin
+/* Run through the adjacency matrix
+ * and at each i,j decide if matrix[i][j] is an edge with a given probability
  */
-void gg_matrix_do(Graph& g,int num_vertices, bool do_dag)
+void gg_erdos_gnp(Graph& g, int num_vertices, double p, bool do_dag)
 {
 	// generate the matrix
 	bool matrix[num_vertices][num_vertices];
@@ -152,7 +99,7 @@ void gg_matrix_do(Graph& g,int num_vertices, bool do_dag)
 			if(i < j || !do_dag)
 			{
 				// coin flipping to determine if we add an edge or not
-				matrix[i][j] = global_rng->bernoulli();
+				matrix[i][j] = global_rng->bernoulli(p);
 			}
 			else
 				matrix[i][j] = false;
@@ -172,15 +119,6 @@ void gg_matrix_do(Graph& g,int num_vertices, bool do_dag)
 			if(matrix[i][j])
 				add_edge(vmap[i],vmap[j],g);
 
-}
-
-/* Wrapper function aroud gg_matrix_do and edge_elmination
- * This is what we call for a generation by adjacency matrix
- */
-void gg_adjacency_matrix(Graph& g, int num_vertices, int num_edges, bool do_dag)
-{
-	gg_matrix_do(g,num_vertices,do_dag);
-	edge_limitation(g,num_edges);
 }
 
 ///////////////////////////////////////
@@ -243,77 +181,125 @@ Graph *g;
  */
 int main(int argc, char** argv)
 {
-	int nb_vertices,nb_edges,mean_degree;
-	bool do_dag;
+	// Init the structures
+	////////////////////////////
 
+	g = new Graph();
+	
 	// Handle command line arguments
 	////////////////////////////////////
-	po::options_description desc("Allowed options");
-	desc.add_options()
+	po::options_description od_general("General Options");
+	od_general.add_options()
 		("help", "produce help message")
-		
+
 		/* I/O options */
 		("output,o", po::value<std::string>(), "Set the output file")
+	;
 	
-		/* Generation options */
-		("nb-vertices,n", po::value<int>(&nb_vertices)->default_value(10),"set the number of vertices in the generated graph")
-		("nb-edges,m", po::value<int>(&nb_edges)->default_value(10),"set the number of edges in the generated graph")
-		("mean-degree", po::value<int>(),"Set the mean degree expected for the graph")
-		("dag", po::value<bool>(&do_dag)->zero_tokens()->default_value(false),"When possible, alter the generation method to only generate Directed Acyclic Graphs")
-		/* Generation methods */
-		("matrix", po::value<bool>()->zero_tokens(),"Generate with the adjacency matrix method")
+	ADD_DBG_OPTIONS(od_general);
+
+	po::options_description od_methods("Methods Options");
+	od_methods.add_options()
+		("method", po::value<std::string>(),"The generation method to use")
+		("method-args",po::value<std::vector<std::string> >(),"The generation method's arguments")
 	;
 
-	po::options_description all;
-	po::options_description ro = random_rng_options();
 
+	// Positional Options
+	///////////////////////////////
 
-	all.add(desc).add(ro);
+	po::positional_options_description pod_methods;
+	pod_methods.add("method", 1);
+	pod_methods.add("method-args",-1);
 
+	po::options_description od_all;
+	po::options_description od_ro = random_rng_options();
 
-	po::variables_map vm;
-	po::store(po::parse_command_line(argc,argv,all),vm);
-	po::notify(vm);
+	od_all.add(od_general).add(od_methods).add(od_ro);
+
+	po::variables_map vm_general;
+	po::parsed_options prso_general = po::command_line_parser(argc,argv).options(od_all).positional(pod_methods).allow_unregistered().run();
+	po::store(prso_general,vm_general);
+	po::notify(vm_general);
 	
-	if (vm.count("help")) {
-		std::cout << all << "\n";
-		        return 1;
+	if (vm_general.count("help")) {
+		std::cout << "Usage: " << argv[0] << "[options] method_name method_arguments" << std::endl << std::endl;
+
+		std::cout << od_general << std::endl;
+		std::cout << od_ro << std::endl;
+		
+		std::cout << "Methods Available:" << std::endl;
+		std::cout << "erdos_gnp\t\tThe classical adjacency matrix method" << std::endl << std::endl;
+		return 1;
 	}
 	
-	if (vm.count("output")) 
+	if (vm_general.count("output")) 
 	{
 		// create a new file with 344 file permissions
-		int out = open(vm["output"].as<std::string>().c_str(),O_WRONLY | O_CREAT | O_TRUNC,S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH );
+		int out = open(vm_general["output"].as<std::string>().c_str(),O_WRONLY | O_CREAT | O_TRUNC,S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH );
 	
 		// redirect stdout to it
 		dup2(out,STDOUT_FILENO);
 		close(out);
 	}
 
-	// Random number generator, options hnadling
-	global_rng = random_rng_handle_options_atinit(vm);
-	
-	// Graph options handling
-	////////////////////////////////
-	
-	// This option force the number of edges, so if both are activated and values differ, we need to crash
-	if(vm.count("mean-degree"))
-	{
-		if(vm.count("nb-edges"))
-			if(vm["nb-edges"].as<int>() / nb_vertices != vm["mean-degree"].as<int>())
-				exit(3); // TODO ERROR
-		
-		nb_edges = vm["mean-degree"].as<int>() / nb_vertices;
-	}
+	// Random number generator, options handling
+	global_rng = random_rng_handle_options_atinit(vm_general);
 
-	// Graph generation
+
+
+	// Graph methods handling
 	////////////////////////////////
 	
-	g = new Graph();
+	// First we recover all the possible options we didn't parse
+	// this is the -- options that we didn't recognized
+	std::vector< std::string > unparsed_args = po::collect_unrecognized(prso_general.options,po::exclude_positional);
+	// this is the positional arguments that were given to the method
+	std::vector< std::string > parsed_args = vm_general["method-args"].as < std::vector < std::string > >();
 	
-	if(vm.count("matrix"))
-	{	
-		gg_adjacency_matrix(*g,nb_vertices,nb_edges,do_dag);
+	//we merge the whole thing
+	std::vector< std::string > to_parse;
+	to_parse.insert(to_parse.end(),unparsed_args.begin(),unparsed_args.end());
+	to_parse.insert(to_parse.end(),parsed_args.begin(),parsed_args.end());
+
+	if(vm_general.count("method"))
+	{
+		std::string method_name = vm_general["method"].as<std::string>();
+		po::options_description od_method("Method options");
+		po::variables_map vm_method;
+
+		if(method_name == "erdos_gnp")
+		{
+			bool do_dag;
+			double prob;
+			int nb_vertices;
+			// define the options specific to this method
+			od_method.add_options()
+				("dag",po::bool_switch(&do_dag)->default_value(false),"Generate a DAG instead of a classical graph")
+				("nb-vertices,n",po::value<int>(&nb_vertices)->default_value(10),"Set the number of vertices in the generated graph")
+				("probability,p",po::value<double>(&prob)->default_value(0.5),"The probability to get each edge");
+			
+			// define method arguments as positional
+			po::positional_options_description pod_method_args;
+			pod_method_args.add("nb-vertices",1);
+			pod_method_args.add("probability",2);
+			
+			// do the parsing
+			po::store(po::command_line_parser(to_parse).options(od_method).positional(pod_method_args).run(),vm_method);
+			po::notify(vm_method);
+
+			gg_erdos_gnp(*g,nb_vertices,prob,do_dag);
+		}
+		else
+		{
+			std::cerr << "Error : you must provide a VALID method name!" << std::endl;
+			exit(1);
+		}
+	}
+	else
+	{
+		std::cerr << "Error : you must provide a method name !" << std::endl;
+		exit(1);
 	}
 
 	
@@ -332,7 +318,7 @@ int main(int argc, char** argv)
 	////////////////////////////////////	
 	write_graphviz(std::cout, *g,properties);
 
-	random_rng_handle_options_atexit(vm,global_rng);
+	random_rng_handle_options_atexit(vm_general,global_rng);
 	
 	delete g;
 	return 0;

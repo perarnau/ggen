@@ -43,11 +43,11 @@
  */
 
 #include <iostream>
+#include <climits>
 #include <sys/types.h>
 #include <unistd.h>
 #include <sys/stat.h>
 #include <fcntl.h>
-#include <climits>
 
 /* We use extensively the BOOST library for 
  * handling output, program options and random generators
@@ -55,12 +55,17 @@
 #include <boost/config.hpp>
 
 #include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/graph_traits.hpp>
 #include <boost/graph/graphviz.hpp>
 #include <boost/graph/properties.hpp>
+#include <boost/graph/prim_minimum_spanning_tree.hpp>
+#include <boost/graph/connected_components.hpp>
+#include <boost/graph/strong_components.hpp>
+#include <boost/graph/topological_sort.hpp>
 #include <boost/program_options.hpp>
 
-#include "ggen.hpp"
-#include "dynamic_properties.hpp"
+#include "../ggen.hpp"
+#include "../dynamic_properties.hpp"
 
 using namespace boost;
 using namespace std;
@@ -68,131 +73,21 @@ using namespace std;
 dynamic_properties properties(&create_property_map);
 
 ////////////////////////////////////////////////////////////////////////////////
-// TRANFORM FUNCTIONS
-////////////////////////////////////////////////////////////////////////////////
-
-// if there is more than one source, create a new node and make it the only source.
-void add_dummy_source(Graph *g,dynamic_properties* dp,std::string name)
-{
-	// list of sources
-	std::list< Vertex > sources;
-
-	// identify the sources
-	std::pair <Vertex_iter, Vertex_iter> vp;
-	for(vp = vertices(*g);vp.first != vp.second; vp.first++)
-	{
-		if(in_degree(*vp.first,*g) == 0)
-		{
-			sources.push_back(*vp.first);
-		}
-	}
-
-	if(sources.size() > 1)
-	{
-		Vertex v = add_vertex(*g);
-		put("node_id",*dp,v,name);
-		std::list< Vertex >::iterator it;
-		for(it = sources.begin(); it != sources.end(); it++)
-		{
-			add_edge(v,*it,*g);
-		}
-	}
-}
-
-// if there is more than one sink, create a new node and make it the only one.
-void add_dummy_sink(Graph *g,dynamic_properties* dp,std::string name)
-{
-	// list of sinks
-	std::list< Vertex > sinks;
-
-	// identify the sinks
-	std::pair <Vertex_iter, Vertex_iter> vp;
-	for(vp = vertices(*g);vp.first != vp.second; vp.first++)
-	{
-		if(out_degree(*vp.first,*g) == 0)
-		{
-			sinks.push_back(*vp.first);
-		}
-	}
-
-	if(sinks.size() > 1)
-	{
-		Vertex v = add_vertex(*g);
-		put("node_id",*dp,v,name);
-		std::list< Vertex >::iterator it;
-		for(it = sinks.begin(); it != sinks.end(); it++)
-		{
-			add_edge(*it,v,*g);
-		}
-	}
-}
-
-
-// Remove the sources present in the graph when it is passed to the function.
-// We must be carefull to not remove too many nodes
-void remove_sources(Graph* g)
-{
-	// the list of real sources
-	std::list < Vertex > sources;
-	
-	// identify the sources as they don't have any in_edge
-	std::pair <Vertex_iter, Vertex_iter> vp;
-	for(vp = vertices(*g);vp.first != vp.second; vp.first++)
-	{
-		if(in_degree(*vp.first,*g) == 0)
-		{
-			sources.push_back(*vp.first);
-		}
-	}
-	
-	// now that we identied all the sources, remove them
-	std::list<Vertex>::iterator it;
-	for(it = sources.begin(); it != sources.end(); it++)
-	{
-		clear_vertex(*it,*g);
-		remove_vertex(*it,*g);
-	}
-}
-
-// Remove the sinks present in the graph when it is passed to the function.
-// We must be carefull to not remove too many nodes
-void remove_sinks(Graph* g)
-{
-	// the list of real sources
-	std::list < Vertex > sinks;
-	
-	// identify the sinks as they don't have any out_edge
-	std::pair <Vertex_iter, Vertex_iter> vp;
-	for(vp = vertices(*g);vp.first != vp.second; ++vp.first)
-	{
-		if(out_degree(*vp.first,*g) == 0)
-		{
-			sinks.push_back(*vp.first);
-		}
-	}
-	
-	// now that we identied all the sinks, remove them
-	std::list<Vertex>::iterator it;
-	for(it = sinks.begin(); it != sinks.end(); it++)
-	{
-		clear_vertex(*it,*g);
-		remove_vertex(*it,*g);
-	}
-}
-
-////////////////////////////////////////////////////////////////////////////////
 // MAIN
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace po = boost::program_options;
 
-Graph *g;
 
 
 /* Main program
 */
 int main(int argc, char** argv)
 {
+	Graph *g;
+	unsigned int **matrix;
+	unsigned int size;
+	unsigned int i,j;
 
 	// Handle command line arguments
 	////////////////////////////////////
@@ -202,17 +97,13 @@ int main(int argc, char** argv)
 
 		/* I/O options */
 		("input,i", po::value<string>(), "Set the input file")
-		("output,o", po::value<string>(), "Set the output file")
+		("output,o",po::value<string>(), "Set the output file")
 		
-		/* Transform options */
-		("remove-sinks", po::value<bool>()->zero_tokens(), "Remove all sinks from the graph")
-		("remove-sources", po::value<bool>()->zero_tokens(), "Remove all sources from the graph")
-		("add-sink", po::value<std::string>(), "Make all sinks from the graph point to a dummy node")
-		("add-source", po::value<std::string>(), "Make a dummy node point to all all sources of the graph")
+		/* Analysis options */
+		("size,s", po::value<unsigned int>(&size)->default_value(10), "Size of the output matrix")
+		("add,a", po::value<bool>()->zero_tokens(),"Add the result to the output matrix instead of erasing it")
 		;
-	
-	ADD_DBG_OPTIONS(desc);
-
+		
 	po::options_description all;
 	all.add(desc);
 
@@ -238,9 +129,33 @@ int main(int argc, char** argv)
 		dup2(in,STDIN_FILENO);
 		close(in);
 	}
-	
+
+	// we must initialize the matrix first
+	matrix = new unsigned int*[size];
+	for(i = 0; i < size ; i++)
+		matrix[i] =  new unsigned int[size];
+
+	// init matrix
+	for(i = 0; i < size; i++)
+		for(j = 0; j < size ; j++)
+			matrix[i][j] = 0;
+
+
 	if (vm.count("output")) 
 	{
+		if(vm.count("add"))
+		{
+			// read the output file first
+			filebuf *fb = new filebuf();
+			fb->open(vm["output"].as<std::string>().c_str(),ios::in);
+			istream *infile = new istream(fb);
+			for(i = 0; i < size; i++)
+				for(j = 0; j < size ; j++)
+					*infile >> matrix[i][j];
+
+			delete infile;
+		}
+		
 		// create a new file with 344 file permissions
 		int out = open(vm["output"].as<std::string>().c_str(),O_WRONLY | O_CREAT | O_TRUNC,S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH );
 	
@@ -249,7 +164,8 @@ int main(int argc, char** argv)
 		close(out);
 	}
 
-	// Graph init
+
+	// Graph generation
 	////////////////////////////////
 
 	g = new Graph();
@@ -258,36 +174,44 @@ int main(int argc, char** argv)
 	////////////////////////////////	
 	read_graphviz(std::cin, *g,properties);
 
-	// Transfrom graph
+	// Analyse the graph
 	////////////////////////////////
 
-	// Actualy this might be hard in place :
-	// we _MUST_ be sure that the transformation do not propagates to other nodes.
+	// Index map
+	std::map < Vertex, unsigned int > imap;
+	boost::associative_property_map< std::map< Vertex, unsigned int> > indexmap(imap);
 
-	if(vm.count("remove-sources"))
+	// Update map
+	i = 0;
+	std::pair<Vertex_iter, Vertex_iter> vp;
+	for (vp = boost::vertices(*g); vp.first != vp.second; ++vp.first)
 	{
-		remove_sources(g);
-	}
-	
-	if(vm.count("remove-sinks"))
-	{
-		remove_sinks(g);
-	}
-	if(vm.count("add-source"))
-	{
-		add_dummy_source(g,&properties,vm["add-source"].as<std::string>());
-	}
-	
-	if(vm.count("add-sink"))
-	{
-		add_dummy_sink(g,&properties,vm["add-sink"].as<std::string>());
+		imap.insert(make_pair(*vp.first,i++));
 	}
 
-	// Output graph
-	////////////////////////////////
-	
-	write_graphviz(std::cout, *g,properties);
+	// update matrix
+	std::pair< Edge_iter, Edge_iter> ep;
+	for (ep = boost::edges(*g); ep.first != ep.second; ++ep.first)
+	{
+		Vertex s,t;
+		unsigned int k,l;
+		s = source(*ep.first,*g);
+		t = target(*ep.first,*g);
+		k = imap[s];
+		l = imap[t];
+		matrix[k][l] += 1;
+	}
 
+	
+	// output matrix
+	for(i = 0; i < size; i++)
+	{
+		for(j = 0; j < size ; j++)
+		{
+			std::cout << matrix[i][j] << " ";
+		}
+		std::cout << std::endl;
+	}
 	delete g;
 	return EXIT_SUCCESS;
 }

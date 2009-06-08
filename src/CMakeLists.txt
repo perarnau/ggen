@@ -62,7 +62,12 @@ set(EXECS_WITH_RANDOM graph_generator property_adder)
 set(EXECS graph_analysis graph_transform property_analysis)
 
 # commom files dependencies
+
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+set(COMMON_DEPS dynamic_properties.cpp debug.cpp)
+else(true)
 set(COMMON_DEPS dynamic_properties.cpp)
+endif(CMAKE_BUILD_TYPE STREQUAL "Debug")
 
 # add execs and link
 foreach(it ${EXECS_WITH_RANDOM})

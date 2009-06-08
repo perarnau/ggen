@@ -42,38 +42,7 @@
  * INRIA, Grenoble Universities.
  */
 
-#ifndef GGEN_H
-#define GGEN_H
-
-/* We use extensively the BOOST library for 
- * handling output, program options and random generators
- */
-#include <boost/config.hpp>
-
-#include <boost/graph/adjacency_list.hpp>
-#include <boost/graph/graph_traits.hpp>
-#include <boost/graph/properties.hpp>
-#include <boost/dynamic_property_map.hpp>
-
 #include "debug.hpp"
-using namespace boost;
 
-/* This is the definition of the graph struture
- * According to boost that means :
- *	* The graph is an adjacency list
- *	* The vertices are managed as a std::Vector
- *	* The edges are managed as std::set to enforce no parallel edges
- *	* The graph is bidirectional
- *	* We don't have any additional properties on vertices or edges
- */
-typedef adjacency_list < listS, listS, bidirectionalS, dynamic_properties, dynamic_properties > Graph;
+short dbg_level = DEBUG_DEFAULT_LEVEL;
 
-/* typedefs for vertex and edge properties manipulations */
-typedef graph_traits<Graph>::vertex_descriptor Vertex;
-typedef graph_traits<Graph>::edge_descriptor Edge;
-typedef graph_traits<Graph>::vertex_iterator Vertex_iter; 
-typedef graph_traits<Graph>::edge_iterator Edge_iter; 
-typedef graph_traits<Graph>::in_edge_iterator In_edge_iter; 
-typedef graph_traits<Graph>::out_edge_iterator Out_edge_iter; 
-
-#endif

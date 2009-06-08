@@ -42,38 +42,32 @@
  * INRIA, Grenoble Universities.
  */
 
-#ifndef GGEN_H
-#define GGEN_H
+#ifndef DEBUG_H
+#define DEBUG_H
 
-/* We use extensively the BOOST library for 
- * handling output, program options and random generators
- */
-#include <boost/config.hpp>
+/* Debug Levels */
+#define DEBUG_LEVEL_info 0
+#define DEBUG_LEVEL_warning 1
+#define DEBUG_LEVEL_trace 2
 
-#include <boost/graph/adjacency_list.hpp>
-#include <boost/graph/graph_traits.hpp>
-#include <boost/graph/properties.hpp>
-#include <boost/dynamic_property_map.hpp>
+#define DEBUG_DEFAULT_LEVEL DEBUG_LEVEL_info
 
-#include "debug.hpp"
-using namespace boost;
 
-/* This is the definition of the graph struture
- * According to boost that means :
- *	* The graph is an adjacency list
- *	* The vertices are managed as a std::Vector
- *	* The edges are managed as std::set to enforce no parallel edges
- *	* The graph is bidirectional
- *	* We don't have any additional properties on vertices or edges
- */
-typedef adjacency_list < listS, listS, bidirectionalS, dynamic_properties, dynamic_properties > Graph;
+#ifdef DEBUG
+extern short dbg_level;
+#define dbg(level,format,...) if(dbg_level > DEBUG_LEVEL_##level) \
+		fprintf(stderr,"[file %s, line %d] "#level" : " format,__FILE__,__LINE__,__VA_ARGS__);
 
-/* typedefs for vertex and edge properties manipulations */
-typedef graph_traits<Graph>::vertex_descriptor Vertex;
-typedef graph_traits<Graph>::edge_descriptor Edge;
-typedef graph_traits<Graph>::vertex_iterator Vertex_iter; 
-typedef graph_traits<Graph>::edge_iterator Edge_iter; 
-typedef graph_traits<Graph>::in_edge_iterator In_edge_iter; 
-typedef graph_traits<Graph>::out_edge_iterator Out_edge_iter; 
+
+#define ADD_DBG_OPTIONS(x) x.add_options() \
+				("debug,d",po::value<short>(&dbg_level),"Set the debug level")
+
+#else
+
+#define dbg(x,...) do { } while(0)
+
+#define ADD_DBG_OPTIONS(x) do { } while(0)
 
 #endif
+
+#endif //DEBUG_H
