@@ -122,6 +122,56 @@ void gg_erdos_gnp(Graph& g, int num_vertices, double p, bool do_dag)
 }
 
 ///////////////////////////////////////
+// Layer-by-Layer Method
+// Using coin flipping to connect the layers
+// Supports :
+// 	-- dag option
+// 	-- params : number of vertices, probability of an edge,number of layers
+///////////////////////////////////////
+
+/* Run through the adjacency matrix
+ * and at each i,j decide if matrix[i][j] is an edge with a given probability and no edge is formed beteen the two vertices lying in the same layer
+ */
+void layer_by_layer(Graph& g, int num_vertices, double p, bool do_dag,std::vector<int> layer_num_vertex)
+{
+	// generate the matrix
+	bool matrix[num_vertices][num_vertices];
+	int i,j;
+	
+	for(i=0; i < num_vertices; i++)
+	{
+		for(j = 0; j < num_vertices ; j++)
+		{
+			// this test activates if do_dag is false and the vertices i,j are not in the same layer
+			// or if do_dag is true and the edge(i,j) points downwards.
+			if((!do_dag&& layer_num_vertex[i]!=layer_num_vertex[j])||(do_dag&&layer_num_vertex[i]<layer_num_vertex[j]))
+			{
+				// coin flipping to determine if we add an edge or not
+				matrix[i][j] = global_rng->bernoulli(p);
+			}
+			else
+				matrix[i][j] = false;
+		}
+	}
+
+	// translate the matrix to a graph
+	g = Graph(num_vertices);
+	std::map < int, Vertex > vmap;
+	std::pair < Vertex_iter, Vertex_iter > vp;
+	i = 0;
+	for(vp = boost::vertices(g); vp.first != vp.second; vp.first++)
+		vmap[i++] = *vp.first;
+
+
+	for(i=0;i < num_vertices; i++)
+		for(j=0; j < num_vertices; j++)
+			if(matrix[i][j])
+				add_edge(vmap[i],vmap[j],g);
+
+}
+
+
+///////////////////////////////////////
 // Random Vertex Pairs
 // choose randomly two vertices to add an edge to
 // Supports :
@@ -168,6 +218,35 @@ void gg_random_vertex_pairs(Graph& g,int num_vertices, int num_edges, bool allow
 	//delete src;
 	//delete dest;
 }
+
+//To generate a vector containing layer no. of each vertex of the graph
+
+std::vector<int> layer_allocation(unsigned long int num_layers,int num_vertices){
+              
+	      
+                 std::vector<int>layer_num_vertex;
+
+            
+               
+                std::cout<<"no.of layers is="<< num_layers<<'\n';
+               
+   
+                for(int i=0;i<num_vertices;i++)                                   
+                {
+                            int layer_index = global_rng->uniform_int(num_layers); //Generating a random layer no.
+                            layer_num_vertex.push_back(layer_index);                     //storing the layer no. just generated into a vector
+                }
+                      
+           
+                std::cout<<"vertex no..............."<<"layer_number"<<'\n';
+                for(int i=0;i<num_vertices;i++)
+                             std::cout<<"    "<<i<<"..............."<<layer_num_vertex[i]<<'\n';   //printing the layer numbers for all the vertices
+                return layer_num_vertex;
+
+                   
+}
+
+   
 
 ////////////////////////////////////////////////////////////////////////////////
 // MAIN
@@ -230,6 +309,7 @@ int main(int argc, char** argv)
 		
 		std::cout << "Methods Available:" << std::endl;
 		std::cout << "erdos_gnp\t\tThe classical adjacency matrix method" << std::endl << std::endl;
+                std::cout << "layer_by_layer\t\tThe classical adjacency matrix method clubbed with coin flipping to connect the layers" << std::endl << std::endl;
 		return 1;
 	}
 	
@@ -252,7 +332,7 @@ int main(int argc, char** argv)
 	////////////////////////////////
 	
 	// First we recover all the possible options we didn't parse
-	// this is the -- options that we didn't recognized
+	// this is the -- options that we didn't recognize.
 	std::vector< std::string > unparsed_args = po::collect_unrecognized(prso_general.options,po::exclude_positional);
 	// this is the positional arguments that were given to the method
 	std::vector< std::string > parsed_args = vm_general["method-args"].as < std::vector < std::string > >();
@@ -262,12 +342,13 @@ int main(int argc, char** argv)
 	to_parse.insert(to_parse.end(),unparsed_args.begin(),unparsed_args.end());
 	to_parse.insert(to_parse.end(),parsed_args.begin(),parsed_args.end());
 
+	
+
 	if(vm_general.count("method"))
 	{
 		std::string method_name = vm_general["method"].as<std::string>();
 		po::options_description od_method("Method options");
 		po::variables_map vm_method;
-
 		if(method_name == "erdos_gnp")
 		{
 			bool do_dag;
@@ -278,17 +359,43 @@ int main(int argc, char** argv)
 				("dag",po::bool_switch(&do_dag)->default_value(false),"Generate a DAG instead of a classical graph")
 				("nb-vertices,n",po::value<int>(&nb_vertices)->default_value(10),"Set the number of vertices in the generated graph")
 				("probability,p",po::value<double>(&prob)->default_value(0.5),"The probability to get each edge");
-			
+                               
 			// define method arguments as positional
 			po::positional_options_description pod_method_args;
 			pod_method_args.add("nb-vertices",1);
-			pod_method_args.add("probability",2);
+			pod_method_args.add("probability",1);
+                        
+
+			// do the parsing
+			po::store(po::command_line_parser(to_parse).options(od_method).positional(pod_method_args).run(),vm_method);
+			po::notify(vm_method);
+			
+			gg_erdos_gnp(*g,nb_vertices,prob,do_dag);
+		}
+                else if(method_name == "layer_by_layer")
+		{
+			bool do_dag;
+			double prob;
+			int nb_vertices;
+                        int nb_layers;
+			// define the options specific to this method
+			od_method.add_options()
+				("dag",po::bool_switch(&do_dag)->default_value(false),"Generate a DAG instead of a classical graph")
+				("nb-vertices,n",po::value<int>(&nb_vertices)->default_value(10),"Set the number of vertices in the generated graph")
+                                ("probability,p",po::value<double>(&prob)->default_value(0.5),"The probability to get each edge")
+                                ("nb-layers,l",po::value<int>(&nb_layers)->default_value(5),"Set the number of layers in the graph");		
+			// define method arguments as positional
+			po::positional_options_description pod_method_args;
+			pod_method_args.add("nb-vertices",1);
+			pod_method_args.add("probability",1);
+                        pod_method_args.add("nb-layers",1);
 			
 			// do the parsing
 			po::store(po::command_line_parser(to_parse).options(od_method).positional(pod_method_args).run(),vm_method);
 			po::notify(vm_method);
-
-			gg_erdos_gnp(*g,nb_vertices,prob,do_dag);
+                        
+                        std::vector<int>layer_num_vertex=layer_allocation(nb_layers,nb_vertices);
+			layer_by_layer(*g,nb_vertices,prob,do_dag,layer_num_vertex);
 		}
 		else
 		{
