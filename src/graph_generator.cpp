@@ -132,7 +132,7 @@ void gg_erdos_gnp(Graph& g, int num_vertices, double p, bool do_dag)
 /* Run through the adjacency matrix
  * and at each i,j decide if matrix[i][j] is an edge with a given probability and no edge is formed beteen the two vertices lying in the same layer
  */
-void layer_by_layer(Graph& g, int num_vertices, double p, bool do_dag,std::vector<int> layer_num_vertex)
+void gg_layer_by_layer(Graph& g, int num_vertices, double p, bool do_dag,std::vector<int> layer_num_vertex)
 {
 	// generate the matrix
 	bool matrix[num_vertices][num_vertices];
@@ -224,30 +224,183 @@ void gg_random_vertex_pairs(Graph& g,int num_vertices, int num_edges, bool allow
 std::vector<int> layer_allocation(unsigned long int num_layers,int num_vertices){
               
 	      
-                 std::vector<int>layer_num_vertex;
-
-            
-               
-                std::cout<<"no.of layers is="<< num_layers<<'\n';
+	std::vector<int>layer_num_vertex;
+	std::cout<<"no.of layers is="<< num_layers<<'\n';
                
    
-                for(int i=0;i<num_vertices;i++)                                   
-                {
-                            int layer_index = global_rng->uniform_int(num_layers); //Generating a random layer no.
-                            layer_num_vertex.push_back(layer_index);                     //storing the layer no. just generated into a vector
-                }
+	for(int i=0;i<num_vertices;i++)                                   
+	{
+		int layer_index = global_rng->uniform_int(num_layers); //Generating a random layer no.
+		layer_num_vertex.push_back(layer_index);                     //storing the layer no. just generated into a vector
+	}
                       
            
-                std::cout<<"vertex no..............."<<"layer_number"<<'\n';
-                for(int i=0;i<num_vertices;i++)
-                             std::cout<<"    "<<i<<"..............."<<layer_num_vertex[i]<<'\n';   //printing the layer numbers for all the vertices
-                return layer_num_vertex;
+	std::cout<<"vertex no..............."<<"layer_number"<<'\n';
+	for(int i=0;i<num_vertices;i++)
+	std::cout<<"    "<<i<<"..............."<<layer_num_vertex[i]<<'\n';   //printing the layer numbers for all the vertices
+	return layer_num_vertex;
 
                    
 }
 
-   
+// Task Graphs for free: tgff
+// 	-- params : a lower bound on the number of vertices,maximum out_degree limit and maximum in_degree limit
+///////////////////////////////////////
 
+/* The Task Graphs for Free method carries out graph generation by iteratively incorporating the two steps i.e fan-out and fan-in
+both these steps occur with the equal probability=0.5 */
+
+void gg_tgff(Graph& g,int lower_bound,int max_od,int max_id){
+
+        //Addition of Starting node i.e. 0th node
+	Vertex temp1 = add_vertex(g);  
+
+	while(boost::num_vertices(g) < lower_bound) {
+        	if(global_rng->bernoulli(.5))     //Fan-out Step
+		{            
+			std::pair<Vertex_iter, Vertex_iter> vp;
+			std::map <Vertex,int >available_od; 
+			int max = -1;  
+			/*Calculation of available out degree for each vertex and storing them in the map
+			"available_od" and calculation of maximum available out_degree */
+			for (vp = boost::vertices(g); vp.first != vp.second; ++vp.first)
+			{	int available_out_degree = max_od - out_degree(*vp.first,g);
+				available_od[*vp.first] = available_out_degree;
+				if(available_out_degree >= max)
+				max = available_out_degree;
+			}
+                                                                                                                 
+			std::vector<Vertex>available_vertices;
+			int i=0;
+			/*Collecting all the vertices with the  
+			maximum available out_degree into the vector "available_vertices"*/
+			for (vp = boost::vertices(g); vp.first != vp.second; ++vp.first)
+				if(available_od[*vp.first] == max)
+					available_vertices.push_back(*vp.first);
+
+			/*Choosing  randomly a vertex from the available_map*/                
+			int random_vertex_index = global_rng->uniform_int(available_vertices.size());
+			Vertex temp = available_vertices[random_vertex_index];
+ 
+			/*Deciding randomly the no. of out_nodes between 1 & max*/
+			int out_nodes = global_rng->uniform_int(max) + 1; 
+
+			/*Introducing new nodes and edges between temp node and new introduced nodes*/
+			std::vector< Vertex > new_vertex(out_nodes);
+			std::vector< Edge > new_edge(out_nodes);
+			bool inserted;
+				for (int i = 0; i < out_nodes; i++)
+				{		
+					new_vertex[i] = add_vertex(g);
+					tie(new_edge[i], inserted) = add_edge(temp, new_vertex[i], g);
+					if(inserted==false)
+					std::cout<<"Error in edge insertion"<<'\n';
+                                                
+				}
+          
+                                                       
+		}   
+                                                    
+		else
+		{                       
+                                     //Fan-In Step
+			std::pair<Vertex_iter, Vertex_iter> vp;
+			std::map <Vertex, int >available_od;
+			int i = 0;
+			std::vector< Vertex > available_vertices;
+			/*Collecting all the vertices with available out_degree greater than 
+			 zero into the vector "available_vertices" */                   
+			for (vp = boost::vertices(g); vp.first != vp.second; ++vp.first)
+			{	available_od[*vp.first] = max_od - out_degree(*vp.first,g);
+				if(available_od[*vp.first]>0) available_vertices.push_back(*vp.first);
+			}
+                                     
+                                    
+			Vertex temp = add_vertex(g);
+			int cardinality = available_vertices.size();
+			if(cardinality > max_id) cardinality = max_id;
+			int num_out_nodes = global_rng->uniform_int(cardinality)+1; 
+                                   
+                        
+			/*Randomly picking up exactly "num_out_nodes" no. of vertices from the vector "available_vertices"*/
+			boost::any *src = new boost::any[available_vertices.size()];
+			boost::any *dest = new boost::any[num_out_nodes];
+			i = 0;
+			std::vector< Vertex >::iterator ptr;
+			for (ptr = available_vertices.begin();ptr != available_vertices.end(); ++ptr)
+				src[i++] = boost::any_cast<Vertex>(*ptr);
+			global_rng->choose(dest,num_out_nodes,src,available_vertices.size(),sizeof(boost::any));
+ 
+			std::vector < Edge > new_edge(num_out_nodes);
+			bool inserted;
+			for(int i=0;i<num_out_nodes;i++)
+			{
+				tie(new_edge[i],inserted)=add_edge(boost::any_cast<Vertex>(dest[i]),temp,g);
+				if(inserted==false)
+				std::cout<<"Error in edge insertion"<<'\n';
+			}
+		}	 
+	}            
+
+}
+     
+///////////////////////////////////////
+// Erdos-Renyi : G(n,M)
+// One of the simplest way of generating a graph
+// Supports :
+// 	-- dag option
+// 	-- params : number of vertices,number of edges
+///////////////////////////////////////
+
+/* Run through the adjacency matrix
+ * and at each i,j decide if matrix[i][j] is an edge with a given probability
+ */
+void gg_erdos_gnm(Graph& g, int num_vertices, int num_edges, bool do_dag) {
+
+        bool matrix[num_vertices][num_vertices];
+        int i,j;
+        for(i=0;i < num_vertices; i++)
+		for(j=0; j < num_vertices; j++)
+			matrix[i][j] =0;
+        
+        
+        
+	int added_edges = 0;
+	while(added_edges <num_edges) {
+        	i = global_rng->uniform_int(num_vertices);
+		j = global_rng->uniform_int(num_vertices);
+		bool inserted;
+ 
+                if((!do_dag && i != j && matrix[i][j] == 0) ||(do_dag && i < j && matrix[i][j] == 0)) 
+                {
+			matrix[i][j]= 1;
+			added_edges++;
+                        
+                }
+                
+        }
+       
+                 
+       // translate the matrix to a graph
+	g = Graph(num_vertices);
+	std::map < int, Vertex > vmap;
+	std::pair < Vertex_iter, Vertex_iter > vp;
+	i = 0;
+	for(vp = boost::vertices(g); vp.first != vp.second; vp.first++)
+		vmap[i++] = *vp.first;
+
+
+	for(i = 0; i < num_vertices; i++)
+		for(j = 0; j < num_vertices; j++)
+			if(matrix[i][j])
+				add_edge(vmap[i], vmap[j], g);
+                
+      
+
+}
+                 
+                                  
+                             
 ////////////////////////////////////////////////////////////////////////////////
 // MAIN
 ////////////////////////////////////////////////////////////////////////////////
@@ -310,8 +463,9 @@ int main(int argc, char** argv)
 		std::cout << "Methods Available:" << std::endl;
 		std::cout << "erdos_gnp\t\tThe classical adjacency matrix method" << std::endl << std::endl;
                 std::cout << "layer_by_layer\t\tThe classical adjacency matrix method clubbed with coin flipping to connect the layers" << std::endl;
-                std::cout<<"tgff\t\t\tThe Task Graphs for Free method"<< std::endl << std::endl;
-		return 1;
+                std::cout<<  "tgff\t\t\tThe Task Graphs for Free method"<< std::endl << std::endl;
+		std::cout << "erdos_gnm\t\t" << std::endl << std::endl;
+	return 1;
 	}
 	
 	if (vm_general.count("output")) 
@@ -395,9 +549,60 @@ int main(int argc, char** argv)
 			po::store(po::command_line_parser(to_parse).options(od_method).positional(pod_method_args).run(),vm_method);
 			po::notify(vm_method);
                         
-                        std::vector<int>layer_num_vertex=layer_allocation(nb_layers,nb_vertices);
-			layer_by_layer(*g,nb_vertices,prob,do_dag,layer_num_vertex);
+			std::vector<int>layer_num_vertex=layer_allocation(nb_layers,nb_vertices);
+			gg_layer_by_layer(*g,nb_vertices,prob,do_dag,layer_num_vertex);
 		}
+		else if(method_name == "tgff")
+		{
+			
+			
+			int lower_bound;
+			int max_od;
+			int max_id;
+                        
+			// define the options specific to this method
+			od_method.add_options()
+				
+				("lower-bound",po::value<int>(&lower_bound)->default_value(10),"Set the value of the lower bound on the vertices")
+				("max-od",po::value<int>(&max_od)->default_value(3),"Set the maximum out_degree limit for all the vertices")
+				("max-id",po::value<int>(&max_id)->default_value(3),"Set the maximum in_degree limit for all the vertices");		
+			// define method arguments as positional
+			po::positional_options_description pod_method_args;
+			pod_method_args.add("lower-bound",1);
+			pod_method_args.add("max-od",1);
+			pod_method_args.add("max-id",1);
+			
+			// do the parsing
+			po::store(po::command_line_parser(to_parse).options(od_method).positional(pod_method_args).run(),vm_method);
+			po::notify(vm_method);
+                        
+			gg_tgff(*g,lower_bound,max_od,max_id);
+		}
+		else if(method_name == "erdos_gnm")
+		{
+			bool do_dag;
+			int nb_vertices;
+			int nb_edges;
+			// define the options specific to this method
+			od_method.add_options()
+				("dag",po::bool_switch(&do_dag)->default_value(false),"Generate a DAG instead of a classical graph")
+				("nb-vertices,n",po::value<int>(&nb_vertices)->default_value(10),"Set the number of vertices in the generated graph")
+				("nb-edges,n",po::value<int>(&nb_edges)->default_value(10),"Set the number of edges in the generated graph");
+			// define method arguments as positional
+			po::positional_options_description pod_method_args;
+			
+			pod_method_args.add("nb-vertices",1);
+			pod_method_args.add("nb-edges",1);
+			
+                        
+
+			// do the parsing
+			po::store(po::command_line_parser(to_parse).options(od_method).positional(pod_method_args).run(),vm_method);
+			po::notify(vm_method);
+			
+			gg_erdos_gnm(*g,nb_vertices,nb_edges,do_dag);
+		}
+
 		else
 		{
 			std::cerr << "Error : you must provide a VALID method name!" << std::endl;
