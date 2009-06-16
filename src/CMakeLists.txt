@@ -34,7 +34,10 @@
 # The fact that you are presently reading this means that you have had
 # knowledge of the CeCILL license and that you accept its terms.
 
-# ggen project
+#######################################
+## MAIN
+#######################################
+
 PROJECT(ggen CXX C)
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 
@@ -79,3 +82,31 @@ foreach(it ${EXECS})
 	add_executable(${it} ${it}.cpp ${COMMON_DEPS})
 	target_link_libraries(${it} ${Boost_LIBRARIES} ${GSL_LIBRARIES})
 endforeach(it ${EXECS})
+
+
+#######################################
+## PACKAGING
+#######################################
+
+# General info
+set(CPACK_PACKAGE_NAME "ggen")
+set(CPACK_PACKAGE_VENDOR "GGen development team")
+set(CPACK_PACKAGE_VERSION "0.1.a")
+set(CPACK_PACKAGE_VERSION_MAJOR "0")
+set(CPACK_PACKAGE_VERSION_MINOR "1")
+set(CPACK_PACKAGE_VERSION_PATCH "a")
+
+set(CPACK_GENERATOR "TGZ")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "GGen : a random graph generator")
+set(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_SOURCE_DIR}/../README")
+set(CPACK_PACKAGE_RESSOURCE_FILE_LICENCE "${CMAKE_SOURCE_DIR}/../LICENCE")
+
+# Binary package info
+# TODO
+
+# Source package info
+set(CPACK_SOURCE_GENERATOR "TGZ")
+set(CPACK_SOURCE_IGNORE_FILES "/\\\\.svn/;\\\\.swp$;.*~;prototypes/;build/;www/;docs/;\\\\.git/")
+set(CPACK_SOURCE_INSTALLED_DIRECTORIES "${CMAKE_SOURCE_DIR}/../;/")
+
+include(CPack)
