@@ -309,7 +309,8 @@ int main(int argc, char** argv)
 		
 		std::cout << "Methods Available:" << std::endl;
 		std::cout << "erdos_gnp\t\tThe classical adjacency matrix method" << std::endl << std::endl;
-                std::cout << "layer_by_layer\t\tThe classical adjacency matrix method clubbed with coin flipping to connect the layers" << std::endl << std::endl;
+                std::cout << "layer_by_layer\t\tThe classical adjacency matrix method clubbed with coin flipping to connect the layers" << std::endl;
+                std::cout<<"tgff\t\t\tThe Task Graphs for Free method"<< std::endl << std::endl;
 		return 1;
 	}
 	
