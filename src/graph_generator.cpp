@@ -1,7 +1,8 @@
 /* Copyright Swann Perarnau 2009
 *
-*   contributor(s) :  
-*
+*   contributor(s) : 
+*	Pradeep Beniwal (pdpbeniwal AT gmail.com)
+*	
 *   contact : firstname.lastname@imag.fr	
 *
 * This software is a computer program whose purpose is to help the
