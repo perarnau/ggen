@@ -1,0 +1,19 @@
+########################
+GGen : a graph generator
+########################
+
+This is a work in progress.
+Address any remarks concerning compiling or use to the bug tracker
+of http://ggen.ligforge.imag.fr
+
+REQUIREMENTS:
+	- CMake
+	- Boost Graph Library and Boost Program Options (>=1.37)
+	- GNU Scientific Library
+INSTALL:
+	- mkdir build
+	- cd build
+	- cmake ../src
+	- make
+
+No install procedure is included for now.
