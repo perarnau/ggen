@@ -308,7 +308,6 @@ void gg_tgff(Graph& g,int lower_bound,int max_od,int max_id)
  * and at each i,j decide if matrix[i][j] is an edge with a given probability
  */
 void gg_erdos_gnm(Graph& g, int num_vertices, int num_edges, bool do_dag) {
-
         bool matrix[num_vertices][num_vertices];
         int i,j;
         for(i=0;i < num_vertices; i++)
@@ -544,7 +543,6 @@ int main(int argc, char** argv)
 			pod_method_args.add("nb-vertices",1);
 			pod_method_args.add("nb-edges",1);
 			
-                        
 			// do the parsing
 			po::store(po::command_line_parser(to_parse).options(od_method).positional(pod_method_args).run(),vm_method);
 			po::notify(vm_method);

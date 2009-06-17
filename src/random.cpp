@@ -117,9 +117,14 @@ void ggen_rng::write(std::string filename)
 	}
 }
 
-void ggen_rng::choose(boost::any *dest, size_t k, boost::any* src, size_t n,size_t size)
+void ggen_rng::choose(boost::any *dest, size_t k, boost::any* src, size_t n, size_t size)
 {
 	gsl_ran_choose(rng,dest,k,src,n,size);
+}
+
+void ggen_rng::shuffle(boost::any *base, size_t n, size_t size)
+{
+	gsl_ran_shuffle(rng, base, n, size);
 }
 
 // simple function to do a bernoulli trial : return true with probability p
