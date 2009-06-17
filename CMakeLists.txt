@@ -34,60 +34,54 @@
 # The fact that you are presently reading this means that you have had
 # knowledge of the CeCILL license and that you accept its terms.
 
-###################
-## DEPENDENIES
-###################
-# For boost
-SET(Boost_USE_STATIC_LIBS OFF)
-SET(Boost_USE_MULTITHREAD OFF)
-FIND_PACKAGE(Boost REQUIRED regex program_options graph)
+#######################################
+## MAIN
+#######################################
 
-# For GSL
-find_package(GSL)
+PROJECT(ggen CXX C)
+CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
 
-###################
-## DEFINITIONS
-###################
+set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/")
 
-# remove deprecated warning about hash_set with gcc 4.3
-ADD_DEFINITIONS(-DBOOST_NO_HASH)
+# set install path to /usr/local/ggen/*
+set(CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}/ggen")
 
-# Some flags definitions
-set(CMAKE_CXX_FLAGS_DEBUG	" -g -O2 -DDEBUG ")
-set(CMAKE_C_FLAGS_DEBUG       	" -g -O2 -DDEBUG ")
-set(CMAKE_CXX_FLAGS_RELEASE	"-O2")
-set(CMAKE_C_FLAGS_RELEASE	"-O2")
+# output binaries to the build/bin or build/lib dir
+set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin CACHE PATH "Single directory for all executables")
+set(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib CACHE PATH "Single directory for all libraries")
 
-###################
-## EXEC VARS
-###################
+mark_as_advanced(EXECUTABLE_OUTPUT_PATH LIBRARY_OUTPUT_PATH)
+#######################################
+## SUBDIRS
+#######################################
 
-# Executables
-set(EXECS_WITH_RANDOM graph_generator property_adder)
-set(EXECS graph_analysis graph_transform property_analysis)
+# the source dir contains its own CMakeLists.txt with the
+# real targets
+add_subdirectory(src)
 
-# commom files dependencies
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-	set(COMMON_DEPS dynamic_properties.cpp debug.cpp)
-else(true)
-	set(COMMON_DEPS dynamic_properties.cpp)
-endif(CMAKE_BUILD_TYPE STREQUAL "Debug")
+#######################################
+## PACKAGING
+#######################################
 
-###################
-## INSTALL RULES
-###################
+# General info
+set(CPACK_PACKAGE_NAME "ggen")
+set(CPACK_PACKAGE_VENDOR "GGen development team")
+set(CPACK_PACKAGE_VERSION "0.1.a")
+set(CPACK_PACKAGE_VERSION_MAJOR "0")
+set(CPACK_PACKAGE_VERSION_MINOR "1")
+set(CPACK_PACKAGE_VERSION_PATCH "a")
 
-# add execs and link
-foreach(it ${EXECS_WITH_RANDOM})
-	add_executable(${it} ${it}.cpp ${COMMON_DEPS} random.cpp)
-	target_link_libraries(${it} ${Boost_LIBRARIES} ${GSL_LIBRARIES})
-endforeach(it ${EXECS_WITH_RANDOM})
+set(CPACK_GENERATOR "TGZ")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "GGen : a random graph generator")
+set(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_SOURCE_DIR}/README")
+set(CPACK_PACKAGE_RESSOURCE_FILE_LICENCE "${CMAKE_SOURCE_DIR}/LICENCE")
 
-foreach(it ${EXECS})
-	add_executable(${it} ${it}.cpp ${COMMON_DEPS})
-	target_link_libraries(${it} ${Boost_LIBRARIES} ${GSL_LIBRARIES})
-endforeach(it ${EXECS})
+# Binary package info
+# TODO
 
-# install commands
-install(TARGETS ${EXECS_WITH_RANDOM} ${EXECS}
-	RUNTIME DESTINATION bin)
+# Source package info
+set(CPACK_SOURCE_GENERATOR "TGZ")
+set(CPACK_SOURCE_IGNORE_FILES "/\\\\.svn/;\\\\.swp$;.*~;prototypes/;build/;www/;docs/;\\\\.git/")
+set(CPACK_SOURCE_INSTALLED_DIRECTORIES "${CMAKE_SOURCE_DIR}/;/")
+
+include(CPack)
