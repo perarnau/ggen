@@ -171,62 +171,12 @@ void gg_layer_by_layer(Graph& g, int num_vertices, double p, bool do_dag,std::ve
 
 }
 
-
-///////////////////////////////////////
-// Random Vertex Pairs
-// choose randomly two vertices to add an edge to
-// Supports :
-// 	-- dag option
-// 	-- limited edge number by edge by post edge elminitation
-// 	-- adding edges (TODO, how ??)
-///////////////////////////////////////
-
-
-/* Random generation by choosing pairs of vertices.
-*/ 
-void gg_random_vertex_pairs(Graph& g,int num_vertices, int num_edges, bool allow_parallel = false, bool self_edges = false) {	
-
-	g = Graph(num_vertices);
-
-	// create a two arrays for ggen_rnd::choose
-	boost::any *src = new boost::any[num_vertices];
-	boost::any *dest = new boost::any[2];
-	
-	// add all vertices to src
-	int i = 0;
-	std::pair<Vertex_iter, Vertex_iter> vp;
-	for (vp = boost::vertices(g); vp.first != vp.second; ++vp.first)
-		src[i++] = boost::any_cast<Vertex>(*vp.first);
-
-	int added_edges = 0;
-	while(added_edges < num_edges ) {
-		if( !self_edges)
-		{
-			global_rng->choose(dest,2,src,num_vertices,sizeof(boost::any));
-		}
-		else
-		{
-			// TODO rnd.shuffle
-		}
-		Vertex u,v;
-		u = boost::any_cast<Vertex>(dest[0]);
-		v = boost::any_cast<Vertex>(dest[1]);
-		std::pair<Edge,bool> result = add_edge(u,v,g);
-		if(!allow_parallel && result.second)
-			added_edges++;
-	}
-
-	//delete src;
-	//delete dest;
-}
-
 //To generate a vector containing layer no. of each vertex of the graph
-
 std::vector<int> layer_allocation(unsigned long int num_layers,int num_vertices){
               
 	      
 	std::vector<int>layer_num_vertex;
-	std::cout<<"no.of layers is="<< num_layers<<'\n';
+	dbg(trace,"no.of layers is= %lu\n",num_layers);
                
    
 	for(int i=0;i<num_vertices;i++)                                   
@@ -236,12 +186,13 @@ std::vector<int> layer_allocation(unsigned long int num_layers,int num_vertices)
 	}
                       
            
-	std::cout<<"vertex no..............."<<"layer_number"<<'\n';
+	dbg(trace,"vertex no..............layer_number\n");
 	for(int i=0;i<num_vertices;i++)
-	std::cout<<"    "<<i<<"..............."<<layer_num_vertex[i]<<'\n';   //printing the layer numbers for all the vertices
-	return layer_num_vertex;
+	{
+		dbg(trace,"%d\t\t%d\n",i,layer_num_vertex[i]);   //printing the layer numbers for all the vertices
+	}
 
-                   
+	return layer_num_vertex;           
 }
 
 // Task Graphs for free: tgff
@@ -251,7 +202,8 @@ std::vector<int> layer_allocation(unsigned long int num_layers,int num_vertices)
 /* The Task Graphs for Free method carries out graph generation by iteratively incorporating the two steps i.e fan-out and fan-in
 both these steps occur with the equal probability=0.5 */
 
-void gg_tgff(Graph& g,int lower_bound,int max_od,int max_id){
+void gg_tgff(Graph& g,int lower_bound,int max_od,int max_id)
+{
 
         //Addition of Starting node i.e. 0th node
 	Vertex temp1 = add_vertex(g);  
@@ -302,9 +254,8 @@ void gg_tgff(Graph& g,int lower_bound,int max_od,int max_id){
                                                        
 		}   
                                                     
-		else
+		else	//Fan-In Step
 		{                       
-                                     //Fan-In Step
 			std::pair<Vertex_iter, Vertex_iter> vp;
 			std::map <Vertex, int >available_od;
 			int i = 0;
@@ -375,8 +326,7 @@ void gg_erdos_gnm(Graph& g, int num_vertices, int num_edges, bool do_dag) {
                 if((!do_dag && i != j && matrix[i][j] == 0) ||(do_dag && i < j && matrix[i][j] == 0)) 
                 {
 			matrix[i][j]= 1;
-			added_edges++;
-                        
+			added_edges++;        
                 }
                 
         }
@@ -396,8 +346,6 @@ void gg_erdos_gnm(Graph& g, int num_vertices, int num_edges, bool do_dag) {
 			if(matrix[i][j])
 				add_edge(vmap[i], vmap[j], g);
                 
-      
-
 }
                  
                                   
@@ -491,7 +439,9 @@ int main(int argc, char** argv)
 	// this is the -- options that we didn't recognize.
 	std::vector< std::string > unparsed_args = po::collect_unrecognized(prso_general.options,po::exclude_positional);
 	// this is the positional arguments that were given to the method
-	std::vector< std::string > parsed_args = vm_general["method-args"].as < std::vector < std::string > >();
+	std::vector< std::string > parsed_args;
+	if(vm_general.count("method-args"))
+		parsed_args = vm_general["method-args"].as < std::vector < std::string > >();
 	
 	//we merge the whole thing
 	std::vector< std::string > to_parse;
@@ -563,7 +513,6 @@ int main(int argc, char** argv)
                         
 			// define the options specific to this method
 			od_method.add_options()
-				
 				("lower-bound",po::value<int>(&lower_bound)->default_value(10),"Set the value of the lower bound on the vertices")
 				("max-od",po::value<int>(&max_od)->default_value(3),"Set the maximum out_degree limit for all the vertices")
 				("max-id",po::value<int>(&max_id)->default_value(3),"Set the maximum in_degree limit for all the vertices");		
@@ -596,7 +545,6 @@ int main(int argc, char** argv)
 			pod_method_args.add("nb-edges",1);
 			
                         
-
 			// do the parsing
 			po::store(po::command_line_parser(to_parse).options(od_method).positional(pod_method_args).run(),vm_method);
 			po::notify(vm_method);
