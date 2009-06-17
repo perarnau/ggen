@@ -56,7 +56,7 @@
 #ifdef DEBUG
 extern short dbg_level;
 #define dbg(level,format,...) if(dbg_level > DEBUG_LEVEL_##level) \
-		fprintf(stderr,"[file %s, line %d] "#level" : " format,__FILE__,__LINE__,__VA_ARGS__);
+		fprintf(stderr,"[file %s, line %d] "#level" : " format, __FILE__ , __LINE__ , ##__VA_ARGS__);
 
 
 #define ADD_DBG_OPTIONS(x) x.add_options() \
