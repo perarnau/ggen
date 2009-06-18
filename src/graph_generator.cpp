@@ -172,7 +172,8 @@ void gg_layer_by_layer(Graph& g, int num_vertices, double p, bool do_dag,std::ve
 }
 
 //To generate a vector containing layer no. of each vertex of the graph
-std::vector<int> layer_allocation(unsigned long int num_layers,int num_vertices){
+std::vector<int> layer_allocation(unsigned long int num_layers,int num_vertices)
+{
               
 	      
 	std::vector<int>layer_num_vertex;
@@ -310,21 +311,21 @@ void gg_tgff(Graph& g,int lower_bound,int max_od,int max_id)
 void gg_erdos_gnm(Graph& g, int num_vertices, int num_edges, bool do_dag) {
         bool matrix[num_vertices][num_vertices];
         int i,j;
-        for(i=0;i < num_vertices; i++)
-		for(j=0; j < num_vertices; j++)
-			matrix[i][j] =0;
+        for(i = 0;i < num_vertices; i++)
+		for(j = 0; j < num_vertices; j++)
+			matrix[i][j] = 0;
         
         
         
 	int added_edges = 0;
-	while(added_edges <num_edges) {
+	while(added_edges < num_edges) {
         	i = global_rng->uniform_int(num_vertices);
 		j = global_rng->uniform_int(num_vertices);
 		bool inserted;
  
                 if((!do_dag && i != j && matrix[i][j] == 0) ||(do_dag && i < j && matrix[i][j] == 0)) 
                 {
-			matrix[i][j]= 1;
+			matrix[i][j] = 1;
 			added_edges++;        
                 }
                 
@@ -346,7 +347,84 @@ void gg_erdos_gnm(Graph& g, int num_vertices, int num_edges, bool do_dag) {
 				add_edge(vmap[i], vmap[j], g);
                 
 }
-                 
+
+
+///////////////////////////////////////
+// Random Orders Method : f(num_vertices,num_pos)
+// One of the simplest way of generating a graph
+// Supports :
+// 	-- params : number of vertices,number of partially ordered sets
+///////////////////////////////////////
+
+/* It makes permutations of the vertices and 
+ * if index of the vertex 'i' is less than index of vertex 'j' in every permutation, 
+   an edge is introduced between the vertex 'i' and the vertex 'j'.
+ */
+void gg_random_orders_method(Graph& g, int num_vertices, int num_pos)
+{
+	bool matrix[num_vertices][num_vertices];
+	int test_edge[num_vertices][num_vertices];
+	int i, j, k;
+
+	//Nullifying the arrays "matrix" and "test_edge"
+	for( i = 0; i < num_vertices; i++)
+		for( j = 0; j < num_vertices; j++)
+		{	test_edge[i][j] = 0;
+			matrix[i][j] = 0;
+		}
+	//Making an array named "poset" to hold the permutations of the vertices
+	boost::any **poset = new boost::any*[num_pos];
+        
+	for( k = 0 ; k < num_pos ; k++ )
+		poset[k] = new boost::any[num_vertices];
+
+ 
+	for( k = 0; k < num_pos; k++)
+		for( j = 0; j < num_vertices; j++)
+			poset[k][j] = j;
+
+	//Shuffling all the rows of the array "poset"
+	for( k = 0; k < num_pos; k++)
+		global_rng-> shuffle (poset[k], num_vertices, sizeof (boost::any));
+
+	//Making the array "index" to hold the indices of the vertices for every permutation
+	int index[num_pos][num_vertices];
+
+	for( i = 0; i < num_pos; i++)
+		for( j = 0; j < num_vertices; j++)
+			index[i][boost::any_cast<int>(poset[i][j])] = j;
+	
+	for( i = 0; i < num_vertices; i++)
+		for( j = 0; j < num_vertices; j++)
+			for( k = 0; k < num_pos; k++)
+				if( index[k][i] < index[k][j])	
+					test_edge[i][j]++;
+	//if index of the vertex 'i' is less than index of vertex 'j' in every permutation, edge is introduced between (i,j)
+	for( i = 0; i < num_vertices; i++)
+		for( j = 0; j < num_vertices; j++)
+			if( test_edge[i][j] == num_pos) matrix[i][j] = 1;
+
+	 // translate the matrix to a graph
+	g = Graph(num_vertices);
+	std::map < int, Vertex > vmap;
+	std::pair < Vertex_iter, Vertex_iter > vp;
+	i = 0;
+	for(vp = boost::vertices(g); vp.first != vp.second; vp.first++)
+		vmap[i++] = *vp.first;
+
+
+	for(i = 0; i < num_vertices; i++)
+		for(j = 0; j < num_vertices; j++)
+			if(matrix[i][j])
+				add_edge(vmap[i], vmap[j], g);
+	
+	
+}
+  
+
+
+
+	           
                                   
                              
 ////////////////////////////////////////////////////////////////////////////////
@@ -410,9 +488,10 @@ int main(int argc, char** argv)
 		
 		std::cout << "Methods Available:" << std::endl;
 		std::cout << "erdos_gnp\t\tThe classical adjacency matrix method" << std::endl << std::endl;
-                std::cout << "layer_by_layer\t\tThe classical adjacency matrix method clubbed with coin flipping to connect the layers" << std::endl;
-                std::cout<<  "tgff\t\t\tThe Task Graphs for Free method"<< std::endl << std::endl;
+                std::cout << "layer_by_layer\t\tCoin flipping to connect the layers" << std::endl;
+                std::cout << "tgff\t\t\tThe Task Graphs for Free method"<< std::endl << std::endl;
 		std::cout << "erdos_gnm\t\t" << std::endl << std::endl;
+		std::cout << "Random Orders Method\t\t" << std::endl;
 	return 1;
 	}
 	
@@ -548,6 +627,25 @@ int main(int argc, char** argv)
 			po::notify(vm_method);
 			
 			gg_erdos_gnm(*g,nb_vertices,nb_edges,do_dag);
+		}
+		 else if(method_name == "rom")
+		{
+			int nb_vertices;
+			int nb_pos;
+			// define the options specific to this method
+			od_method.add_options()
+				("nb-vertices,n",po::value<int>(&nb_vertices)->default_value(10),"Set the number of vertices in the generated graph")
+				("nb-pos,l",po::value<int>(&nb_pos)->default_value(5),"Set the number of layers in the graph");		
+			// define method arguments as positional
+			po::positional_options_description pod_method_args;
+			pod_method_args.add("nb-vertices",1);
+			pod_method_args.add("nb-pos",1);
+			
+			// do the parsing
+			po::store(po::command_line_parser(to_parse).options(od_method).positional(pod_method_args).run(),vm_method);
+			po::notify(vm_method);
+                        
+			gg_random_orders_method(*g,nb_vertices,nb_pos);
 		}
 
 		else
