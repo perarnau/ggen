@@ -34,57 +34,41 @@
 # The fact that you are presently reading this means that you have had
 # knowledge of the CeCILL license and that you accept its terms.
 
-#######################################
+###################
+## DEPENDENIES
+###################
+
+# For Doxygen
+find_package(Doxygen)
+
+###################
 ## MAIN
-#######################################
+###################
 
-PROJECT(ggen CXX C)
-CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
+# Ok this is a bit complicated :
+# doxygen is normally run from the binary directory.
+# Then doxygen is not very smart and any relative path in the
+# doxyfile is relative to the cwd of doxygen not of the file.
+# So the best way to really compile the docs in the build dir :
+#  - have a doxyfile.in that contains our doxygen config + cmake variables
+#  - use configure_file to copy this file to the build dir and replace the cmake variables
+#  - execute doxygen
+if(DOXYGEN_FOUND)
 
-set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/")
+set(DOXYFILE_IN "${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in")
+configure_file(${DOXYFILE_IN} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
 
-# set install path to /usr/local/ggen/*
-set(CMAKE_INSTALL_PREFIX "${CMAKE_INSTALL_PREFIX}/ggen")
+add_custom_target(doxygen ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile)
 
-# output binaries to the build/bin or build/lib dir
-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin CACHE PATH "Single directory for all executables")
-set(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib CACHE PATH "Single directory for all libraries")
+add_custom_target(doc)
 
-mark_as_advanced(EXECUTABLE_OUTPUT_PATH LIBRARY_OUTPUT_PATH)
-#######################################
-## SUBDIRS
-#######################################
+add_dependencies(doc doxygen)
 
-# the source dir contains its own CMakeLists.txt with the
-# real targets
-add_subdirectory(src)
+###################
+## INSTALL RULES
+###################
 
-# the doc dir contains rules for doxygen generation
-add_subdirectory(doc)
+# install commands
+install(DIRECTORY doc DESTINATION doc)
 
-#######################################
-## PACKAGING
-#######################################
-
-# General info
-set(CPACK_PACKAGE_NAME "ggen")
-set(CPACK_PACKAGE_VENDOR "GGen development team")
-set(CPACK_PACKAGE_VERSION "0.1.a")
-set(CPACK_PACKAGE_VERSION_MAJOR "0")
-set(CPACK_PACKAGE_VERSION_MINOR "1")
-set(CPACK_PACKAGE_VERSION_PATCH "a")
-
-set(CPACK_GENERATOR "TGZ")
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "GGen : a random graph generator")
-set(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_SOURCE_DIR}/README")
-set(CPACK_PACKAGE_RESSOURCE_FILE_LICENCE "${CMAKE_SOURCE_DIR}/LICENCE")
-
-# Binary package info
-# TODO
-
-# Source package info
-set(CPACK_SOURCE_GENERATOR "TGZ")
-set(CPACK_SOURCE_IGNORE_FILES "/\\\\.svn/;\\\\.swp$;.*~;prototypes/;build/;www/;docs/;\\\\.git/;\\\\.bzr;\\\\.#;/#;cscope.*")
-set(CPACK_SOURCE_INSTALLED_DIRECTORIES "${CMAKE_SOURCE_DIR}/;/")
-
-include(CPack)
+endif()
