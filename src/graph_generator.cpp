@@ -360,7 +360,7 @@ void gg_erdos_gnm(Graph& g, int num_vertices, int num_edges, bool do_dag) {
  * if index of the vertex 'i' is less than index of vertex 'j' in every permutation, 
    an edge is introduced between the vertex 'i' and the vertex 'j'.
  */
-void gg_random_orders_method(Graph& g, int num_vertices, int num_pos)
+void gg_random_orders_method(Graph& g, int num_vertices, int num_pos, int d)
 {
 	bool matrix[num_vertices][num_vertices];
 	int test_edge[num_vertices][num_vertices];
@@ -397,8 +397,10 @@ void gg_random_orders_method(Graph& g, int num_vertices, int num_pos)
 	for( i = 0; i < num_vertices; i++)
 		for( j = 0; j < num_vertices; j++)
 			for( k = 0; k < num_pos; k++)
-				if( index[k][i] < index[k][j])	
+				if( index[k][i]-index[k][j] <= d && index[k][i]-index[k][j] > 0)	
 					test_edge[i][j]++;
+				else if(d == 0 && i != j) 
+					matrix[i][j] = 1;
 	//if index of the vertex 'i' is less than index of vertex 'j' in every permutation, edge is introduced between (i,j)
 	for( i = 0; i < num_vertices; i++)
 		for( j = 0; j < num_vertices; j++)
@@ -632,20 +634,23 @@ int main(int argc, char** argv)
 		{
 			int nb_vertices;
 			int nb_pos;
+			int distance;
 			// define the options specific to this method
 			od_method.add_options()
 				("nb-vertices,n",po::value<int>(&nb_vertices)->default_value(10),"Set the number of vertices in the generated graph")
-				("nb-pos,l",po::value<int>(&nb_pos)->default_value(5),"Set the number of layers in the graph");		
+				("nb-pos,l",po::value<int>(&nb_pos)->default_value(5),"Set the number of layers in the graph")
+				("distance,l",po::value<int>(&distance)->default_value(2),"Set the distance between the verticesin the graph");		
 			// define method arguments as positional
 			po::positional_options_description pod_method_args;
 			pod_method_args.add("nb-vertices",1);
 			pod_method_args.add("nb-pos",1);
+			pod_method_args.add("distance",1);
 			
 			// do the parsing
 			po::store(po::command_line_parser(to_parse).options(od_method).positional(pod_method_args).run(),vm_method);
 			po::notify(vm_method);
                         
-			gg_random_orders_method(*g,nb_vertices,nb_pos);
+			gg_random_orders_method(*g,nb_vertices,nb_pos,distance);
 		}
 
 		else
