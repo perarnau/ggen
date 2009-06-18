@@ -70,6 +70,25 @@ using namespace boost;
 // a random number generator for all our random stuff, initialized in main
 ggen_rng* global_rng;
 
+
+void translate_matrix_to_a_graph( Graph& g, bool **matrix, int num_vertices)
+{
+	//int num_vertices = matrix.Rowsize();
+	g = Graph(num_vertices);
+	std::map < int, Vertex > vmap;
+	std::pair < Vertex_iter, Vertex_iter > vp;
+        int i = 0;
+	for(vp = boost::vertices(g); vp.first != vp.second; vp.first++)
+		vmap[i++] = *vp.first;
+
+	for( i = 0;i < num_vertices; i++)
+		for( int j = 0; j < num_vertices; j++) 
+			if(matrix[i][j])
+				add_edge(vmap[i],vmap[j],g);
+	
+
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Generation Methods
 ////////////////////////////////////////////////////////////////////////////////
@@ -88,10 +107,13 @@ ggen_rng* global_rng;
 void gg_erdos_gnp(Graph& g, int num_vertices, double p, bool do_dag)
 {
 	// generate the matrix
-	bool matrix[num_vertices][num_vertices];
-	int i,j;
+	bool **matrix = new bool *[num_vertices];
+        
+	for( int k = 0 ; k < num_vertices ; k++ )
+		matrix[k] = new bool[num_vertices];
+	int i, j;
 	
-	for(i=0; i < num_vertices; i++)
+	for(i = 0; i < num_vertices; i++)
 	{
 		for(j = 0; j < num_vertices ; j++)
 		{
@@ -108,19 +130,9 @@ void gg_erdos_gnp(Graph& g, int num_vertices, double p, bool do_dag)
 	}
 
 	// translate the matrix to a graph
-	g = Graph(num_vertices);
-	std::map < int, Vertex > vmap;
-	std::pair < Vertex_iter, Vertex_iter > vp;
-	i = 0;
-	for(vp = boost::vertices(g); vp.first != vp.second; vp.first++)
-		vmap[i++] = *vp.first;
-
-	for(i=0;i < num_vertices; i++)
-		for(j=0; j < num_vertices; j++)
-			if(matrix[i][j])
-				add_edge(vmap[i],vmap[j],g);
-
+	translate_matrix_to_a_graph(g, (bool **) matrix, num_vertices);
 }
+
 
 ///////////////////////////////////////
 // Layer-by-Layer Method
@@ -133,10 +145,15 @@ void gg_erdos_gnp(Graph& g, int num_vertices, double p, bool do_dag)
 /* Run through the adjacency matrix
  * and at each i,j decide if matrix[i][j] is an edge with a given probability and no edge is formed beteen the two vertices lying in the same layer
  */
+
 void gg_layer_by_layer(Graph& g, int num_vertices, double p, bool do_dag,std::vector<int> layer_num_vertex)
 {
 	// generate the matrix
-	bool matrix[num_vertices][num_vertices];
+	bool **matrix = new bool *[num_vertices];
+        
+	for( int k = 0 ; k < num_vertices ; k++ )
+		matrix[k] = new bool[num_vertices];
+        
 	int i,j;
 	
 	for(i=0; i < num_vertices; i++)
@@ -156,18 +173,7 @@ void gg_layer_by_layer(Graph& g, int num_vertices, double p, bool do_dag,std::ve
 	}
 
 	// translate the matrix to a graph
-	g = Graph(num_vertices);
-	std::map < int, Vertex > vmap;
-	std::pair < Vertex_iter, Vertex_iter > vp;
-	i = 0;
-	for(vp = boost::vertices(g); vp.first != vp.second; vp.first++)
-		vmap[i++] = *vp.first;
-
-
-	for(i=0;i < num_vertices; i++)
-		for(j=0; j < num_vertices; j++)
-			if(matrix[i][j])
-				add_edge(vmap[i],vmap[j],g);
+	translate_matrix_to_a_graph(g, (bool **)matrix, num_vertices);
 
 }
 
@@ -308,9 +314,13 @@ void gg_tgff(Graph& g,int lower_bound,int max_od,int max_id)
 /* Run through the adjacency matrix
  * and at each i,j decide if matrix[i][j] is an edge with a given probability
  */
+
 void gg_erdos_gnm(Graph& g, int num_vertices, int num_edges, bool do_dag) {
-        bool matrix[num_vertices][num_vertices];
-        int i,j;
+	bool **matrix = new bool *[num_vertices];
+        
+	for( int k = 0 ; k < num_vertices ; k++ )
+		matrix[k] = new bool[num_vertices];
+        int i, j;
         for(i = 0;i < num_vertices; i++)
 		for(j = 0; j < num_vertices; j++)
 			matrix[i][j] = 0;
@@ -333,18 +343,7 @@ void gg_erdos_gnm(Graph& g, int num_vertices, int num_edges, bool do_dag) {
        
                  
        // translate the matrix to a graph
-	g = Graph(num_vertices);
-	std::map < int, Vertex > vmap;
-	std::pair < Vertex_iter, Vertex_iter > vp;
-	i = 0;
-	for(vp = boost::vertices(g); vp.first != vp.second; vp.first++)
-		vmap[i++] = *vp.first;
-
-
-	for(i = 0; i < num_vertices; i++)
-		for(j = 0; j < num_vertices; j++)
-			if(matrix[i][j])
-				add_edge(vmap[i], vmap[j], g);
+	translate_matrix_to_a_graph(g, (bool **)matrix, num_vertices );
                 
 }
 
@@ -353,16 +352,20 @@ void gg_erdos_gnm(Graph& g, int num_vertices, int num_edges, bool do_dag) {
 // Random Orders Method : f(num_vertices,num_pos)
 // One of the simplest way of generating a graph
 // Supports :
-// 	-- params : number of vertices,number of partially ordered sets
+// 	-- params : number of vertices,number of partially ordered sets, distance between the vertices
 ///////////////////////////////////////
 
 /* It makes permutations of the vertices and 
  * if index of the vertex 'i' is less than index of vertex 'j' in every permutation, 
    an edge is introduced between the vertex 'i' and the vertex 'j'.
  */
+
 void gg_random_orders_method(Graph& g, int num_vertices, int num_pos, int d)
 {
-	bool matrix[num_vertices][num_vertices];
+	bool **matrix = new bool *[num_vertices];
+        
+	for( int k = 0 ; k < num_vertices ; k++ )
+		matrix[k] = new bool[num_vertices];
 	int test_edge[num_vertices][num_vertices];
 	int i, j, k;
 
@@ -407,21 +410,10 @@ void gg_random_orders_method(Graph& g, int num_vertices, int num_pos, int d)
 			if( test_edge[i][j] == num_pos) matrix[i][j] = 1;
 
 	 // translate the matrix to a graph
-	g = Graph(num_vertices);
-	std::map < int, Vertex > vmap;
-	std::pair < Vertex_iter, Vertex_iter > vp;
-	i = 0;
-	for(vp = boost::vertices(g); vp.first != vp.second; vp.first++)
-		vmap[i++] = *vp.first;
-
-
-	for(i = 0; i < num_vertices; i++)
-		for(j = 0; j < num_vertices; j++)
-			if(matrix[i][j])
-				add_edge(vmap[i], vmap[j], g);
+	translate_matrix_to_a_graph(g, (bool **)matrix, num_vertices);
 	
 	
-}
+} 
   
 
 
@@ -651,7 +643,7 @@ int main(int argc, char** argv)
 			po::notify(vm_method);
                         
 			gg_random_orders_method(*g,nb_vertices,nb_pos,distance);
-		}
+		} 
 
 		else
 		{
