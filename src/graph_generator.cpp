@@ -1,4 +1,4 @@
-/* Copyright Swann Perarnau 2009
+/** Copyright Swann Perarnau 2009
 *
 *   contributor(s) : 
 *	Pradeep Beniwal (pdpbeniwal AT gmail.com)
@@ -34,14 +34,14 @@
 * 
 * The fact that you are presently reading this means that you have had
 * knowledge of the CeCILL license and that you accept its terms.
+*
+* GGen is a random graph generator :
+* it provides means to generate a graph following a
+* collection of methods found in the litterature.
+*
+* This is a research project founded by the MOAIS Team,
+* INRIA, Grenoble Universities.
 */
-/* GGen is a random graph generator :
- * it provides means to generate a graph following a
- * collection of methods found in the litterature.
- *
- * This is a research project founded by the MOAIS Team,
- * INRIA, Grenoble Universities.
- */
 
 
 #include <iostream>
@@ -50,9 +50,10 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-/* We use extensively the BOOST library for 
- * handling output, program options and random generators
- */
+/** We use extensively the BOOST library for 
+* handling output, program options and random generators
+*/
+
 #include <boost/config.hpp>
 #include <boost/program_options.hpp>
 #include <boost/graph/graphviz.hpp>
@@ -63,17 +64,28 @@
 
 using namespace boost;
 
-////////////////////////////////////////////////////////////////////////////////
-// Global definitions
-////////////////////////////////////////////////////////////////////////////////
+/**
+* Global definitions
+*/
 
-// a random number generator for all our random stuff, initialized in main
+/** 
+* a random number generator for all our random stuff, initialized in main
+*/
 ggen_rng* global_rng;
 
-
+/** translate_matrix_to_a_graph(g, matrix, num_vertices)
+*
+* A method to convert an adjacency matrix to an object of type Graph.
+*
+* @param value1 : g, an object of type Graph
+* @param value2 : matrix, an adjacency matrix
+* @param value3 : num_vertices, the number of vertices in the graph
+*
+* Run through the adjacency matrix
+* and at each i,j decide if matrix[i][j] is an edge or not.
+*/
 void translate_matrix_to_a_graph( Graph& g, bool **matrix, vertices_size num_vertices)
 {
-	//int num_vertices = matrix.Rowsize();
 	g = Graph(num_vertices);
 	std::map < vertices_size, Vertex > vmap;
 	std::pair < Vertex_iter, Vertex_iter > vp;
@@ -89,21 +101,27 @@ void translate_matrix_to_a_graph( Graph& g, bool **matrix, vertices_size num_ver
 
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// Generation Methods
-////////////////////////////////////////////////////////////////////////////////
+/** @Generation Methods
+*
+*/
 
-///////////////////////////////////////
-// Erdos-Renyi : G(n,p)
-// One of the simplest way of generating a graph
-// Supports :
-// 	-- dag option
-// 	-- params : number of vertices, probability of an edge
-///////////////////////////////////////
+/** Erdos-Renyi : G(n,p)
+*
+* One of the simplest way of generating a graph
+*
+* Supports :
+*
+* -- dag option
+*
+* @param value1 : g, an object of type Graph
+* @param value2 : num_vertices, the number of vertices in the graph
+* @param value3 : p, probability with which an edge(i,j) will be formed.
+* @param value4 : do_dag, a boolean to determine whether the graph is a directed acyclic graph or not.
+*
+* Run through the adjacency matrix
+* and at each i,j decide if matrix[i][j] is an edge with a given probability
+*/
 
-/* Run through the adjacency matrix
- * and at each i,j decide if matrix[i][j] is an edge with a given probability
- */
 void gg_erdos_gnp(Graph& g, vertices_size num_vertices, double p, bool do_dag)
 {
 	// generate the matrix
@@ -134,24 +152,30 @@ void gg_erdos_gnp(Graph& g, vertices_size num_vertices, double p, bool do_dag)
 }
 
 
-///////////////////////////////////////
-// Layer-by-Layer Method
-// Using coin flipping to connect the layers
-// Supports :
-// 	-- dag option
-// 	-- params : number of vertices, probability of an edge,number of layers
-///////////////////////////////////////
 
-/* Run through the adjacency matrix
- * and at each i,j decide if matrix[i][j] is an edge with a given probability and no edge is formed beteen the two vertices lying in the same layer
- */
+/** Layer-by-Layer Method: gg_layer_by_layer(g, num_vertices, p, do_dag, layer_num_vertex)
+*
+* Using coin flipping to connect the layers
+*
+* Supports :
+*
+* -- dag option
+*
+* @param value1 : g, an object of type Graph
+* @param value2 : num_vertices, number of vertices in the graph
+* @param value3 : p, probability with which an edge will be inserted between two layers
+* @param value4 : do_dag, a boolean to determine whether the graph is a directed acyclic graph or not
+* @param value5 : layer_num_vertex, an array containing index of the layer in which a vertex has been positioned.
+* 
+* Run through the adjacency matrix
+* and at each i,j decide if matrix[i][j] is an edge with a given probability and no edge is formed beteen the two vertices lying in the same layer
+*/
 
 void gg_layer_by_layer(Graph& g, vertices_size num_vertices, double p, bool do_dag,std::vector<int> layer_num_vertex)
 {
-	// generate the matrix
+ 	//generate the matrix
 	bool **matrix = new bool *[num_vertices];
-        
-	for( vertices_size k = 0 ; k < num_vertices ; k++ )
+        for( vertices_size k = 0 ; k < num_vertices ; k++ )
 		matrix[k] = new bool[num_vertices];
         
 	vertices_size i, j;
@@ -159,55 +183,70 @@ void gg_layer_by_layer(Graph& g, vertices_size num_vertices, double p, bool do_d
 	for(i = 0; i < num_vertices; i++)
 	{
 		for(j = 0; j < num_vertices ; j++)
-		{
-			// this test activates if do_dag is false and the vertices i,j are not in the same layer
-			// or if do_dag is true and the edge(i,j) povertices_sizes downwards.
+		{	
+			/*this test activates if do_dag is false and the vertices i,j are not in the same layer
+			 or if do_dag is true and the edge(i,j) povertices_sizes downwards.*/
 			if((!do_dag&& layer_num_vertex[i]!=layer_num_vertex[j])||(do_dag&&layer_num_vertex[i]<layer_num_vertex[j]))
 			{
-				// coin flipping to determine if we add an edge or not
+				//coin flipping to determine if we add an edge or not
 				matrix[i][j] = global_rng->bernoulli(p);
 			}
 			else
 				matrix[i][j] = false;
 		}
 	}
-
-	// translate the matrix to a graph
+	
+	 //translate the matrix to a graph
 	translate_matrix_to_a_graph(g, (bool **)matrix, num_vertices);
-
 }
 
-//To generate a vector containing layer no. of each vertex of the graph
-std::vector<int> layer_allocation(unsigned long int num_layers,vertices_size num_vertices)
+/** The method 'layer_allocation(num_layers, num_vertices)' returns an array containing layer indices for all the vertices. This array is required for the random graph generation method "Layer-by-Layer".
+*
+* @param value1 : num_layers, number of layers in the graph
+* @param value2 : num_vertices, number of vertices in the graph
+* 
+* A random number between 1 and 'num_layers' is generated and is assigned to each vertex.
+*
+*/
+
+std::vector <int> layer_allocation(unsigned long int num_layers,vertices_size num_vertices)
 {
               
 	      
 	std::vector<int>layer_num_vertex;
-	dbg(trace,"no.of layers is= %lu\n",num_layers);
+	dbg(trace, "no.of layers is = %lu\n",num_layers);
                
    
-	for(vertices_size i=0;i<num_vertices;i++)                                   
-	{
-		int layer_index = global_rng->uniform_int(num_layers); //Generating a random layer no.
-		layer_num_vertex.push_back(layer_index);                     //storing the layer no. just generated into a vector
+	for(vertices_size i = 0;i < num_vertices; i++)                                   
+	{	
+		// Generating a random layer no.
+		int layer_index = global_rng->uniform_int(num_layers); 
+		 
+		//storing the layer no. just generated into a vector
+		layer_num_vertex.push_back(layer_index);                    
 	}
                       
            
 	dbg(trace,"vertex no..............layer_number\n");
-	for(vertices_size i = 0;i<num_vertices;i++)
-	{
-		dbg(trace,"%d\t\t%d\n",i,layer_num_vertex[i]);   //printing the layer numbers for all the vertices
+	for(vertices_size i = 0;i < num_vertices; i++)
+	{	 
+		//printing the layer numbers for all the vertices
+		dbg(trace,"%d\t\t%d\n",i,layer_num_vertex[i]);   
 	}
 
 	return layer_num_vertex;           
 }
 
-// Task Graphs for free: tgff
-// 	-- params : a lower bound on the number of vertices,maximum out_degree limit and maximum in_degree limit
-///////////////////////////////////////
-
-/* The Task Graphs for Free method carries out graph generation by iteratively incorporating the two steps i.e fan-out and fan-in
-both these steps occur with the equal probability=0.5 */
+/** Task Graphs for free: gg_tgff(g, lower_bound, max_od, max_id)
+*
+* @param value1 : g, an object of type Graph 
+* @param value2 : lower_bound, a lower bound on the number of vertices
+* @param value3 : max_od, maximum out degree constraint on each node
+* @param value4 : max_id, maximum in degree constraint on each node
+*
+* The Task Graphs for Free method carries out graph generation by iteratively incorporating the two steps i.e fan-out and fan-in
+* both these steps occur with the equal probability=0.5 
+*/
 
 void gg_tgff(Graph& g,int lower_bound,int max_od,int max_id)
 {
@@ -303,17 +342,22 @@ void gg_tgff(Graph& g,int lower_bound,int max_od,int max_id)
 
 }
      
-///////////////////////////////////////
-// Erdos-Renyi : G(n,M)
-// One of the simplest way of generating a graph
-// Supports :
-// 	-- dag option
-// 	-- params : number of vertices,number of edges
-///////////////////////////////////////
+/** Erdos-Renyi : G(n,M)
+*
+* One of the simplest way of generating a graph
+*
+* Supports :
+*
+* -- dag option
+*
+* @param value1 : g, an object of type Graph
+* @param value2 : num_vertices, the number of vertices in the graph
+* @param value3 : num_edges, the number of edges in the graph
+* @param value4 : do_dag, a boolean to determine whether the graph is a directed acyclic graph or not.
+*
+* Randomly selecting two vertices i and j and inserting an edge between them unless the total number of edges become equal to the wanted number of edges
+*/
 
-/* Run through the adjacency matrix
- * and at each i,j decide if matrix[i][j] is an edge with a given probability
- */
 
 void gg_erdos_gnm(Graph& g, vertices_size num_vertices, edges_size num_edges, bool do_dag) {
 	bool **matrix = new bool *[num_vertices];
@@ -349,16 +393,17 @@ void gg_erdos_gnm(Graph& g, vertices_size num_vertices, edges_size num_edges, bo
 
 
 ///////////////////////////////////////
-// Random Orders Method : f(num_vertices,num_pos)
-// One of the simplest way of generating a graph
-// Supports :
-// 	-- params : number of vertices,number of partially ordered sets, distance between the vertices
-///////////////////////////////////////
-
-/* It makes permutations of the vertices and 
- * if index of the vertex 'i' is less than index of vertex 'j' in every permutation, 
-   an edge is introduced between the vertex 'i' and the vertex 'j'.
- */
+/** Random Orders Method : f(num_vertices,num_pos)
+*
+* @param value1 : g, an object of type Graph
+* @param value2 : num_vertices, the number of vertices in the graph
+* @param value3 : num_pos, the number of partially ordered sets
+* @param value4 : d, the distance with which or less than that distance an edge can be inserted between two vertices
+*
+* It makes permutations of the vertices and 
+* if distance between two vertices is equal to or less than 'd' in all the permutations
+* an edge is introduced between the vertex 'i' and the vertex 'j'.
+*/
 
 void gg_random_orders_method(Graph& g, int num_vertices, int num_pos, int d)
 {
@@ -431,8 +476,10 @@ namespace po = boost::program_options;
 dynamic_properties properties(&create_property_map);
 Graph *g;
 
-/* Main program
- */
+/** 
+* Main program
+*
+*/
 int main(int argc, char** argv)
 {
 	// Init the structures
