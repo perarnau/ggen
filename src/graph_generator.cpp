@@ -398,14 +398,12 @@ void gg_erdos_gnm(Graph& g, vertices_size num_vertices, edges_size num_edges, bo
 * @param value1 : g, an object of type Graph
 * @param value2 : num_vertices, the number of vertices in the graph
 * @param value3 : num_pos, the number of partially ordered sets
-* @param value4 : d, the distance with which or less than that distance an edge can be inserted between two vertices
 *
 * It makes permutations of the vertices and 
-* if distance between two vertices is equal to or less than 'd' in all the permutations
+* if index of the vertex 'i' is less than index of vertex 'j' in every permutation, 
 * an edge is introduced between the vertex 'i' and the vertex 'j'.
 */
-
-void gg_random_orders_method(Graph& g, int num_vertices, int num_pos, int d)
+void gg_random_orders_method(Graph& g, int num_vertices, int num_pos)
 {
 	int i, j;
 	int k;
@@ -447,10 +445,8 @@ void gg_random_orders_method(Graph& g, int num_vertices, int num_pos, int d)
 	for( i = 0; i < num_vertices; i++)
 		for( j = 0; j < num_vertices; j++)
 			for( k = 0; k < num_pos; k++)
-				if( index[k][i]-index[k][j] <= d && index[k][i]-index[k][j] > 0)	
+				if( index[k][i] < index[k][j])	
 					test_edge[i][j]++;
-				else if(d == 0 && i != j) 
-					matrix[i][j] = 1;
 	//if index of the vertex 'i' is less than index of vertex 'j' in every permutation, edge is introduced between (i,j)
 	for( i = 0; i < num_vertices; i++)
 		for( j = 0; j < num_vertices; j++)
@@ -461,13 +457,7 @@ void gg_random_orders_method(Graph& g, int num_vertices, int num_pos, int d)
 	
 	
 } 
-  
 
-
-
-	           
-                                  
-                             
 ////////////////////////////////////////////////////////////////////////////////
 // MAIN
 ////////////////////////////////////////////////////////////////////////////////
@@ -671,29 +661,25 @@ int main(int argc, char** argv)
 			
 			gg_erdos_gnm(*g,nb_vertices,nb_edges,do_dag);
 		}
-		 else if(method_name == "rom")
+		else if(method_name == "rom")
 		{
 			int nb_vertices;
 			int nb_pos;
-			int distance;
 			// define the options specific to this method
 			od_method.add_options()
 				("nb-vertices,n",po::value<int>(&nb_vertices)->default_value(10),"Set the no. of vertices in the generated graph")
 				("nb-pos,l",po::value<int>(&nb_pos)->default_value(5),"Set the number of posets in the graph")
-				("distance,l",po::value<int>(&distance)->default_value(2),"Set the distance between the verticesin the graph");		
 			// define method arguments as positional
 			po::positional_options_description pod_method_args;
 			pod_method_args.add("nb-vertices",1);
 			pod_method_args.add("nb-pos",1);
-			pod_method_args.add("distance",1);
 			
 			// do the parsing
 			po::store(po::command_line_parser(to_parse).options(od_method).positional(pod_method_args).run(),vm_method);
 			po::notify(vm_method);
                         
-			gg_random_orders_method(*g, nb_vertices, nb_pos, distance);
-		} 
-
+			gg_random_orders_method(*g,nb_vertices,nb_pos);
+		}
 		else
 		{
 			std::cerr << "Error : you must provide a VALID method name!" << std::endl;
