@@ -77,9 +77,9 @@ ggen_rng* global_rng;
 *
 * A method to convert an adjacency matrix to an object of type Graph.
 *
-* @param value1 : g, an object of type Graph
-* @param value2 : matrix, an adjacency matrix
-* @param value3 : num_vertices, the number of vertices in the graph
+* @param g : an object of type Graph to save the generated graph and it should be empty when initialized
+* @param matrix : an adjacency matrix with matrix[i][j] true if there is an edge connecting the vertices 'i' & 'j' otherwise false.
+* @param num_vertices : the number of vertices in the graph 
 *
 * Run through the adjacency matrix
 * and at each i,j decide if matrix[i][j] is an edge or not.
@@ -113,13 +113,15 @@ void translate_matrix_to_a_graph( Graph& g, bool **matrix, vertices_size num_ver
 *
 * -- dag option
 *
-* @param value1 : g, an object of type Graph
-* @param value2 : num_vertices, the number of vertices in the graph
-* @param value3 : p, probability with which an edge(i,j) will be formed.
-* @param value4 : do_dag, a boolean to determine whether the graph is a directed acyclic graph or not.
+* @param g : an object of type Graph to save the generated graph and it should be empty when initialized
+* @param num_vertices : the number of vertices in the graph
+* @param p : probability with which an edge(i,j) will be formed.
+* @param do_dag : a boolean to determine whether the graph is a directed acyclic graph or not.
 *
-* Run through the adjacency matrix
-* and at each i,j decide if matrix[i][j] is an edge with a given probability
+* This method first of all generates an adjacency matrix of the type boolean of size equal to the number of vertices. Then a coin is flipped for every 
+* (i,j) to determine whether an edge be inserted between the vertices 'i' and 'j' or not.If do_dag is true then only the upper triangle of the adjacency  
+* matrix is iterated otherwise the complete adjacency matrix.Finally, the adjacency matrix is translated to a graph object with the help of the function  
+* translate_matrix_to_a_graph.
 */
 
 void gg_erdos_gnp(Graph& g, vertices_size num_vertices, double p, bool do_dag)
@@ -161,14 +163,14 @@ void gg_erdos_gnp(Graph& g, vertices_size num_vertices, double p, bool do_dag)
 *
 * -- dag option
 *
-* @param value1 : g, an object of type Graph
-* @param value2 : num_vertices, number of vertices in the graph
-* @param value3 : p, probability with which an edge will be inserted between two layers
-* @param value4 : do_dag, a boolean to determine whether the graph is a directed acyclic graph or not
-* @param value5 : layer_num_vertex, an array containing index of the layer in which a vertex has been positioned.
+* @param g : an object of type Graph to save the generated graph and it should be empty when intialized.
+* @param num_vertices : number of vertices in the graph
+* @param p : probability with which an edge will be inserted between two layers
+* @param do_dag : a boolean to determine whether the graph is a directed acyclic graph or not
+* @param layer_num_vertex : an array containing index of the layer in which a vertex is positioned.
 * 
-* Run through the adjacency matrix
-* and at each i,j decide if matrix[i][j] is an edge with a given probability and no edge is formed beteen the two vertices lying in the same layer
+* In this method, two vertices lying in distinct layers are chosen and an edge is inserted between them depending upon the outcome of a bernouilli trial.
+* No edge is inserted between the two vertices lying in the same layer.
 */
 
 void gg_layer_by_layer(Graph& g, vertices_size num_vertices, double p, bool do_dag,std::vector<int> layer_num_vertex)
@@ -202,8 +204,8 @@ void gg_layer_by_layer(Graph& g, vertices_size num_vertices, double p, bool do_d
 
 /** The method 'layer_allocation(num_layers, num_vertices)' returns an array containing layer indices for all the vertices. This array is required for the random graph generation method "Layer-by-Layer".
 *
-* @param value1 : num_layers, number of layers in the graph
-* @param value2 : num_vertices, number of vertices in the graph
+* @param num_layers : number of layers in the graph
+* @param num_vertices : number of vertices in the graph
 * 
 * A random number between 1 and 'num_layers' is generated and is assigned to each vertex.
 *
@@ -239,13 +241,22 @@ std::vector <int> layer_allocation(unsigned long int num_layers,vertices_size nu
 
 /** Task Graphs for free: gg_tgff(g, lower_bound, max_od, max_id)
 *
-* @param value1 : g, an object of type Graph 
-* @param value2 : lower_bound, a lower bound on the number of vertices
-* @param value3 : max_od, maximum out degree constraint on each node
-* @param value4 : max_id, maximum in degree constraint on each node
+* @param g : an object of type Graph to save the generated graph and it should be empty when initialized.
+* @param lower_bound : a lower bound on the number of vertices ensuring that atleast these many vertices should be present in the generated graph
+* @param max_od : maximum out degree constraint on each node
+* @param max_id : maximum in degree constraint on each node
 *
-* The Task Graphs for Free method carries out graph generation by iteratively incorporating the two steps i.e fan-out and fan-in
-* both these steps occur with the equal probability=0.5 
+* The Task Graphs for Free method carries out graph generation by iteratively incorporating two steps 'fan-out' and 'fan-in'.First of all, a starting node  
+* i.e. 0th node is created. A bernoulli trial is conducted to determine on each iteration whether it should be a fan-out step or a fan-in step.
+* If it is a fan-out step then available out degrees for all the existing vertices are calculated. The maximum of these all the available outdegrees is 
+* determined.And vertices having available out degree equal to this maximum are stored in an array named available_vertices.Then, a random number is chosen 
+* between 1 and this maximum.New nodes as equal to the generated random number are introduced and each node is connected to an unique vertex in the array 
+* available_vertices.
+* If it a fan-in step then a new node is introduced. All the existing vertices with available out degree greater than zero are stored into an array 
+* and maximum of this array is calculated.Now all the vertices having available out degree equal to this maximum are stored into a separate array.The size 
+* of the newly formed array is said to be the cardinality.If cardinality exceeds the maximum indegree constraint then cardinality is set to the maximum 
+* in-degree constraint.A random number is generated between 1 and this cardinality and as many number of the vertices are chosen randomly from the newly 
+* formed array and each vertex just chosen is connected to the new node introuduced in the starting of the fan-in step.
 */
 
 void gg_tgff(Graph& g,int lower_bound,int max_od,int max_id)
@@ -350,12 +361,13 @@ void gg_tgff(Graph& g,int lower_bound,int max_od,int max_id)
 *
 * -- dag option
 *
-* @param value1 : g, an object of type Graph
-* @param value2 : num_vertices, the number of vertices in the graph
-* @param value3 : num_edges, the number of edges in the graph
-* @param value4 : do_dag, a boolean to determine whether the graph is a directed acyclic graph or not.
+* @param g : an object of type Graph
+* @param num_vertices : the number of vertices in the graph
+* @param num_edges : the number of edges in the graph
+* @param do_dag : a boolean to determine whether the graph is a directed acyclic graph or not.
 *
-* Randomly selecting two vertices i and j and inserting an edge between them unless the total number of edges become equal to the wanted number of edges
+* In this method, an edge is inserted between the two vertices 'i' and 'j' selected randomly.And the selection of these two vertices is iteratively 
+* carried out unless the total number of edges become equal to the wanted number of edges.
 */
 
 
@@ -395,13 +407,14 @@ void gg_erdos_gnm(Graph& g, vertices_size num_vertices, edges_size num_edges, bo
 ///////////////////////////////////////
 /** Random Orders Method : f(num_vertices,num_pos)
 *
-* @param value1 : g, an object of type Graph
-* @param value2 : num_vertices, the number of vertices in the graph
-* @param value3 : num_pos, the number of partially ordered sets
+* @param g : an object of type Graph to save the generated graph and it should be empty when initialized
+* @param num_vertices : the number of vertices in the graph
+* @param num_pos : the number of partially ordered sets which are permutations of the orders of the vertices
 *
-* It makes permutations of the vertices and 
-* if index of the vertex 'i' is less than index of vertex 'j' in every permutation, 
-* an edge is introduced between the vertex 'i' and the vertex 'j'.
+* In this method, an array poset with no. of rows equal to the num_pos and no. of columns equal to num_vertices is created.In this array, each row of it
+* represents a permutation of the vertices.With the help of the function 'shuffle' each row of this array is shuffled. If the vertex 'i' appears before the 
+* vertex 'j' in every permutation, an edge(i, j) is inserted.And, finally, the adjacency matrix is translated to a graph object with the help of the 
+* translate_matrix_to_a_graph.
 */
 void gg_random_orders_method(Graph& g, int num_vertices, int num_pos)
 {
