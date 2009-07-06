@@ -37,6 +37,15 @@
 #include "dynamic_properties.hpp"
 
 using namespace boost;
+/** add_property(dp, g, *name, vertex_or_edge)
+*
+* @param dp :
+* @param g :
+* @param *name :
+* @param vertex_or_edge :
+* computes the list of all connected components. We consider the graph undirected...
+*/
+
 
 void add_property(dynamic_properties& dp, Graph& g,const char *name /*= "node_id"*/, bool vertex_or_edge)
 {
