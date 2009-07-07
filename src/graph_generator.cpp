@@ -101,7 +101,7 @@ void translate_matrix_to_a_graph( Graph& g, bool **matrix, vertices_size num_ver
 
 }
 
-/** @Generation Methods
+/** Generation Methods
 *
 */
 
