@@ -681,7 +681,7 @@ int main(int argc, char** argv)
 			// define the options specific to this method
 			od_method.add_options()
 				("nb-vertices,n",po::value<int>(&nb_vertices)->default_value(10),"Set the no. of vertices in the generated graph")
-				("nb-pos,l",po::value<int>(&nb_pos)->default_value(5),"Set the number of posets in the graph")
+				("nb-pos,l",po::value<int>(&nb_pos)->default_value(5),"Set the number of posets in the graph");
 			// define method arguments as positional
 			po::positional_options_description pod_method_args;
 			pod_method_args.add("nb-vertices",1);
