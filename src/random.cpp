@@ -66,15 +66,6 @@ const gsl_rng_type* ggen_rng_table[GGEN_RNG_MAX] =
 	gsl_rng_ranmar
 };
 
-/** ggen_rng::ggen_rng(rng_type, seed)
-*
-* @param rng_type : 
-* @param seed :
-*
-* Create a random number generator, used to create ggen_rnd 
-*
-*/
-
 ggen_rng::ggen_rng(const unsigned int rng_type, unsigned long int seed)
 {
 	const gsl_rng_type * T = ggen_rng_table[rng_type];
@@ -83,31 +74,17 @@ ggen_rng::ggen_rng(const unsigned int rng_type, unsigned long int seed)
 }
 
 
-/** ggen_rng::~ggen_rng()
-*
-* Delete the rng
-*/
 ggen_rng::~ggen_rng()
 {
 	gsl_rng_free(rng);
 }
 
 
-/** ggen_rng::get_gsl()
-*
-*/
 const gsl_rng* ggen_rng::get_gsl()
 {
 	return rng;
 }
 
-
-/** ggen_rng::read(filename)
-*
-* @param filename : Name of the file from which gsl_rng state is to be read
-*
-* this method reads the gsl_rng state from a file
-*/
 
 void ggen_rng::read(std::string filename)
 {
@@ -124,13 +101,6 @@ void ggen_rng::read(std::string filename)
 	}
 }
 
-/** ggen_rng::write(filename)
-*
-* @param filename : Name of the file in which gsl_rng state is to be wr
-*
-* this method writes the gsl_rng state from a file
-*/
-
 void ggen_rng::write(std::string filename)
 {
 	FILE *output = NULL;
@@ -146,39 +116,15 @@ void ggen_rng::write(std::string filename)
 	}
 }
 
-/** ggen_rng::choose(dest, k, src, n, size)
-*
-* @param dest : It is the array formed by choosing 'k' elements from the array 'src' of size 'n'
-* @param k : size of the array 'dest'
-* @param src : It is the array holding 'n' elements
-* @param n : size of the array 'src'
-* @param size : size of an element of the array
-*
-*/
-
 void ggen_rng::choose(boost::any *dest, size_t k, boost::any* src, size_t n, size_t size)
 {
 	gsl_ran_choose(rng,dest,k,src,n,size);
 }
 
-/** ggen_rng::shuffle(base, n, size)
-*
-* @param base : It is an array of type boost::any whose elements are to be shuffled
-* @param n : Size of the array 'base'
-* @param size : Size of an element of the array 'base'
-*
-*/
 void ggen_rng::shuffle(boost::any *base, size_t n, size_t size)
 {
 	gsl_ran_shuffle(rng, base, n, size);
 }
-
-/** ggen_rng::bernoulli(p)
-*
-* @param p : It is the probability of a successful bernoulli trial
-* 
-* simple function to do a bernoulli trial : return true with probability p
-*/
 
 bool ggen_rng::bernoulli(double p)
 {
@@ -188,30 +134,10 @@ bool ggen_rng::bernoulli(double p)
 		return false;
 }
 
-
-/** ggen_rng::uniform_int(n)
-*
-* @param n : It is an integer specified by the user 
-* 
-* return an integer between 0 and n-1 all with equal probability
-*/
 unsigned long int ggen_rng::uniform_int(unsigned long int n)
 {
 	return gsl_rng_uniform_int(rng,n);
 }
-
-/** ggen_rnd::create_rnd(rng, ggen_rnd_type, args)
-*
-* @param rng :
-* @param ggen_rnd_type :
-* @param args :
-*
-* GGEN GSL Random Number Distribution,
-*
-* Factory pattern
-*
-* Handle all creation and access to gsl_rnd
-*/
 
 
 /* Base class
@@ -231,23 +157,12 @@ ggen_rnd* ggen_rnd::create_rnd(ggen_rng* rng, const unsigned int ggen_rnd_type, 
 	}
 }
 
-/** ggen_rnd::ggen_rnd(r)
-*
-* @param r :
-* 
-* this constructor allows centralized memorization of the rng associated with each rnd
-*/
-
 ggen_rnd::ggen_rnd(ggen_rng* r)
 {
 	rng = r;
 }
 
 
-/** ggen_rnd::~ggen_rnd()
-* 
-* base class destructor
-*/
 ggen_rnd::~ggen_rnd()
 {
 	delete rng;
@@ -255,11 +170,7 @@ ggen_rnd::~ggen_rnd()
 
 
 
-/** ggen_rnd_gaussian::ggen_rnd_gaussian(rng, args)
-* 
-* @param rng :
-* @param args :
-*
+/*
 *  Gaussian Distribution 
 */
 
@@ -271,21 +182,13 @@ ggen_rnd_gaussian::ggen_rnd_gaussian(ggen_rng* rng, std::vector<std::string> arg
 		; //TODO error handling + bad lexical cast exception
 }
 
-/** ggen_rnd_gaussian::get()
-* 
-*/
-
 double ggen_rnd_gaussian::get()
 {
 	return gsl_ran_gaussian(rng->get_gsl(),sigma);
 }
 
 
-/** ggen_rnd_flat::ggen_rnd_flat(rng, args) :ggen_rnd(rng)
-* 
-* @param rng :
-* @param args :
-*
+/*
 *  Flat (Uniform) Distribution
 */
 
@@ -300,9 +203,6 @@ ggen_rnd_flat::ggen_rnd_flat(ggen_rng* rng, std::vector<std::string> args) : gge
 	else
 		; //TODO error handling;
 }
-/** ggen_rnd_flat::get()
-* 
-*/
 
 double ggen_rnd_flat::get()
 {
@@ -337,10 +237,6 @@ po::options_description random_rnd_options()
 	return desc;
 }
 
-/** random_rng_handle_options_atinit(vm)
-*
-* @param vm :
-*/
 ggen_rng* random_rng_handle_options_atinit(const po::variables_map& vm)
 {
 	uint64_t seed;
@@ -374,11 +270,6 @@ ggen_rng* random_rng_handle_options_atinit(const po::variables_map& vm)
 
 	return rng;
 }
-/** random_rng_handle_options_atexit(vm, rng)
-*
-* @param vm :
-* @param rng :
-*/
 
 void random_rng_handle_options_atexit(const po::variables_map& vm,ggen_rng* rng)
 {
@@ -388,11 +279,6 @@ void random_rng_handle_options_atexit(const po::variables_map& vm,ggen_rng* rng)
 	}
 }
 
-/** random_rnd_handle_options_atinit(vm, rng)
-*
-* @param vm :
-* @param rng :
-*/
 ggen_rnd* random_rnd_handle_options_atinit(const po::variables_map& vm,ggen_rng* rng)
 {
 	unsigned int type;
@@ -420,12 +306,6 @@ ggen_rnd* random_rnd_handle_options_atinit(const po::variables_map& vm,ggen_rng*
 	rnd = ggen_rnd::create_rnd(rng,type,args);
 	return rnd;
 }
-/** random_rng_handle_options_atexit(vm, rng, rnd)
-*
-* @param vm :
-* @param rng :
-* @param rnd :
-*/
 
 void random_rnd_handle_options_atexit(const po::variables_map& vm,ggen_rng* rng, ggen_rnd* rnd)
 {
