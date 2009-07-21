@@ -42,6 +42,9 @@
  * INRIA, Grenoble Universities.
  */
 
+#ifndef RANDOM_HPP
+#define RANDOM_HPP
+
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
 #include <iostream>
@@ -148,3 +151,4 @@ void random_rng_handle_options_atexit(const po::variables_map& vm,ggen_rng* rng)
 ggen_rnd* random_rnd_handle_options_atinit(const po::variables_map& vm,ggen_rng* rng);
 void random_rnd_handle_options_atexit(const po::variables_map& vm,ggen_rng* rng, ggen_rnd* rnd);
 
+#endif
