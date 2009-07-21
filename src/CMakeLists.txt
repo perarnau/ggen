@@ -74,8 +74,9 @@ else(true)
 endif(CMAKE_BUILD_TYPE STREQUAL "Debug")
 
 ###################
-## INSTALL RULES
+## EXEC RULES
 ###################
+
 
 # add execs and link
 foreach(it ${EXECS_WITH_RANDOM})
@@ -88,6 +89,17 @@ foreach(it ${EXECS})
 	target_link_libraries(${it} ${Boost_LIBRARIES} ${GSL_LIBRARIES})
 endforeach(it ${EXECS})
 
+###################
+## INSTALL RULES
+###################
+
 # install commands
 install(TARGETS ${EXECS_WITH_RANDOM} ${EXECS}
 	RUNTIME DESTINATION bin)
+
+###################
+## TESTING RULES
+###################
+
+enable_testing()
+
