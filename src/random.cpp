@@ -120,7 +120,7 @@ void ggen_rng::read(std::string filename)
 	}
 	else
 	{
-		// TODO : error handling
+		std::cerr << "Warning, could not read the rng file. Will not load any rng state" << std::endl;
 	}
 }
 
@@ -142,7 +142,7 @@ void ggen_rng::write(std::string filename)
 	}
 	else
 	{
-		// TODO : error handling
+		std::cerr << "Warning, could not write the rng file. Will not save any rng state" << std::endl;
 	}
 }
 
