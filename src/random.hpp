@@ -71,7 +71,7 @@
 #define GGEN_RNG_RANMAR		1
 #define GGEN_RNG_MAX		2
 
-
+#define GGEN_RNG_TESTING GGEN_RNG_MAX+1
 #define GGEN_RNG_DEFAULT GGEN_RNG_RANMAR
 
 /******************************************************************************

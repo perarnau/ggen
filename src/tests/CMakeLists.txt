@@ -35,70 +35,36 @@
 # knowledge of the CeCILL license and that you accept its terms.
 
 ###################
-## DEPENDENIES
-###################
-# For boost
-SET(Boost_USE_STATIC_LIBS OFF)
-SET(Boost_USE_MULTITHREAD OFF)
-FIND_PACKAGE(Boost REQUIRED regex program_options graph)
-
-# For GSL
-find_package(GSL)
-
-###################
-## DEFINITIONS
-###################
-
-# remove deprecated warning about hash_set with gcc 4.3
-ADD_DEFINITIONS(-DBOOST_NO_HASH)
-
-# Some flags definitions
-set(CMAKE_CXX_FLAGS_DEBUG	" -g -O2 -DDEBUG ")
-set(CMAKE_C_FLAGS_DEBUG       	" -g -O2 -DDEBUG ")
-set(CMAKE_CXX_FLAGS_RELEASE	"-O2")
-set(CMAKE_C_FLAGS_RELEASE	"-O2")
-
-###################
 ## EXEC VARS
 ###################
 
 # Executables
-set(EXECS_WITH_RANDOM graph_generator property_adder)
-set(EXECS graph_analysis graph_transform property_analysis)
+set(TEST_GENERATION generation_test)
 
-# commom files dependencies
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-	set(COMMON_DEPS dynamic_properties.cpp debug.cpp)
-else(true)
-	set(COMMON_DEPS dynamic_properties.cpp)
-endif(CMAKE_BUILD_TYPE STREQUAL "Debug")
-
+set(TESTS_EXECS ${TEST_GENERATION})
 ###################
 ## EXEC RULES
 ###################
 
 
 # add execs and link
-foreach(it ${EXECS_WITH_RANDOM})
-	add_executable(${it} ${it}.cpp ${COMMON_DEPS} random.cpp)
+foreach(it ${TESTS_EXECS})
+	add_executable(${it} ${it}.cpp ../random.cpp)
 	target_link_libraries(${it} ${Boost_LIBRARIES} ${GSL_LIBRARIES})
-endforeach(it ${EXECS_WITH_RANDOM})
-
-foreach(it ${EXECS})
-	add_executable(${it} ${it}.cpp ${COMMON_DEPS})
-	target_link_libraries(${it} ${Boost_LIBRARIES} ${GSL_LIBRARIES})
-endforeach(it ${EXECS})
+endforeach(it ${TESTS_EXECS})
 
 ###################
 ## INSTALL RULES
 ###################
 
 # install commands
-install(TARGETS ${EXECS_WITH_RANDOM} ${EXECS}
-	RUNTIME DESTINATION bin)
+install(TARGETS ${TESTS_EXECS} 
+	RUNTIME DESTINATION bin/)
 
 ###################
-## TESTING 
+## TESTING RULES
 ###################
 enable_testing()
-add_subdirectory(tests)
+# Tests on generation algorithms
+add_test(generation-1 ${EXECUTABLE_OUTPUT_PATH}/${TEST_GENERATION} 0)
+add_test(generation-2 ${EXECUTABLE_OUTPUT_PATH}/${TEST_GENERATION} 1)
