@@ -50,13 +50,13 @@
 #include <boost/program_options.hpp>
 
 /* This file is the gls random number distribution wrapper for ggen,
- * It is designed to handle the creation, and "normal" utilization of
- * gsl for ggen, according to user defined command line argument.
- */
+* It is designed to handle the creation, and "normal" utilization of
+* gsl for ggen, according to user defined command line argument.
+*/
 
 /******************************************************************************
- * GGEN GSL Random Number Generator,
- * Handle all creation and access to gsl_rng
+* GGEN GSL Random Number Generator,
+* Handle all creation and access to gsl_rng
 ******************************************************************************/
 /* GGEN_RNG_TYPE to gsl_rng_type matrix */
 
@@ -66,26 +66,42 @@ const gsl_rng_type* ggen_rng_table[GGEN_RNG_MAX] =
 	gsl_rng_ranmar
 };
 
-/* Create a random number generator, used to create ggen_rnd */
-ggen_rng::ggen_rng(const unsigned int rng_type, unsigned long int seed)
+ggen_rng::ggen_rng()
 {
-	const gsl_rng_type * T = ggen_rng_table[rng_type];
-	rng = gsl_rng_alloc(T);
-	gsl_rng_set(rng,seed);
+	rng = NULL;
 }
 
-/* Delete the rng */
 ggen_rng::~ggen_rng()
 {
 	gsl_rng_free(rng);
 }
+
+int ggen_rng::allocate(const unsigned int rng_type)
+{
+	if(rng_type < GGEN_RNG_MAX)
+	{
+		const gsl_rng_type * T = ggen_rng_table[rng_type];
+		rng = gsl_rng_alloc(T);
+	}
+	else 
+	{
+		std::cerr << "Wrong ggen_rng type asked!" << std::endl;
+		return -1;
+	}
+}
+
+void ggen_rng::seed(unsigned long int s)
+{
+	gsl_rng_set(rng,s);
+}
+
 
 const gsl_rng* ggen_rng::get_gsl()
 {
 	return rng;
 }
 
-/* this method reads the gsl_rng state from a file */
+
 void ggen_rng::read(std::string filename)
 {
 	FILE *input = NULL;
@@ -97,11 +113,10 @@ void ggen_rng::read(std::string filename)
 	}
 	else
 	{
-		// TODO : error handling
+		std::cerr << "Warning, could not read the rng file. Will not load any rng state" << std::endl;
 	}
 }
 
-/* this method writes the gsl_rng state from a file */
 void ggen_rng::write(std::string filename)
 {
 	FILE *output = NULL;
@@ -113,7 +128,7 @@ void ggen_rng::write(std::string filename)
 	}
 	else
 	{
-		// TODO : error handling
+		std::cerr << "Warning, could not write the rng file. Will not save any rng state" << std::endl;
 	}
 }
 
@@ -127,7 +142,6 @@ void ggen_rng::shuffle(boost::any *base, size_t n, size_t size)
 	gsl_ran_shuffle(rng, base, n, size);
 }
 
-// simple function to do a bernoulli trial : return true with probability p
 bool ggen_rng::bernoulli(double p)
 {
 	if(gsl_ran_bernoulli(rng,p) == 1)
@@ -136,18 +150,65 @@ bool ggen_rng::bernoulli(double p)
 		return false;
 }
 
-// return an integer between 0 and n-1 all with equal probability
 unsigned long int ggen_rng::uniform_int(unsigned long int n)
 {
 	return gsl_rng_uniform_int(rng,n);
 }
 
-/******************************************************************************
- * GGEN GSL Random Number Distribution,
- * Factory pattern
- * Handle all creation and access to gsl_rnd
- ******************************************************************************/
 
+/* GGen RNG Testing code: class used for testing purposes only.
+ * Implements all rng functions in a deterministic way
+ */
+ggen_rng_testing::ggen_rng_testing()
+{
+	rng = NULL;
+	b = true;
+}
+		
+ggen_rng_testing::~ggen_rng_testing()
+{
+	;
+}
+		
+const gsl_rng* ggen_rng_testing::get_gsl()
+{
+	return NULL;
+}
+
+void ggen_rng_testing::read(std::string filename)
+{
+	;
+}
+
+void ggen_rng_testing::write(std::string filename)
+{
+	;
+}
+
+void ggen_rng_testing::choose(boost::any *dest, size_t k, boost::any* src, size_t n,size_t size)
+{
+	// copy the first k elements in dest
+	// if k > n then copy n elements
+	size_t num = k <= n ? k : n;
+	num *= size;
+	memcpy(dest,src,num);
+}
+
+void ggen_rng_testing::shuffle(boost::any *base, size_t n, size_t size)
+{
+	;
+}
+
+bool ggen_rng_testing::bernoulli(double p)
+{
+	b = !b;
+	return !b;
+}
+
+unsigned long int ggen_rng_testing::uniform_int(unsigned long int n)
+{
+	return 0; //TODO: better algorithm
+}
 
 /* Base class
  *************/
@@ -166,21 +227,22 @@ ggen_rnd* ggen_rnd::create_rnd(ggen_rng* rng, const unsigned int ggen_rnd_type, 
 	}
 }
 
-/* this constructor allows centralized memorization of the rng associated with each rnd */
 ggen_rnd::ggen_rnd(ggen_rng* r)
 {
 	rng = r;
 }
 
-/* base class destructor */
+
 ggen_rnd::~ggen_rnd()
 {
 	delete rng;
 }
 
 
-/* Gaussian Distribution 
- ************************/
+
+/*
+*  Gaussian Distribution 
+*/
 
 ggen_rnd_gaussian::ggen_rnd_gaussian(ggen_rng* rng, std::vector<std::string> args) : ggen_rnd(rng)
 {
@@ -196,8 +258,9 @@ double ggen_rnd_gaussian::get()
 }
 
 
-/* Flat (Uniform) Distribution 
- ******************************/
+/*
+*  Flat (Uniform) Distribution
+*/
 
 ggen_rnd_flat::ggen_rnd_flat(ggen_rng* rng, std::vector<std::string> args) : ggen_rnd(rng)
 
@@ -248,7 +311,7 @@ ggen_rng* random_rng_handle_options_atinit(const po::variables_map& vm)
 {
 	uint64_t seed;
 	unsigned int type;
-	ggen_rng* rng;
+	ggen_rng* rng = new ggen_rng();
 
 	if(vm.count("seed"))
 	{
@@ -257,19 +320,18 @@ ggen_rng* random_rng_handle_options_atinit(const po::variables_map& vm)
 	else
 		seed = time(NULL);
 	
-	//TODO may be better to let the constructor validate the type
 	if(vm.count("rng-type"))
 	{
 		type = vm["rng-type"].as<unsigned int>();
-		if(type >= GGEN_RNG_MAX)
-			std::cout << "Error : invalid rng-type option, max is : " << GGEN_RNG_MAX-1 << ".\n";
 	}
 	else
 		type = GGEN_RNG_DEFAULT;
 
-	rng = new ggen_rng(type,seed);
+	rng->allocate(type);
+	rng->seed(seed);
+	
 
-	// this must be the last, as the rnd must have been created
+	// this must be the last, as the rng must have been created
 	if(vm.count("rng-file"))
 	{
 		rng->read(vm["rng-file"].as<std::string>());

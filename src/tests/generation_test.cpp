@@ -1,3 +1,4 @@
+
 /* Copyright Swann Perarnau 2009
 *
 *   contributor(s) :  
@@ -42,40 +43,73 @@
  * INRIA, Grenoble Universities.
  */
 
-#ifndef GGEN_H
-#define GGEN_H
-
-/* We use extensively the BOOST library for 
- * handling output, program options and random generators
+/* This program tests a number of expected properties
+ * of the generation algorithms inplemented
  */
+
 #include <boost/config.hpp>
 
-#include <boost/graph/adjacency_list.hpp>
-#include <boost/graph/graph_traits.hpp>
-#include <boost/graph/properties.hpp>
-#include <boost/dynamic_property_map.hpp>
 
-#include "debug.hpp"
-using namespace boost;
+#include "../ggen.hpp"
+#include "../random.hpp"
+#include "../graph_generator.hpp"
 
-/* This is the definition of the graph struture
- * According to boost that means :
- *	* The graph is an adjacency list
- *	* The vertices are managed as a std::Vector
- *	* The edges are managed as std::set to enforce no parallel edges
- *	* The graph is bidirectional
- *	* We don't have any additional properties on vertices or edges
- */
-typedef adjacency_list < listS, listS, bidirectionalS, dynamic_properties, dynamic_properties > Graph;
 
-/* typedefs for vertex and edge properties manipulations */
-typedef graph_traits<Graph>::vertex_descriptor Vertex;
-typedef graph_traits<Graph>::edge_descriptor Edge;
-typedef graph_traits<Graph>::vertex_iterator Vertex_iter; 
-typedef graph_traits<Graph>::edge_iterator Edge_iter; 
-typedef graph_traits<Graph>::in_edge_iterator In_edge_iter; 
-typedef graph_traits<Graph>::out_edge_iterator Out_edge_iter; 
-typedef graph_traits<Graph>::vertices_size_type vertices_size;
-typedef graph_traits<Graph>::edges_size_type edges_size;
+int main(int argc, char **argv)
+{
+	// Handle command line arguments
+	////////////////////////////////////
+	po::options_description od_general("General Options");
+	od_general.add_options()
+		("test", po::value<std::string>(), "test to execute")
+		("dag", po::value<bool>()->zero_tokens(),"test the dag version")
+	;
 
-#endif
+	// Positional Options
+	///////////////////////////////
+
+	po::positional_options_description pod_methods;
+	pod_methods.add("test", 1);
+
+	// Options parsing
+	///////////////////////////////
+
+	po::variables_map vm_general;
+	po::parsed_options prso_general = po::command_line_parser(argc,argv).options(od_general).positional(pod_methods).run();
+	po::store(prso_general,vm_general);
+	po::notify(vm_general);
+	
+	// Initialisaton, if this fail nothing passes
+	/////////////////////////////////////////////
+	
+	Graph *g = NULL;
+	ggen_rng *r = NULL;
+	Graph_generation_context *cntxt = new Graph_generation_context();
+	
+	// Launching tests
+	//////////////////////////////
+	
+	if (vm_general.count("test")) {
+		std::string to_test = vm_general["test"].as<std::string>();
+		if(to_test == "erdos_gnp")
+		{
+			r = new ggen_rng_testing();
+			cntxt->set_rng(r);
+			bool do_dag;
+			if(vm_general.count("dag"))
+				do_dag = true;
+			else
+				do_dag =false;
+
+			g = Graph_generation::gg_erdos_gnp(*cntxt,10,0.5,do_dag);
+			return g != NULL;
+		}
+		else
+			std::cerr << "Wrong test name" << std::endl;
+	}
+	else {
+		std::cerr << "No test name" << std::endl;
+		return -1;
+	}
+	return 0;
+}

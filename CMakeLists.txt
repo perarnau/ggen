@@ -59,6 +59,15 @@ mark_as_advanced(EXECUTABLE_OUTPUT_PATH LIBRARY_OUTPUT_PATH)
 # real targets
 add_subdirectory(src)
 
+# the doc dir contains rules for doxygen generation
+add_subdirectory(doc)
+
+#######################################
+## TESTING
+#######################################
+
+enable_testing()
+
 #######################################
 ## PACKAGING
 #######################################

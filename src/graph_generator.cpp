@@ -35,13 +35,14 @@
 * The fact that you are presently reading this means that you have had
 * knowledge of the CeCILL license and that you accept its terms.
 */
+
 /* GGen is a random graph generator :
- * it provides means to generate a graph following a
- * collection of methods found in the litterature.
- *
- * This is a research project founded by the MOAIS Team,
- * INRIA, Grenoble Universities.
- */
+* it provides means to generate a graph following a
+* collection of methods found in the litterature.
+*
+* This is a research project founded by the MOAIS Team,
+* INRIA, Grenoble Universities.
+*/
 
 
 #include <iostream>
@@ -51,8 +52,9 @@
 #include <fcntl.h>
 
 /* We use extensively the BOOST library for 
- * handling output, program options and random generators
- */
+* handling output, program options and random generators
+*/
+
 #include <boost/config.hpp>
 #include <boost/program_options.hpp>
 #include <boost/graph/graphviz.hpp>
@@ -60,38 +62,78 @@
 #include "ggen.hpp"
 #include "random.hpp"
 #include "dynamic_properties.hpp"
+#include "graph_generator.hpp"
 
 using namespace boost;
 
-////////////////////////////////////////////////////////////////////////////////
-// Global definitions
-////////////////////////////////////////////////////////////////////////////////
+/******************************************************************************
+ * Graph_generation_context
+ *****************************************************************************/
 
-// a random number generator for all our random stuff, initialized in main
-ggen_rng* global_rng;
-
-////////////////////////////////////////////////////////////////////////////////
-// Generation Methods
-////////////////////////////////////////////////////////////////////////////////
-
-///////////////////////////////////////
-// Erdos-Renyi : G(n,p)
-// One of the simplest way of generating a graph
-// Supports :
-// 	-- dag option
-// 	-- params : number of vertices, probability of an edge
-///////////////////////////////////////
-
-/* Run through the adjacency matrix
- * and at each i,j decide if matrix[i][j] is an edge with a given probability
- */
-void gg_erdos_gnp(Graph& g, int num_vertices, double p, bool do_dag)
+Graph_generation_context::Graph_generation_context()
 {
-	// generate the matrix
-	bool matrix[num_vertices][num_vertices];
-	int i,j;
+	rng = NULL;
+}
+
+Graph_generation_context::~Graph_generation_context()
+{
+	// we don't destroy it because the option parser still need it
+	rng = NULL;
+}
+
+void Graph_generation_context::set_rng(ggen_rng* r)
+{
+	rng = r;
+}
+
+ggen_rng* Graph_generation_context::get_rng()
+{
+	return rng;
+}
+
+
+/******************************************************************************
+ * Graph_generation
+ *****************************************************************************/
+
+		
+/* 
+* A method to convert an adjacency matrix to an object of type Graph.
+*
+* Run through the adjacency matrix
+* and at each i,j decide if matrix[i][j] is an edge or not.
+*/
+Graph* Graph_generation::translate_matrix_to_a_graph( bool **matrix, vertices_size num_vertices)
+{
+	Graph *g = new Graph(num_vertices);
+	std::map < vertices_size, Vertex > vmap;
+	std::pair < Vertex_iter, Vertex_iter > vp;
+	vertices_size i = 0;
+	for(vp = boost::vertices(*g); vp.first != vp.second; vp.first++)
+		vmap[i++] = *vp.first;
+
+	for( i = 0;i < num_vertices; i++)
+		for( vertices_size j = 0; j < num_vertices; j++) 
+			if(matrix[i][j])
+				add_edge(vmap[i],vmap[j],*g);
 	
-	for(i=0; i < num_vertices; i++)
+	return g;
+}
+
+/* Erdos-Renyi : G(n,p)
+*/
+Graph* Graph_generation::gg_erdos_gnp(Graph_generation_context &cntxt, vertices_size num_vertices, double p, bool do_dag)
+{
+	ggen_rng *rng = cntxt.get_rng(); 
+	
+	// generate the matrix
+	bool **matrix = new bool *[num_vertices];
+        
+	for( vertices_size k = 0 ; k < num_vertices ; k++ )
+		matrix[k] = new bool[num_vertices];
+	vertices_size i, j;
+	
+	for(i = 0; i < num_vertices; i++)
 	{
 		for(j = 0; j < num_vertices ; j++)
 		{
@@ -100,7 +142,7 @@ void gg_erdos_gnp(Graph& g, int num_vertices, double p, bool do_dag)
 			if(i < j || !do_dag)
 			{
 				// coin flipping to determine if we add an edge or not
-				matrix[i][j] = global_rng->bernoulli(p);
+				matrix[i][j] = rng->bernoulli(p);
 			}
 			else
 				matrix[i][j] = false;
@@ -108,135 +150,115 @@ void gg_erdos_gnp(Graph& g, int num_vertices, double p, bool do_dag)
 	}
 
 	// translate the matrix to a graph
-	g = Graph(num_vertices);
-	std::map < int, Vertex > vmap;
-	std::pair < Vertex_iter, Vertex_iter > vp;
-	i = 0;
-	for(vp = boost::vertices(g); vp.first != vp.second; vp.first++)
-		vmap[i++] = *vp.first;
-
-	for(i=0;i < num_vertices; i++)
-		for(j=0; j < num_vertices; j++)
-			if(matrix[i][j])
-				add_edge(vmap[i],vmap[j],g);
-
+	return translate_matrix_to_a_graph( (bool **) matrix, num_vertices);
 }
 
-///////////////////////////////////////
-// Layer-by-Layer Method
-// Using coin flipping to connect the layers
-// Supports :
-// 	-- dag option
-// 	-- params : number of vertices, probability of an edge,number of layers
-///////////////////////////////////////
 
-/* Run through the adjacency matrix
- * and at each i,j decide if matrix[i][j] is an edge with a given probability and no edge is formed beteen the two vertices lying in the same layer
- */
-void gg_layer_by_layer(Graph& g, int num_vertices, double p, bool do_dag,std::vector<int> layer_num_vertex)
+
+/* Layer-by-Layer Method: 
+* Using coin flipping to connect the layers
+* Erdos method for connecting vertices
+*/
+Graph* 	Graph_generation::gg_layer_by_layer(Graph_generation_context &cntxt, vertices_size num_vertices, double p, bool do_dag,std::vector<int> layer_num_vertex)
 {
-	// generate the matrix
-	bool matrix[num_vertices][num_vertices];
-	int i,j;
+ 	ggen_rng* rng = cntxt.get_rng();
+	//generate the matrix
+	bool **matrix = new bool *[num_vertices];
+        for( vertices_size k = 0 ; k < num_vertices ; k++ )
+		matrix[k] = new bool[num_vertices];
+        
+	vertices_size i, j;
 	
-	for(i=0; i < num_vertices; i++)
+	for(i = 0; i < num_vertices; i++)
 	{
 		for(j = 0; j < num_vertices ; j++)
-		{
-			// this test activates if do_dag is false and the vertices i,j are not in the same layer
-			// or if do_dag is true and the edge(i,j) points downwards.
+		{	
+			/*this test activates if do_dag is false and the vertices i,j are not in the same layer
+			 or if do_dag is true and the edge(i,j) povertices_sizes downwards.*/
 			if((!do_dag&& layer_num_vertex[i]!=layer_num_vertex[j])||(do_dag&&layer_num_vertex[i]<layer_num_vertex[j]))
 			{
-				// coin flipping to determine if we add an edge or not
-				matrix[i][j] = global_rng->bernoulli(p);
+				//coin flipping to determine if we add an edge or not
+				matrix[i][j] = rng->bernoulli(p);
 			}
 			else
 				matrix[i][j] = false;
 		}
 	}
-
-	// translate the matrix to a graph
-	g = Graph(num_vertices);
-	std::map < int, Vertex > vmap;
-	std::pair < Vertex_iter, Vertex_iter > vp;
-	i = 0;
-	for(vp = boost::vertices(g); vp.first != vp.second; vp.first++)
-		vmap[i++] = *vp.first;
-
-
-	for(i=0;i < num_vertices; i++)
-		for(j=0; j < num_vertices; j++)
-			if(matrix[i][j])
-				add_edge(vmap[i],vmap[j],g);
-
+	
+	 //translate the matrix to a graph
+	return translate_matrix_to_a_graph( (bool **)matrix, num_vertices);
 }
 
-//To generate a vector containing layer no. of each vertex of the graph
-std::vector<int> layer_allocation(unsigned long int num_layers,int num_vertices){
+/* Returns an array containing layer indices for all the vertices. This array is required for the random graph generation method "Layer-by-Layer".
+* A random number between 1 and 'num_layers' is generated and is assigned to each vertex.
+*/
+std::vector <int> Graph_generation::layer_allocation(Graph_generation_context &cntxt,unsigned long int num_layers,vertices_size num_vertices)
+{
               
-	      
+	ggen_rng* rng = cntxt.get_rng(); 
 	std::vector<int>layer_num_vertex;
-	dbg(trace,"no.of layers is= %lu\n",num_layers);
+	dbg(trace, "no.of layers is = %lu\n",num_layers);
                
    
-	for(int i=0;i<num_vertices;i++)                                   
-	{
-		int layer_index = global_rng->uniform_int(num_layers); //Generating a random layer no.
-		layer_num_vertex.push_back(layer_index);                     //storing the layer no. just generated into a vector
+	for(vertices_size i = 0;i < num_vertices; i++)                                   
+	{	
+		// Generating a random layer no.
+		int layer_index = rng->uniform_int(num_layers); 
+		 
+		//storing the layer no. just generated into a vector
+		layer_num_vertex.push_back(layer_index);                    
 	}
                       
            
 	dbg(trace,"vertex no..............layer_number\n");
-	for(int i=0;i<num_vertices;i++)
-	{
-		dbg(trace,"%d\t\t%d\n",i,layer_num_vertex[i]);   //printing the layer numbers for all the vertices
+	for(vertices_size i = 0;i < num_vertices; i++)
+	{	 
+		//printing the layer numbers for all the vertices
+		dbg(trace,"%d\t\t%d\n",i,layer_num_vertex[i]);   
 	}
 
 	return layer_num_vertex;           
 }
 
-// Task Graphs for free: tgff
-// 	-- params : a lower bound on the number of vertices,maximum out_degree limit and maximum in_degree limit
-///////////////////////////////////////
-
-/* The Task Graphs for Free method carries out graph generation by iteratively incorporating the two steps i.e fan-out and fan-in
-both these steps occur with the equal probability=0.5 */
-
-void gg_tgff(Graph& g,int lower_bound,int max_od,int max_id)
+/* Task Graphs for free: 
+*/
+Graph* Graph_generation::gg_tgff(Graph_generation_context &cntxt,int lower_bound,int max_od,int max_id)
 {
 
-        //Addition of Starting node i.e. 0th node
-	Vertex temp1 = add_vertex(g);  
+        ggen_rng *rng = cntxt.get_rng();
+	Graph *g = new Graph();
+	//Addition of Starting node i.e. 0th node
+	Vertex temp1 = add_vertex(*g);  
 
-	while(boost::num_vertices(g) < lower_bound) {
-        	if(global_rng->bernoulli(.5))     //Fan-out Step
+	while(boost::num_vertices(*g) < lower_bound) {
+        	if(rng->bernoulli(.5))     //Fan-out Step
 		{            
 			std::pair<Vertex_iter, Vertex_iter> vp;
 			std::map <Vertex,int >available_od; 
 			int max = -1;  
 			/*Calculation of available out degree for each vertex and storing them in the map
 			"available_od" and calculation of maximum available out_degree */
-			for (vp = boost::vertices(g); vp.first != vp.second; ++vp.first)
-			{	int available_out_degree = max_od - out_degree(*vp.first,g);
+			for (vp = boost::vertices(*g); vp.first != vp.second; ++vp.first)
+			{	int available_out_degree = max_od - out_degree(*vp.first,*g);
 				available_od[*vp.first] = available_out_degree;
 				if(available_out_degree >= max)
 				max = available_out_degree;
 			}
                                                                                                                  
 			std::vector<Vertex>available_vertices;
-			int i=0;
+			int i = 0;
 			/*Collecting all the vertices with the  
 			maximum available out_degree into the vector "available_vertices"*/
-			for (vp = boost::vertices(g); vp.first != vp.second; ++vp.first)
+			for (vp = boost::vertices(*g); vp.first != vp.second; ++vp.first)
 				if(available_od[*vp.first] == max)
 					available_vertices.push_back(*vp.first);
 
 			/*Choosing  randomly a vertex from the available_map*/                
-			int random_vertex_index = global_rng->uniform_int(available_vertices.size());
+			int random_vertex_index = rng->uniform_int(available_vertices.size());
 			Vertex temp = available_vertices[random_vertex_index];
  
 			/*Deciding randomly the no. of out_nodes between 1 & max*/
-			int out_nodes = global_rng->uniform_int(max) + 1; 
+			int out_nodes = rng->uniform_int(max) + 1; 
 
 			/*Introducing new nodes and edges between temp node and new introduced nodes*/
 			std::vector< Vertex > new_vertex(out_nodes);
@@ -244,11 +266,10 @@ void gg_tgff(Graph& g,int lower_bound,int max_od,int max_id)
 			bool inserted;
 				for (int i = 0; i < out_nodes; i++)
 				{		
-					new_vertex[i] = add_vertex(g);
-					tie(new_edge[i], inserted) = add_edge(temp, new_vertex[i], g);
+					new_vertex[i] = add_vertex(*g);
+					tie(new_edge[i], inserted) = add_edge(temp, new_vertex[i], *g);
 					if(inserted==false)
 					std::cout<<"Error in edge insertion"<<'\n';
-                                                
 				}
           
                                                        
@@ -262,16 +283,16 @@ void gg_tgff(Graph& g,int lower_bound,int max_od,int max_id)
 			std::vector< Vertex > available_vertices;
 			/*Collecting all the vertices with available out_degree greater than 
 			 zero into the vector "available_vertices" */                   
-			for (vp = boost::vertices(g); vp.first != vp.second; ++vp.first)
-			{	available_od[*vp.first] = max_od - out_degree(*vp.first,g);
+			for (vp = boost::vertices(*g); vp.first != vp.second; ++vp.first)
+			{	available_od[*vp.first] = max_od - out_degree(*vp.first,*g);
 				if(available_od[*vp.first]>0) available_vertices.push_back(*vp.first);
 			}
                                      
                                     
-			Vertex temp = add_vertex(g);
+			Vertex temp = add_vertex(*g);
 			int cardinality = available_vertices.size();
 			if(cardinality > max_id) cardinality = max_id;
-			int num_out_nodes = global_rng->uniform_int(cardinality)+1; 
+			int num_out_nodes = rng->uniform_int(cardinality)+1; 
                                    
                         
 			/*Randomly picking up exactly "num_out_nodes" no. of vertices from the vector "available_vertices"*/
@@ -281,90 +302,132 @@ void gg_tgff(Graph& g,int lower_bound,int max_od,int max_id)
 			std::vector< Vertex >::iterator ptr;
 			for (ptr = available_vertices.begin();ptr != available_vertices.end(); ++ptr)
 				src[i++] = boost::any_cast<Vertex>(*ptr);
-			global_rng->choose(dest,num_out_nodes,src,available_vertices.size(),sizeof(boost::any));
+			rng->choose(dest,num_out_nodes,src,available_vertices.size(),sizeof(boost::any));
  
 			std::vector < Edge > new_edge(num_out_nodes);
 			bool inserted;
 			for(int i=0;i<num_out_nodes;i++)
 			{
-				tie(new_edge[i],inserted)=add_edge(boost::any_cast<Vertex>(dest[i]),temp,g);
+				tie(new_edge[i],inserted)=add_edge(boost::any_cast<Vertex>(dest[i]),temp,*g);
 				if(inserted==false)
 				std::cout<<"Error in edge insertion"<<'\n';
 			}
 		}	 
 	}            
-
+	
+	return g;
 }
      
-///////////////////////////////////////
-// Erdos-Renyi : G(n,M)
-// One of the simplest way of generating a graph
-// Supports :
-// 	-- dag option
-// 	-- params : number of vertices,number of edges
-///////////////////////////////////////
-
-/* Run through the adjacency matrix
- * and at each i,j decide if matrix[i][j] is an edge with a given probability
- */
-void gg_erdos_gnm(Graph& g, int num_vertices, int num_edges, bool do_dag) {
-        bool matrix[num_vertices][num_vertices];
-        int i,j;
-        for(i=0;i < num_vertices; i++)
-		for(j=0; j < num_vertices; j++)
-			matrix[i][j] =0;
+/* Erdos-Renyi : G(n,M)
+*  
+*/
+Graph* Graph_generation::gg_erdos_gnm(Graph_generation_context &cntxt, vertices_size num_vertices, edges_size num_edges, bool do_dag) 
+{
+	ggen_rng* rng = cntxt.get_rng();
+	bool **matrix = new bool *[num_vertices];
+        
+	for( vertices_size k = 0 ; k < num_vertices ; k++ )
+		matrix[k] = new bool[num_vertices];
+	vertices_size i, j;
+        for(i = 0;i < num_vertices; i++)
+		for(j = 0; j < num_vertices; j++)
+			matrix[i][j] = 0;
         
         
         
-	int added_edges = 0;
-	while(added_edges <num_edges) {
-        	i = global_rng->uniform_int(num_vertices);
-		j = global_rng->uniform_int(num_vertices);
+	edges_size added_edges = 0;
+	while(added_edges < num_edges) {
+        	i = rng->uniform_int(num_vertices);
+		j = rng->uniform_int(num_vertices);
 		bool inserted;
  
                 if((!do_dag && i != j && matrix[i][j] == 0) ||(do_dag && i < j && matrix[i][j] == 0)) 
                 {
-			matrix[i][j]= 1;
+			matrix[i][j] = 1;
 			added_edges++;        
                 }
                 
         }
        
                  
-       // translate the matrix to a graph
-	g = Graph(num_vertices);
-	std::map < int, Vertex > vmap;
-	std::pair < Vertex_iter, Vertex_iter > vp;
-	i = 0;
-	for(vp = boost::vertices(g); vp.first != vp.second; vp.first++)
-		vmap[i++] = *vp.first;
-
-
-	for(i = 0; i < num_vertices; i++)
-		for(j = 0; j < num_vertices; j++)
-			if(matrix[i][j])
-				add_edge(vmap[i], vmap[j], g);
-                
+	// translate the matrix to a graph
+	return translate_matrix_to_a_graph( (bool **)matrix, num_vertices );
 }
-                 
-                                  
-                             
+
+/* Random Orders Method :
+*/
+Graph*  Graph_generation::gg_random_orders_method(Graph_generation_context &cntxt, int num_vertices, int num_pos)
+{
+	ggen_rng *rng = cntxt.get_rng();
+	int i, j;
+	int k;
+	bool **matrix = new bool *[num_vertices];
+        
+	for( i = 0 ; i < num_vertices ; i++ )
+		matrix[i] = new bool[num_vertices];
+	int test_edge[num_vertices][num_vertices];
+	
+
+	//Nullifying the arrays "matrix" and "test_edge"
+	for( i = 0; i < num_vertices; i++)
+		for( j = 0; j < num_vertices; j++)
+		{	test_edge[i][j] = 0;
+			matrix[i][j] = 0;
+		}
+	//Making an array named "poset" to hold the permutations of the vertices
+	boost::any **poset = new boost::any*[num_pos];
+        
+	for( k = 0 ; k < num_pos ; k++ )
+		poset[k] = new boost::any[num_vertices];
+
+ 
+	for( k = 0; k < num_pos; k++)
+		for( j = 0; j < num_vertices; j++)
+			poset[k][j] = j;
+
+	//Shuffling all the rows of the array "poset"
+	for( k = 0; k < num_pos; k++)
+		rng-> shuffle (poset[k], num_vertices, sizeof (boost::any));
+
+	//Making the array "index" to hold the indices of the vertices for every permutation
+	int index[num_pos][num_vertices];
+
+	for( k = 0; k < num_pos; k++)
+		for( j = 0; j < num_vertices; j++)
+			index[k][boost::any_cast<int>(poset[k][j])] = j;
+	
+	for( i = 0; i < num_vertices; i++)
+		for( j = 0; j < num_vertices; j++)
+			for( k = 0; k < num_pos; k++)
+				if( index[k][i] < index[k][j])	
+					test_edge[i][j]++;
+	//if index of the vertex 'i' is less than index of vertex 'j' in every permutation, edge is introduced between (i,j)
+	for( i = 0; i < num_vertices; i++)
+		for( j = 0; j < num_vertices; j++)
+			if( test_edge[i][j] == num_pos) matrix[i][j] = 1;
+
+	// translate the matrix to a graph
+	return translate_matrix_to_a_graph((bool **)matrix, num_vertices);	
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // MAIN
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace po = boost::program_options;
 dynamic_properties properties(&create_property_map);
-Graph *g;
 
-/* Main program
- */
+/** 
+* Main program
+*
+*/
 int main(int argc, char** argv)
 {
 	// Init the structures
 	////////////////////////////
 
-	g = new Graph();
+	Graph *g = NULL;
+	Graph_generation_context *cntxt = new Graph_generation_context();
 	
 	// Handle command line arguments
 	////////////////////////////////////
@@ -409,10 +472,11 @@ int main(int argc, char** argv)
 		std::cout << od_ro << std::endl;
 		
 		std::cout << "Methods Available:" << std::endl;
-		std::cout << "erdos_gnp\t\tThe classical adjacency matrix method" << std::endl << std::endl;
-                std::cout << "layer_by_layer\t\tThe classical adjacency matrix method clubbed with coin flipping to connect the layers" << std::endl;
-                std::cout<<  "tgff\t\t\tThe Task Graphs for Free method"<< std::endl << std::endl;
-		std::cout << "erdos_gnm\t\t" << std::endl << std::endl;
+		std::cout << "erdos_gnp\t\tThe classical adjacency matrix method" << std::endl;
+                std::cout << "layer_by_layer\t\tCoin flipping to connect the layers" << std::endl;
+                std::cout << "tgff\t\t\tThe Task Graphs for Free method"<< std::endl;
+		std::cout << "erdos_gnm\t\t" << std::endl;
+		std::cout << "rom\t\t\tRandom Orders Method" << std::endl;
 	return 1;
 	}
 	
@@ -427,8 +491,8 @@ int main(int argc, char** argv)
 	}
 
 	// Random number generator, options handling
-	global_rng = random_rng_handle_options_atinit(vm_general);
-
+	ggen_rng *rng = random_rng_handle_options_atinit(vm_general);
+	cntxt->set_rng(rng);
 
 
 	// Graph methods handling
@@ -458,11 +522,11 @@ int main(int argc, char** argv)
 		{
 			bool do_dag;
 			double prob;
-			int nb_vertices;
+			vertices_size nb_vertices;
 			// define the options specific to this method
 			od_method.add_options()
 				("dag",po::bool_switch(&do_dag)->default_value(false),"Generate a DAG instead of a classical graph")
-				("nb-vertices,n",po::value<int>(&nb_vertices)->default_value(10),"Set the number of vertices in the generated graph")
+				("nb-vertices,n",po::value<vertices_size>(&nb_vertices)->default_value(10),"Set the number of vertices in the generated graph")
 				("probability,p",po::value<double>(&prob)->default_value(0.5),"The probability to get each edge");
                                
 			// define method arguments as positional
@@ -475,18 +539,18 @@ int main(int argc, char** argv)
 			po::store(po::command_line_parser(to_parse).options(od_method).positional(pod_method_args).run(),vm_method);
 			po::notify(vm_method);
 			
-			gg_erdos_gnp(*g,nb_vertices,prob,do_dag);
+			g = Graph_generation::gg_erdos_gnp(*cntxt,nb_vertices,prob,do_dag);
 		}
                 else if(method_name == "layer_by_layer")
 		{
 			bool do_dag;
 			double prob;
-			int nb_vertices;
+			vertices_size nb_vertices;
                         int nb_layers;
 			// define the options specific to this method
 			od_method.add_options()
 				("dag",po::bool_switch(&do_dag)->default_value(false),"Generate a DAG instead of a classical graph")
-				("nb-vertices,n",po::value<int>(&nb_vertices)->default_value(10),"Set the number of vertices in the generated graph")
+				("nb-vertices,n",po::value<vertices_size>(&nb_vertices)->default_value(10),"Set the no. of vertices in the generated graph")
                                 ("probability,p",po::value<double>(&prob)->default_value(0.5),"The probability to get each edge")
                                 ("nb-layers,l",po::value<int>(&nb_layers)->default_value(5),"Set the number of layers in the graph");		
 			// define method arguments as positional
@@ -499,8 +563,8 @@ int main(int argc, char** argv)
 			po::store(po::command_line_parser(to_parse).options(od_method).positional(pod_method_args).run(),vm_method);
 			po::notify(vm_method);
                         
-			std::vector<int>layer_num_vertex=layer_allocation(nb_layers,nb_vertices);
-			gg_layer_by_layer(*g,nb_vertices,prob,do_dag,layer_num_vertex);
+			std::vector<int>layer_num_vertex = Graph_generation::layer_allocation(*cntxt,nb_layers,nb_vertices);
+			g = Graph_generation::gg_layer_by_layer(*cntxt,nb_vertices,prob,do_dag,layer_num_vertex);
 		}
 		else if(method_name == "tgff")
 		{
@@ -525,18 +589,18 @@ int main(int argc, char** argv)
 			po::store(po::command_line_parser(to_parse).options(od_method).positional(pod_method_args).run(),vm_method);
 			po::notify(vm_method);
                         
-			gg_tgff(*g,lower_bound,max_od,max_id);
+			g = Graph_generation::gg_tgff(*cntxt,lower_bound,max_od,max_id);
 		}
 		else if(method_name == "erdos_gnm")
 		{
 			bool do_dag;
-			int nb_vertices;
-			int nb_edges;
+			vertices_size nb_vertices;
+			edges_size nb_edges;
 			// define the options specific to this method
 			od_method.add_options()
 				("dag",po::bool_switch(&do_dag)->default_value(false),"Generate a DAG instead of a classical graph")
-				("nb-vertices,n",po::value<int>(&nb_vertices)->default_value(10),"Set the number of vertices in the generated graph")
-				("nb-edges,n",po::value<int>(&nb_edges)->default_value(10),"Set the number of edges in the generated graph");
+				("nb-vertices,n",po::value<vertices_size>(&nb_vertices)->default_value(10),"Set the no. of vertices in the generated graph")
+				("nb-edges,n",po::value<edges_size>(&nb_edges)->default_value(10),"Set the number of edges in the generated graph");
 			// define method arguments as positional
 			po::positional_options_description pod_method_args;
 			
@@ -547,9 +611,27 @@ int main(int argc, char** argv)
 			po::store(po::command_line_parser(to_parse).options(od_method).positional(pod_method_args).run(),vm_method);
 			po::notify(vm_method);
 			
-			gg_erdos_gnm(*g,nb_vertices,nb_edges,do_dag);
+			g = Graph_generation::gg_erdos_gnm(*cntxt,nb_vertices,nb_edges,do_dag);
 		}
-
+		else if(method_name == "rom")
+		{
+			int nb_vertices;
+			int nb_pos;
+			// define the options specific to this method
+			od_method.add_options()
+				("nb-vertices,n",po::value<int>(&nb_vertices)->default_value(10),"Set the no. of vertices in the generated graph")
+				("nb-pos,l",po::value<int>(&nb_pos)->default_value(5),"Set the number of posets in the graph");
+			// define method arguments as positional
+			po::positional_options_description pod_method_args;
+			pod_method_args.add("nb-vertices",1);
+			pod_method_args.add("nb-pos",1);
+			
+			// do the parsing
+			po::store(po::command_line_parser(to_parse).options(od_method).positional(pod_method_args).run(),vm_method);
+			po::notify(vm_method);
+                        
+			g = Graph_generation::gg_random_orders_method(*cntxt,nb_vertices,nb_pos);
+		}
 		else
 		{
 			std::cerr << "Error : you must provide a VALID method name!" << std::endl;
@@ -578,8 +660,8 @@ int main(int argc, char** argv)
 	////////////////////////////////////	
 	write_graphviz(std::cout, *g,properties);
 
-	random_rng_handle_options_atexit(vm_general,global_rng);
-	
+	random_rng_handle_options_atexit(vm_general,rng);
+	delete cntxt;
 	delete g;
 	return 0;
 }

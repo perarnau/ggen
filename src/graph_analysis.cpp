@@ -75,6 +75,10 @@ dynamic_properties properties(&create_property_map);
 // Analysis Function
 ////////////////////////////////////////////////////////////////////////////////
 
+/** minimum_spanning_tree(g)
+*
+* @param g : an object of type Graph to save the generated graph and it should be empty when initialized
+*/
 void minimum_spanning_tree(const Graph& g)
 {
 	Vertex source = *vertices(g).first;
@@ -138,7 +142,13 @@ void minimum_spanning_tree(const Graph& g)
 	write_graphviz(std::cout,mst,p);
 }
 
-// just output the out_degree of each node
+
+/** out_degree(g)
+*
+* @param g : an object of type Graph to save the generated graph and it should be empty when initialized
+*
+* It just outputs the out_degree of each node
+*/
 void out_degree(const Graph& g)
 {
 	std::cout << "Vertex\tOut_degree" << std::endl;
@@ -149,8 +159,12 @@ void out_degree(const Graph& g)
 	}
 }
 
-
-// just output the in_degree of each node
+/** in_degree(g)
+*
+* @param g : an object of type Graph to save the generated graph and it should be empty when initialized
+*
+* It just outputs the in_degree of each node
+*/
 void in_degree(const Graph& g)
 {
 	std::cout << "Vertex\tIn_degree" << std::endl;
@@ -161,10 +175,18 @@ void in_degree(const Graph& g)
 	}
 }
 
-// this metric doesn't have a nice name for now
-// the idea is to compute, for each i the number of nodes at a maximum distance (longest path) i of the source
-// that is a kind of "number of nodes per layer"
-// THIS MIGHT NOT WORK PROPERLY WITH NOT FULLY CONNECTED GRAPHS !!
+/** nodes_per_layer(g)
+*
+* @param g : an object of type Graph to save the generated graph and it should be empty when initialized
+*
+* this metric doesn't have a nice name for now
+*
+* the idea is to compute, for each i the number of nodes at a maximum distance (longest path) i of the source
+*
+* that is a kind of "number of nodes per layer"
+*
+* THIS MIGHT NOT WORK PROPERLY WITH NOT FULLY CONNECTED GRAPHS !!
+*/
 void nodes_per_layer(const Graph& g)
 {
 	std::set< Vertex> src;
@@ -225,8 +247,13 @@ void nodes_per_layer(const Graph& g)
 		next.clear();
 	}
 }
-
-// computes the longuest path present in the graph, this without weights on nodes nor edges
+/** longest_path(g)
+*
+* @param g : an object of type Graph to save the generated graph and it should be empty when initialized
+*
+* computes the longuest path present in the graph, this without weights on nodes nor edges
+*/
+ 
 void longest_path(const Graph& g)
 {
 	// Index map
@@ -282,7 +309,16 @@ void longest_path(const Graph& g)
 	}
 }
 
-// recursive function for the max_independent_set
+/** max_i_s_rec(g, *max, current, allowed)
+*
+* @param g : an object of type Graph to save the generated graph and it should be empty when initialized
+* @param *max :
+* @param current :
+* @param allowed : 
+*
+* recursive function for the max_independent_set
+*/
+
 void max_i_s_rec(const Graph& g,std::set<Vertex> *max,std::set<Vertex> current,std::set<Vertex> allowed)
 {
 	// optimization, if there is not enough available nodes for current
@@ -336,8 +372,14 @@ void max_i_s_rec(const Graph& g,std::set<Vertex> *max,std::set<Vertex> current,s
 	}
 }
 
-// stupid "powerset" algorithm to computes the maximum independent set of the graph
-// recursively compute all possible independent sets and find the maximum one
+/** max_independent_set(g)
+*
+* @param g : an object of type Graph to save the generated graph and it should be empty when initialized
+*
+* stupid "powerset" algorithm to computes the maximum independent set of the graph
+* recursively compute all possible independent sets and find the maximum one
+*/
+
 void max_independent_set(const Graph& g)
 {
 	// the list of sets
@@ -358,7 +400,13 @@ void max_independent_set(const Graph& g)
 	}
 }
 
-// computes the list of all connected components. We consider the graph undirected...
+/** strong_components(g)
+*
+* @param g : an object of type Graph to save the generated graph and it should be empty when initialized
+*
+* computes the list of all connected components. We consider the graph undirected...
+*/
+
 void strong_components(const Graph& g)
 {
 	// create the component map
