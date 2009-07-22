@@ -82,19 +82,16 @@ int main(int argc, char **argv)
 	/////////////////////////////////////////////
 	
 	Graph *g = NULL;
-	ggen_rng *r = new ggen_rng();
+	ggen_rng *r = NULL;
 	
-	r->allocate(GGEN_RNG_TESTING);
-	
-	
-
 	// Launching tests
 	//////////////////////////////
-	if (vm_general.count("erdos")) {
-		;
+	
+	if (vm_general.count("test")) {
+			
 	}
 	else {
-		std::cerr << "Wrong test name" << std::endl;
+		std::cerr << "No test name" << std::endl;
 		return -1;
 	}
 	return 0;
