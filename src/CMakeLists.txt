@@ -101,4 +101,19 @@ install(TARGETS ${EXECS_WITH_RANDOM} ${EXECS}
 ## TESTING 
 ###################
 enable_testing()
-add_subdirectory(tests)
+#add_subdirectory(tests)
+
+# test graph_generator
+# for now we only test that a set of standard parameters work
+add_test(generation-gnp ${EXECUTABLE_OUTPUT_PATH}/graph_generator erdos_gnp 100 0.5)
+add_test(generation-gnp-dag ${EXECUTABLE_OUTPUT_PATH}/graph_generator --dag erdos_gnp 100 0.5)
+
+add_test(generation-gnm ${EXECUTABLE_OUTPUT_PATH}/graph_generator erdos_gnm 100 20)
+add_test(generation-gnm-dag ${EXECUTABLE_OUTPUT_PATH}/graph_generator --dag erdos_gnm 100 20)
+
+add_test(generation-layer ${EXECUTABLE_OUTPUT_PATH}/graph_generator layer_by_layer 100 0.5 10)
+add_test(generation-layer-dag ${EXECUTABLE_OUTPUT_PATH}/graph_generator --dag layer_by_layer 100 0.5 10)
+
+add_test(generation-tgff ${EXECUTABLE_OUTPUT_PATH}/graph_generator tgff 100 5 5)
+
+add_test(generation-rom ${EXECUTABLE_OUTPUT_PATH}/graph_generator rom 100 3)
