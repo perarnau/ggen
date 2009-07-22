@@ -85,20 +85,28 @@
  */
 class ggen_rng {
 	public:
-		/** Creates a ggen_rng
-		 * @param rng_type : the wanted type of rng
-		 * @param seed : the wanted seed
+		/** Creates an empty ggen_rng
 		 */
-		ggen_rng(const unsigned int rng_type, unsigned long int seed);
+		ggen_rng();
 		
 		/** Destroys the rng
 		 * Also destroy the GSL rng
 		 */
 		~ggen_rng();
-		
+	
+		/** Allocates the gsl backend in function of the type asked
+		 * @param rng_type : a GGEN_RNG_TYPE between 0 and GGEN_RNG_MAX
+		 */
+		void allocate(const unsigned int rng_type);
+
+		/** Sets the rng seed
+		 * @param s : the seed to use
+		 */
+		void seed(unsigned long int s);
+
 		/** Retreives the backend rng
-		 * We actually use GSL for random number generation and this allows the inspection of
-		 * the backend
+		 * We actually use GSL for random number generation and this 
+		 * allows the inspection of the backend
 		 * @return the GSL random number generator
 		 */
 		const gsl_rng* get_gsl();

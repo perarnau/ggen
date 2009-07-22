@@ -66,17 +66,28 @@ const gsl_rng_type* ggen_rng_table[GGEN_RNG_MAX] =
 	gsl_rng_ranmar
 };
 
-ggen_rng::ggen_rng(const unsigned int rng_type, unsigned long int seed)
+ggen_rng::ggen_rng()
 {
-	const gsl_rng_type * T = ggen_rng_table[rng_type];
-	rng = gsl_rng_alloc(T);
-	gsl_rng_set(rng,seed);
+	rng = NULL;
 }
-
 
 ggen_rng::~ggen_rng()
 {
 	gsl_rng_free(rng);
+}
+
+void ggen_rng::allocate(const unsigned int rng_type)
+{
+	if(rng_type < GGEN_RNG_MAX)
+	{
+		const gsl_rng_type * T = ggen_rng_table[rng_type];
+		rng = gsl_rng_alloc(T);
+	}
+}
+
+void ggen_rng::seed(unsigned long int s)
+{
+	gsl_rng_set(rng,s);
 }
 
 
@@ -241,7 +252,7 @@ ggen_rng* random_rng_handle_options_atinit(const po::variables_map& vm)
 {
 	uint64_t seed;
 	unsigned int type;
-	ggen_rng* rng;
+	ggen_rng* rng = new ggen_rng();
 
 	if(vm.count("seed"))
 	{
@@ -250,19 +261,18 @@ ggen_rng* random_rng_handle_options_atinit(const po::variables_map& vm)
 	else
 		seed = time(NULL);
 	
-	//TODO may be better to let the constructor validate the type
 	if(vm.count("rng-type"))
 	{
 		type = vm["rng-type"].as<unsigned int>();
-		if(type >= GGEN_RNG_MAX)
-			std::cout << "Error : invalid rng-type option, max is : " << GGEN_RNG_MAX-1 << ".\n";
 	}
 	else
 		type = GGEN_RNG_DEFAULT;
 
-	rng = new ggen_rng(type,seed);
+	rng->allocate(type);
+	rng->seed(seed);
+	
 
-	// this must be the last, as the rnd must have been created
+	// this must be the last, as the rng must have been created
 	if(vm.count("rng-file"))
 	{
 		rng->read(vm["rng-file"].as<std::string>());
