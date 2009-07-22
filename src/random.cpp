@@ -159,7 +159,7 @@ unsigned long int ggen_rng::uniform_int(unsigned long int n)
 /* GGen RNG Testing code: class used for testing purposes only.
  * Implements all rng functions in a deterministic way
  */
-ggen_rng_testing::ggen_rng_testing(const unsigned int rng_type, unsigned long int seed)
+ggen_rng_testing::ggen_rng_testing()
 {
 	rng = NULL;
 	b = true;

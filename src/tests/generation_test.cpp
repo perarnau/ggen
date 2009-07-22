@@ -62,6 +62,7 @@ int main(int argc, char **argv)
 	po::options_description od_general("General Options");
 	od_general.add_options()
 		("test", po::value<std::string>(), "test to execute")
+		("dag", po::value<bool>()->zero_tokens(),"test the dag version")
 	;
 
 	// Positional Options
@@ -83,12 +84,28 @@ int main(int argc, char **argv)
 	
 	Graph *g = NULL;
 	ggen_rng *r = NULL;
+	Graph_generation_context *cntxt = new Graph_generation_context();
 	
 	// Launching tests
 	//////////////////////////////
 	
 	if (vm_general.count("test")) {
-			
+		std::string to_test = vm_general["test"].as<std::string>();
+		if(to_test == "erdos_gnp")
+		{
+			r = new ggen_rng_testing();
+			cntxt->set_rng(r);
+			bool do_dag;
+			if(vm_general.count("dag"))
+				do_dag = true;
+			else
+				do_dag =false;
+
+			g = Graph_generation::gg_erdos_gnp(*cntxt,10,0.5,do_dag);
+			return g != NULL;
+		}
+		else
+			std::cerr << "Wrong test name" << std::endl;
 	}
 	else {
 		std::cerr << "No test name" << std::endl;

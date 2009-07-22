@@ -161,10 +161,8 @@ class ggen_rng {
 class ggen_rng_testing : public ggen_rng {
 		public:
 		/** Creates a ggen_rng_testing
-		 * @param rng_type : the wanted type of rng
-		 * @param seed : the wanted seed
 		 */
-		ggen_rng_testing(const unsigned int rng_type, unsigned long int seed);
+		ggen_rng_testing();
 		
 		/** Destroys the rng
 		 * Also destroy the GSL rng
