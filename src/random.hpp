@@ -97,7 +97,7 @@ class ggen_rng {
 		/** Allocates the gsl backend in function of the type asked
 		 * @param rng_type : a GGEN_RNG_TYPE between 0 and GGEN_RNG_MAX
 		 */
-		void allocate(const unsigned int rng_type);
+		int allocate(const unsigned int rng_type);
 
 		/** Sets the rng seed
 		 * @param s : the seed to use

@@ -76,12 +76,17 @@ ggen_rng::~ggen_rng()
 	gsl_rng_free(rng);
 }
 
-void ggen_rng::allocate(const unsigned int rng_type)
+int ggen_rng::allocate(const unsigned int rng_type)
 {
 	if(rng_type < GGEN_RNG_MAX)
 	{
 		const gsl_rng_type * T = ggen_rng_table[rng_type];
 		rng = gsl_rng_alloc(T);
+	}
+	else 
+	{
+		std::cerr << "Wrong ggen_rng type asked!" << std::endl;
+		return -1;
 	}
 }
 
