@@ -151,6 +151,60 @@ unsigned long int ggen_rng::uniform_int(unsigned long int n)
 }
 
 
+/* GGen RNG Testing code: class used for testing purposes only.
+ * Implements all rng functions in a deterministic way
+ */
+ggen_rng_testing::ggen_rng_testing(const unsigned int rng_type, unsigned long int seed)
+{
+	rng = NULL;
+	b = true;
+}
+		
+ggen_rng_testing::~ggen_rng_testing()
+{
+	;
+}
+		
+const gsl_rng* ggen_rng_testing::get_gsl()
+{
+	return NULL;
+}
+
+void ggen_rng_testing::read(std::string filename)
+{
+	;
+}
+
+void ggen_rng_testing::write(std::string filename)
+{
+	;
+}
+
+void ggen_rng_testing::choose(boost::any *dest, size_t k, boost::any* src, size_t n,size_t size)
+{
+	// copy the first k elements in dest
+	// if k > n then copy n elements
+	size_t num = k <= n ? k : n;
+	num *= size;
+	memcpy(dest,src,num);
+}
+
+void ggen_rng_testing::shuffle(boost::any *base, size_t n, size_t size)
+{
+	;
+}
+
+bool ggen_rng_testing::bernoulli(double p)
+{
+	b = !b;
+	return !b;
+}
+
+unsigned long int ggen_rng_testing::uniform_int(unsigned long int n)
+{
+	return 0; //TODO: better algorithm
+}
+
 /* Base class
  *************/
 

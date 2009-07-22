@@ -155,6 +155,74 @@ class ggen_rng {
 		gsl_rng* rng;
 };
 
+/** Class used for testing purposes only.
+ * Implements all rng functions in a deterministic way
+ */
+class ggen_rng_testing : public ggen_rng {
+		public:
+		/** Creates a ggen_rng_testing
+		 * @param rng_type : the wanted type of rng
+		 * @param seed : the wanted seed
+		 */
+		ggen_rng_testing(const unsigned int rng_type, unsigned long int seed);
+		
+		/** Destroys the rng
+		 * Also destroy the GSL rng
+		 */
+		~ggen_rng_testing();
+		
+		/** Should return the backend rng
+		 * As no backend exists, return always NULL
+		 * @return NULL
+		 */
+		const gsl_rng* get_gsl();
+		
+		/** Should read the generator state from a given file
+		 * This always fail.
+		 * @param filename : the file containing the rng. This file is in binary GSL RNG format.
+		 */
+		void read(std::string filename);
+		
+		/** Should write the generator state to a specific file
+		 * Always fail.
+		 * @param filename : the file which will contain the saved state
+		 */
+		void write(std::string filename);
+		
+		/** Chooses THE FIRST k elements in an array of size n
+		 * @param dest : the destination array
+		 * @param k : the size of the destination array
+		 * @param src : the source array
+		 * @param n : the size of the source array
+		 * @param size : the size of each element in bytes
+		 */
+		void choose(boost::any *dest, size_t k, boost::any* src, size_t n,size_t size);
+		
+		/** Should shuffle an array. To actually NOTHING.
+		 * @param base : the array to shuffle
+		 * @param n : the size of the array
+		 * @param size : the size of each element of the array
+		 */
+		void shuffle(boost::any *base, size_t n, size_t size);
+		
+		/** Should run a bernouilli trial with probability of p.
+		 * Implemented by an alterning sequence.
+		 * @param p : the probability to obtain true
+		 * @return true, false, true, false, true, ...
+		 */
+		bool bernoulli(double p = 0.5);
+		
+		/** Should choose uniformly an integer in the range 0 n-1.
+		 * Implemented by a deterministic algorithm.
+		 * @param n : the upper limit of the range
+		 * @return TODO
+		 */
+		unsigned long int uniform_int(unsigned long int n);
+	private:
+		/** used for the alterning sequence returned by bernoulli()*/
+		bool b;
+};
+
 /******************************************************************************
  * GGEN GSL Random Number Distribution,
  * Factory pattern
