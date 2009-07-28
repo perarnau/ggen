@@ -82,22 +82,8 @@ set(EXECS_FILES builtin-generate-graph.cpp ggen.cpp builtin-analyse-graph.cpp bu
 ## EXEC RULES
 ###################
 
-<<<<<<< branches/unstable:src/CMakeLists.txt
-
-# add execs and link
-foreach(it ${EXECS_WITH_RANDOM})
-	add_executable(${it} ${it}.cpp ${COMMON_DEPS} random.cpp)
-	target_link_libraries(${it} ${Boost_LIBRARIES} ${GSL_LIBRARIES})
-endforeach(it ${EXECS_WITH_RANDOM})
-
-foreach(it ${EXECS})
-	add_executable(${it} ${it}.cpp ${COMMON_DEPS})
-	target_link_libraries(${it} ${Boost_LIBRARIES} ${GSL_LIBRARIES})
-endforeach(it ${EXECS})
-=======
 add_executable(ggen ${EXECS_FILES})
 target_link_libraries(ggen ${Boost_LIBRARIES} ${GSL_LIBRARIES} graph)
->>>>>>> local:src/CMakeLists.txt
 
 ###################
 ## INSTALL RULES
@@ -110,20 +96,5 @@ install(TARGETS ggen
 ###################
 ## TESTING 
 ###################
-enable_testing()
 #add_subdirectory(tests)
 
-# test graph_generator
-# for now we only test that a set of standard parameters work
-add_test(generation-gnp ${EXECUTABLE_OUTPUT_PATH}/graph_generator erdos_gnp 100 0.5)
-add_test(generation-gnp-dag ${EXECUTABLE_OUTPUT_PATH}/graph_generator --dag erdos_gnp 100 0.5)
-
-add_test(generation-gnm ${EXECUTABLE_OUTPUT_PATH}/graph_generator erdos_gnm 100 20)
-add_test(generation-gnm-dag ${EXECUTABLE_OUTPUT_PATH}/graph_generator --dag erdos_gnm 100 20)
-
-add_test(generation-layer ${EXECUTABLE_OUTPUT_PATH}/graph_generator layer_by_layer 100 0.5 10)
-add_test(generation-layer-dag ${EXECUTABLE_OUTPUT_PATH}/graph_generator --dag layer_by_layer 100 0.5 10)
-
-add_test(generation-tgff ${EXECUTABLE_OUTPUT_PATH}/graph_generator tgff 100 5 5)
-
-add_test(generation-rom ${EXECUTABLE_OUTPUT_PATH}/graph_generator rom 100 3)

@@ -81,14 +81,7 @@ enable_testing()
 # General info
 set(CPACK_PACKAGE_NAME "ggen")
 set(CPACK_PACKAGE_VENDOR "GGen development team")
-<<<<<<< branches/unstable:CMakeLists.txt
-set(CPACK_PACKAGE_VERSION "0.1.a")
-set(CPACK_PACKAGE_VERSION_MAJOR "0")
-set(CPACK_PACKAGE_VERSION_MINOR "1")
-set(CPACK_PACKAGE_VERSION_PATCH "a")
-=======
 set(CPACK_PACKAGE_VERSION ${GGEN_VERSION_STRING})
->>>>>>> local:CMakeLists.txt
 
 set(CPACK_GENERATOR "TGZ")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "GGen : a random graph generator")
