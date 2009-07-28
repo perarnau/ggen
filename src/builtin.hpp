@@ -1,7 +1,5 @@
 /* Copyright Swann Perarnau 2009
 *
-*   contributor(s) :  
-*
 *   contact : firstname.lastname@imag.fr	
 *
 * This software is a computer program whose purpose is to help the
@@ -34,18 +32,27 @@
 * The fact that you are presently reading this means that you have had
 * knowledge of the CeCILL license and that you accept its terms.
 */
-/* GGen is a random graph generator :
- * it provides means to generate a graph following a
- * collection of methods found in the litterature.
- *
- * This is a research project founded by the MOAIS Team,
- * INRIA, Grenoble Universities.
- */
 
-#include "debug.hpp"
+#ifndef BUILTIN_HPP
+#define BUILTIN_HPP
 
-namespace ggen {
+#include "types.hpp"
+#include "random.hpp"
+using namespace ggen;
+/* helps defining a table of all the commands known by a program*/
+struct cmd_table_elt {
+	const char* name;
+	int (*fn)(int, char**);
+};
 
-short dbg_level = DEBUG_DEFAULT_LEVEL;
+/* C black magic to compute the size of a flexible array */
+#define ARRAY_SIZE(x) (sizeof(x)/sizeof(x[0]))
 
-}
+/* builtin commands external to ggen */
+
+extern int cmd_generate_graph(int argc,char **argv);
+extern int cmd_analyse_graph(int argc, char **argv);
+extern int cmd_transform_graph(int argc, char**argv);
+extern int cmd_add_property(int argc, char**argv);
+
+#endif

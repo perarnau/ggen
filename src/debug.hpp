@@ -45,6 +45,8 @@
 #ifndef DEBUG_H
 #define DEBUG_H
 
+namespace ggen {
+
 /* Debug Levels */
 #define DEBUG_LEVEL_info 0
 #define DEBUG_LEVEL_warning 1
@@ -69,5 +71,7 @@ extern short dbg_level;
 #define ADD_DBG_OPTIONS(x) do { } while(0)
 
 #endif
+
+}
 
 #endif //DEBUG_H

@@ -40,7 +40,7 @@
 # For boost
 SET(Boost_USE_STATIC_LIBS OFF)
 SET(Boost_USE_MULTITHREAD OFF)
-FIND_PACKAGE(Boost REQUIRED regex program_options graph)
+FIND_PACKAGE(Boost REQUIRED program_options graph)
 
 # For GSL
 find_package(GSL)
@@ -48,6 +48,8 @@ find_package(GSL)
 ###################
 ## DEFINITIONS
 ###################
+
+add_definitions(-DGGEN_VERSION_STRING=\"${GGEN_VERSION_STRING}\")
 
 # remove deprecated warning about hash_set with gcc 4.3
 ADD_DEFINITIONS(-DBOOST_NO_HASH)
@@ -59,24 +61,28 @@ set(CMAKE_CXX_FLAGS_RELEASE	"-O2")
 set(CMAKE_C_FLAGS_RELEASE	"-O2")
 
 ###################
+## LIB VARS
+###################
+
+set(LIB_FILES debug.cpp dynamic_properties.cpp graph-generation.cpp graph-analysis.cpp random.cpp graph-transformation.cpp graph-properties.cpp)
+
+add_library(graph STATIC ${LIB_FILES})
+
+
+###################
 ## EXEC VARS
 ###################
 
 # Executables
-set(EXECS_WITH_RANDOM graph_generator property_adder)
-set(EXECS graph_analysis graph_transform property_analysis)
+set(EXECS ggen)
 
-# commom files dependencies
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-	set(COMMON_DEPS dynamic_properties.cpp debug.cpp)
-else(true)
-	set(COMMON_DEPS dynamic_properties.cpp)
-endif(CMAKE_BUILD_TYPE STREQUAL "Debug")
+set(EXECS_FILES builtin-generate-graph.cpp ggen.cpp builtin-analyse-graph.cpp builtin-transform-graph.cpp builtin-add-property.cpp)
 
 ###################
 ## EXEC RULES
 ###################
 
+<<<<<<< branches/unstable:src/CMakeLists.txt
 
 # add execs and link
 foreach(it ${EXECS_WITH_RANDOM})
@@ -88,13 +94,17 @@ foreach(it ${EXECS})
 	add_executable(${it} ${it}.cpp ${COMMON_DEPS})
 	target_link_libraries(${it} ${Boost_LIBRARIES} ${GSL_LIBRARIES})
 endforeach(it ${EXECS})
+=======
+add_executable(ggen ${EXECS_FILES})
+target_link_libraries(ggen ${Boost_LIBRARIES} ${GSL_LIBRARIES} graph)
+>>>>>>> local:src/CMakeLists.txt
 
 ###################
 ## INSTALL RULES
 ###################
 
 # install commands
-install(TARGETS ${EXECS_WITH_RANDOM} ${EXECS}
+install(TARGETS ggen
 	RUNTIME DESTINATION bin)
 
 ###################

@@ -42,10 +42,29 @@
  * INRIA, Grenoble Universities.
  */
 
-#include "debug.hpp"
+
+#include <boost/config.hpp>
+
+#include "types.hpp"
+#include "dynamic_properties.hpp"
+#include "random.hpp"
+
+#ifndef GRAPH_PROPERTIES_HPP
+#define GRAPH_PROPERTIES_HPP
+
+using namespace boost;
+using namespace std;
 
 namespace ggen {
 
-short dbg_level = DEBUG_DEFAULT_LEVEL;
+void add_vertex_property(Graph *g,dynamic_properties* properties,ggen_rnd* rnd,string name);
 
-}
+void add_edge_property(Graph *g,dynamic_properties* properties,ggen_rnd* rnd,string name);
+
+void extract_vertex_property(std::ostream *out,Graph *g, dynamic_properties *properties, std::string name);
+
+void extract_edge_property(std::ostream *out,Graph *g, dynamic_properties *properties, std::string name);
+
+};
+
+#endif

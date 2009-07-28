@@ -37,6 +37,8 @@
 #include "dynamic_properties.hpp"
 
 using namespace boost;
+namespace ggen {
+
 /** add_property(dp, g, *name, vertex_or_edge)
 *
 * @param dp :
@@ -45,8 +47,6 @@ using namespace boost;
 * @param vertex_or_edge :
 * computes the list of all connected components. We consider the graph undirected...
 */
-
-
 void add_property(dynamic_properties& dp, Graph& g,const char *name /*= "node_id"*/, bool vertex_or_edge)
 {
 	if(vertex_or_edge)
@@ -83,4 +83,5 @@ std::auto_ptr<dynamic_property_map> create_property_map (const std::string&, con
 	}
 	else
 		return std::auto_ptr<dynamic_property_map> (0); //TODO error handling
+}
 }

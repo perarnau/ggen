@@ -42,40 +42,55 @@
  * INRIA, Grenoble Universities.
  */
 
-#ifndef GGEN_H
-#define GGEN_H
-
-/* We use extensively the BOOST library for 
- * handling output, program options and random generators
- */
 #include <boost/config.hpp>
+#include <boost/lexical_cast.hpp>
 
-#include <boost/graph/adjacency_list.hpp>
-#include <boost/graph/graph_traits.hpp>
-#include <boost/graph/properties.hpp>
-#include <boost/dynamic_property_map.hpp>
+#include "types.hpp"
+#include "dynamic_properties.hpp"
+#include "random.hpp"
+#include "graph-properties.hpp"
 
-#include "debug.hpp"
 using namespace boost;
+using namespace std;
+namespace ggen {
 
-/* This is the definition of the graph struture
- * According to boost that means :
- *	* The graph is an adjacency list
- *	* The vertices are managed as a std::Vector
- *	* The edges are managed as std::set to enforce no parallel edges
- *	* The graph is bidirectional
- *	* We don't have any additional properties on vertices or edges
- */
-typedef adjacency_list < listS, listS, bidirectionalS, dynamic_properties, dynamic_properties > Graph;
+void add_vertex_property(Graph *g,dynamic_properties* properties,ggen_rnd* rnd,string name)
+{
+	vertex_std_map* map = new vertex_std_map();
+	vertex_assoc_map * amap = new vertex_assoc_map(*map);
+	properties->property(name,*amap);
+		
+	// iterate and add random property
+	std::pair<Vertex_iter, Vertex_iter> vp;
+	for (vp = boost::vertices(*g); vp.first != vp.second; ++vp.first)
+		    put(name,*properties,*vp.first,boost::lexical_cast<std::string>(rnd->get()));
+}
 
-/* typedefs for vertex and edge properties manipulations */
-typedef graph_traits<Graph>::vertex_descriptor Vertex;
-typedef graph_traits<Graph>::edge_descriptor Edge;
-typedef graph_traits<Graph>::vertex_iterator Vertex_iter; 
-typedef graph_traits<Graph>::edge_iterator Edge_iter; 
-typedef graph_traits<Graph>::in_edge_iterator In_edge_iter; 
-typedef graph_traits<Graph>::out_edge_iterator Out_edge_iter; 
-typedef graph_traits<Graph>::vertices_size_type vertices_size;
-typedef graph_traits<Graph>::edges_size_type edges_size;
+void add_edge_property(Graph *g,dynamic_properties* properties,ggen_rnd* rnd,string name)
+{
+	edge_std_map* map = new edge_std_map();
+	edge_assoc_map * amap = new edge_assoc_map(*map);
+	properties->property(name,*amap);
 
-#endif
+	// iterate and add random property
+	std::pair<Edge_iter, Edge_iter> ep;
+	for (ep = boost::edges(*g); ep.first != ep.second; ++ep.first)
+		    put(name,*properties,*ep.first,boost::lexical_cast<std::string>(rnd->get()));
+	
+}
+
+void extract_vertex_property(std::ostream *out,Graph *g, dynamic_properties *properties, std::string name)
+{
+	std::pair<Vertex_iter, Vertex_iter> vp;
+	for (vp = boost::vertices(*g); vp.first != vp.second; ++vp.first)
+		*out << get(name,*properties,*vp.first) << std::endl;
+}
+
+void extract_edge_property(std::ostream *out,Graph *g, dynamic_properties *properties, std::string name)
+{
+	std::pair<Edge_iter, Edge_iter> ep;
+	for (ep = boost::edges(*g); ep.first != ep.second; ++ep.first)
+		*out << get(name,*properties,*ep.first) << std::endl;
+}
+
+};

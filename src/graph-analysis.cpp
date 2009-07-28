@@ -45,31 +45,22 @@
 #include <iostream>
 #include <climits>
 
-/* We use extensively the BOOST library for 
- * handling output, program options and random generators
- */
 #include <boost/config.hpp>
-
-#include <boost/graph/adjacency_list.hpp>
-#include <boost/graph/graph_traits.hpp>
 #include <boost/graph/graphviz.hpp>
 #include <boost/graph/properties.hpp>
 #include <boost/graph/prim_minimum_spanning_tree.hpp>
 #include <boost/graph/connected_components.hpp>
 #include <boost/graph/strong_components.hpp>
 #include <boost/graph/topological_sort.hpp>
-#include <boost/program_options.hpp>
 
-// lets try using gsl_histograms
-#include <gsl/gsl_histogram.h>
-
-#include "ggen.hpp"
+#include "types.hpp"
 #include "dynamic_properties.hpp"
+#include "graph-analysis.hpp"
 
 using namespace boost;
 using namespace std;
 
-dynamic_properties properties(&create_property_map);
+namespace ggen {
 
 ////////////////////////////////////////////////////////////////////////////////
 // Analysis Function
@@ -79,7 +70,7 @@ dynamic_properties properties(&create_property_map);
 *
 * @param g : an object of type Graph to save the generated graph and it should be empty when initialized
 */
-void minimum_spanning_tree(const Graph& g)
+void minimum_spanning_tree(const Graph& g, dynamic_properties& properties)
 {
 	Vertex source = *vertices(g).first;
 	// We need a map to store the spanning tree 
@@ -149,7 +140,7 @@ void minimum_spanning_tree(const Graph& g)
 *
 * It just outputs the out_degree of each node
 */
-void out_degree(const Graph& g)
+void out_degree(const Graph& g, dynamic_properties& properties)
 {
 	std::cout << "Vertex\tOut_degree" << std::endl;
 	std::pair<Vertex_iter, Vertex_iter> vp;
@@ -165,7 +156,7 @@ void out_degree(const Graph& g)
 *
 * It just outputs the in_degree of each node
 */
-void in_degree(const Graph& g)
+void in_degree(const Graph& g, dynamic_properties& properties)
 {
 	std::cout << "Vertex\tIn_degree" << std::endl;
 	std::pair<Vertex_iter, Vertex_iter> vp;
@@ -187,7 +178,7 @@ void in_degree(const Graph& g)
 *
 * THIS MIGHT NOT WORK PROPERLY WITH NOT FULLY CONNECTED GRAPHS !!
 */
-void nodes_per_layer(const Graph& g)
+void nodes_per_layer(const Graph& g, dynamic_properties& properties)
 {
 	std::set< Vertex> src;
 	std::pair< Vertex_iter, Vertex_iter> vp;
@@ -254,7 +245,7 @@ void nodes_per_layer(const Graph& g)
 * computes the longuest path present in the graph, this without weights on nodes nor edges
 */
  
-void longest_path(const Graph& g)
+void longest_path(const Graph& g, dynamic_properties& properties)
 {
 	// Index map
 	int i = 0;
@@ -380,7 +371,7 @@ void max_i_s_rec(const Graph& g,std::set<Vertex> *max,std::set<Vertex> current,s
 * recursively compute all possible independent sets and find the maximum one
 */
 
-void max_independent_set(const Graph& g)
+void max_independent_set(const Graph& g, dynamic_properties& properties)
 {
 	// the list of sets
 	std::set< Vertex > *max = new  std::set< Vertex >();
@@ -407,7 +398,7 @@ void max_independent_set(const Graph& g)
 * computes the list of all connected components. We consider the graph undirected...
 */
 
-void strong_components(const Graph& g)
+void strong_components(const Graph& g, dynamic_properties& properties)
 {
 	// create the component map
 	std::map< Vertex, int > com;
@@ -435,118 +426,4 @@ void strong_components(const Graph& g)
 	}
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// MAIN
-////////////////////////////////////////////////////////////////////////////////
-
-namespace po = boost::program_options;
-
-
-
-/* Main program
-*/
-int main(int argc, char** argv)
-{
-	Graph *g;
-	istream *infile = NULL;
-
-	// Handle command line arguments
-	////////////////////////////////////
-	po::options_description desc("Allowed options");
-	desc.add_options()
-		("help", "produce this help message")
-
-		/* I/O options */
-		("input,i", po::value<string>(), "Set the input file")
-		
-		/* Analysis options */
-		("nb-vertices,n", po::value<bool>()->zero_tokens(), "Output the number of vertices in the graph")
-		("nb-edges,m", po::value<bool>()->zero_tokens(), "Output the number of edges in the graph")
-		("mst", po::value<bool>()->zero_tokens(),"Compute the Minimum Spanning Tree of the graph")
-		("lp", po::value<bool>()->zero_tokens(),"Compute the Longest Path of the graph")
-		("npl",po::value<bool>()->zero_tokens(),"Compute the Nodes Per Layer of the graph")
-		("out-degree", po::value<bool>()->zero_tokens(),"Gives the out_degree of each vertex")
-		("in-degree", po::value<bool>()->zero_tokens(),"Gives the in_degree of each vertex")
-		("max-independent-set",po::value<bool>()->zero_tokens(),"Gives a maximum independent set of the graph")
-		("strong-components",po::value<bool>()->zero_tokens(),"Gives the list of all strong components of the graph")
-		;
-	ADD_DBG_OPTIONS(desc);
-		
-	po::options_description all;
-	all.add(desc);
-
-
-	// Parse command line options
-	////////////////////////////////
-	po::variables_map vm;
-	po::store(po::parse_command_line(argc,argv,all),vm);
-	po::notify(vm);
-
-	if (vm.count("help"))
-	{
-		std::cout << all << "\n";
-		return 1;
-	}
-
-	if (vm.count("input")) 
-	{
-		filebuf *fb = new filebuf();
-		fb->open(vm["input"].as<std::string>().c_str(),ios::in);
-		infile = new istream(fb);
-	}
-	else
-		infile = &cin;
-
-	// Graph generation
-	////////////////////////////////
-
-	g = new Graph();
-
-	// Read graph
-	////////////////////////////////	
-	read_graphviz(*infile, *g,properties);
-
-	// Analyse the graph
-	////////////////////////////////
-	if(vm.count("nb-vertices"))
-	{
-		std::cout << "Nb Vertices: " << num_vertices(*g) << std::endl;
-	}
-
-	if(vm.count("nb-edges"))
-	{
-		std::cout << "Nb Edges: " << num_edges(*g) << std::endl;
-	}
-
-	if(vm.count("mst"))
-	{
-		minimum_spanning_tree(*g);
-	}
-	if(vm.count("lp"))
-	{
-		longest_path(*g);
-	}
-	if(vm.count("npl"))
-	{
-		nodes_per_layer(*g);
-	}
-	if(vm.count("out-degree"))
-	{
-		out_degree(*g);
-	}
-	if(vm.count("in-degree"))
-	{
-		in_degree(*g);
-	}
-	if(vm.count("max-independent-set"))
-	{
-		max_independent_set(*g);
-	}
-	if(vm.count("strong-components"))
-	{
-		strong_components(*g);
-	}
-	
-	delete g;
-	return EXIT_SUCCESS;
 }

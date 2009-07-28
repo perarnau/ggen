@@ -40,8 +40,8 @@
 #include <boost/config.hpp>
 #include <boost/dynamic_property_map.hpp>
 
-#include "ggen.hpp"
-
+#include "types.hpp"
+namespace ggen {
 
 // UGLY & BAD HACK : we need to create a map with edge_descriptor as Key but this
 // type doesn't implement the required '<' operator.
@@ -66,5 +66,7 @@ void add_property(boost::dynamic_properties& dp, Graph& g,const char *name = "no
 
 // to use with any dynamic_properties constructor for automatic creation of property_maps
 std::auto_ptr<dynamic_property_map> create_property_map (const std::string&, const boost::any& key, const boost::any& value);
+
+}
 
 #endif

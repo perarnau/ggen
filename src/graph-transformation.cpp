@@ -42,35 +42,18 @@
  * INRIA, Grenoble Universities.
  */
 
-#include <iostream>
-#include <sys/types.h>
-#include <unistd.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <climits>
 
-/* We use extensively the BOOST library for 
- * handling output, program options and random generators
- */
 #include <boost/config.hpp>
-
-#include <boost/graph/adjacency_list.hpp>
-#include <boost/graph/graphviz.hpp>
 #include <boost/graph/properties.hpp>
-#include <boost/program_options.hpp>
 
-#include "ggen.hpp"
+#include "types.hpp"
+#include "graph-transformation.hpp"
 #include "dynamic_properties.hpp"
 
 using namespace boost;
 using namespace std;
 
-dynamic_properties properties(&create_property_map);
-
-////////////////////////////////////////////////////////////////////////////////
-// TRANFORM FUNCTIONS
-////////////////////////////////////////////////////////////////////////////////
-
+namespace ggen {
 // if there is more than one source, create a new node and make it the only source.
 void add_dummy_source(Graph *g,dynamic_properties* dp,std::string name)
 {
@@ -180,114 +163,4 @@ void remove_sinks(Graph* g)
 	}
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// MAIN
-////////////////////////////////////////////////////////////////////////////////
-
-namespace po = boost::program_options;
-
-Graph *g;
-
-
-/* Main program
-*/
-int main(int argc, char** argv)
-{
-
-	// Handle command line arguments
-	////////////////////////////////////
-	po::options_description desc("Allowed options");
-	desc.add_options()
-		("help", "produce this help message")
-
-		/* I/O options */
-		("input,i", po::value<string>(), "Set the input file")
-		("output,o", po::value<string>(), "Set the output file")
-		
-		/* Transform options */
-		("remove-sinks", po::value<bool>()->zero_tokens(), "Remove all sinks from the graph")
-		("remove-sources", po::value<bool>()->zero_tokens(), "Remove all sources from the graph")
-		("add-sink", po::value<std::string>(), "Make all sinks from the graph point to a dummy node")
-		("add-source", po::value<std::string>(), "Make a dummy node point to all all sources of the graph")
-		;
-	
-	ADD_DBG_OPTIONS(desc);
-
-	po::options_description all;
-	all.add(desc);
-
-
-	// Parse command line options
-	////////////////////////////////
-	po::variables_map vm;
-	po::store(po::parse_command_line(argc,argv,all),vm);
-	po::notify(vm);
-
-	if (vm.count("help"))
-	{
-		std::cout << all << "\n";
-		return 1;
-	}
-	
-	if (vm.count("input")) 
-	{
-		// open the file for reading
-		int in = open(vm["input"].as<std::string>().c_str(),O_RDONLY);
-	
-		// redirect stdout to it
-		dup2(in,STDIN_FILENO);
-		close(in);
-	}
-	
-	if (vm.count("output")) 
-	{
-		// create a new file with 344 file permissions
-		int out = open(vm["output"].as<std::string>().c_str(),O_WRONLY | O_CREAT | O_TRUNC,S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH );
-	
-		// redirect stdout to it
-		dup2(out,STDOUT_FILENO);
-		close(out);
-	}
-
-	// Graph init
-	////////////////////////////////
-
-	g = new Graph();
-
-	// Read graph
-	////////////////////////////////	
-	read_graphviz(std::cin, *g,properties);
-
-	// Transfrom graph
-	////////////////////////////////
-
-	// Actualy this might be hard in place :
-	// we _MUST_ be sure that the transformation do not propagates to other nodes.
-
-	if(vm.count("remove-sources"))
-	{
-		remove_sources(g);
-	}
-	
-	if(vm.count("remove-sinks"))
-	{
-		remove_sinks(g);
-	}
-	if(vm.count("add-source"))
-	{
-		add_dummy_source(g,&properties,vm["add-source"].as<std::string>());
-	}
-	
-	if(vm.count("add-sink"))
-	{
-		add_dummy_sink(g,&properties,vm["add-sink"].as<std::string>());
-	}
-
-	// Output graph
-	////////////////////////////////
-	
-	write_graphviz(std::cout, *g,properties);
-
-	delete g;
-	return EXIT_SUCCESS;
-}
+};

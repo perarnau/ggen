@@ -45,22 +45,23 @@
 #ifndef GRAPH_GENERATION_HPP
 #define GRAPH_GENERATION_HPP
 
-#include "ggen.hpp"
+#include "types.hpp"
 #include "random.hpp"
 
 using namespace boost;
+namespace ggen {
 
 /** This class contains all the context (variables and other stuff)
  * needed by the generation methods.
  */
-class Graph_generation_context {
+class generation_context {
 	public:
 		/** Creates an empty context 
 		 * @return an empty context that should be populated by set* methods*/
-		Graph_generation_context();
+		generation_context();
 
 		/** Context destructor, will destroy any object in it*/
-		~Graph_generation_context();
+		~generation_context();
 
 		/** Sets the rng for this context
 		 * @param r : the Random Number Generator to be used by generation methods */
@@ -79,7 +80,7 @@ class Graph_generation_context {
  * Two utils function are also provided, including the very useful adjacency matrix translation.
  * @see Graph_generation_context
  */
-class Graph_generation {
+class generation {
 	public:
 	
 	/** translate_matrix_to_a_graph(g, matrix, num_vertices)
@@ -112,7 +113,7 @@ class Graph_generation {
 	 * matrix is iterated otherwise the complete adjacency matrix.Finally, the adjacency matrix is translated to a graph object with the help of the function  
 	 * translate_matrix_to_a_graph.
 	 */
-	static Graph* gg_erdos_gnp(Graph_generation_context &cntxt, vertices_size num_vertices, double p, bool do_dag);
+	static Graph* erdos_gnp(generation_context &cntxt, vertices_size num_vertices, double p, bool do_dag);
 
 	/** Layer-by-Layer Method: gg_layer_by_layer(g, num_vertices, p, do_dag, layer_num_vertex)
 	 *
@@ -132,7 +133,7 @@ class Graph_generation {
 	 * In this method, two vertices lying in distinct layers are chosen and an edge is inserted between them depending upon the outcome of a bernouilli trial.
 	 * No edge is inserted between the two vertices lying in the same layer.
 	 */
-	static Graph*  gg_layer_by_layer(Graph_generation_context &cntxt, vertices_size num_vertices, double p, bool do_dag,std::vector<int> layer_num_vertex);
+	static Graph*  layer_by_layer(generation_context &cntxt, vertices_size num_vertices, double p, bool do_dag,std::vector<int> layer_num_vertex);
 
 	/** The method 'layer_allocation(num_layers, num_vertices)' returns an array containing layer indices for all the vertices. 
 	 * This array is required for the random graph generation method "Layer-by-Layer".
@@ -144,7 +145,7 @@ class Graph_generation {
 	 * A random number between 1 and 'num_layers' is generated and is assigned to each vertex.
 	 *
 	 */
-	static std::vector <int> layer_allocation(Graph_generation_context &cntxt,unsigned long int num_layers,vertices_size num_vertices);
+	static std::vector <int> layer_allocation(generation_context &cntxt,unsigned long int num_layers,vertices_size num_vertices);
 
 	/** Task Graphs for free: gg_tgff(g, lower_bound, max_od, max_id)
 	 *
@@ -166,7 +167,7 @@ class Graph_generation {
 	 * in-degree constraint.A random number is generated between 1 and this cardinality and as many number of the vertices are chosen randomly from the newly 
 	 * formed array and each vertex just chosen is connected to the new node introuduced in the starting of the fan-in step.
 	 */
-	static Graph* gg_tgff(Graph_generation_context &cntxt,int lower_bound,int max_od,int max_id);
+	static Graph* tgff(generation_context &cntxt,int lower_bound,int max_od,int max_id);
 
 	/** Erdos-Renyi : G(n,M)
 	 *
@@ -185,7 +186,7 @@ class Graph_generation {
 	 * In this method, an edge is inserted between the two vertices 'i' and 'j' selected randomly.And the selection of these two vertices is iteratively 
 	 * carried out unless the total number of edges become equal to the wanted number of edges.
 	 */
-	static Graph* gg_erdos_gnm(Graph_generation_context &cntxt, vertices_size num_vertices, edges_size num_edges, bool do_dag);
+	static Graph* erdos_gnm(generation_context &cntxt, vertices_size num_vertices, edges_size num_edges, bool do_dag);
 
 
 	/** Random Orders Method : 
@@ -200,8 +201,9 @@ class Graph_generation {
 	 * vertex 'j' in every permutation, an edge(i, j) is inserted.And, finally, the adjacency matrix is translated to a graph object with the help of the 
 	 * translate_matrix_to_a_graph.
 	 */
-	static Graph* gg_random_orders_method(Graph_generation_context &cntxt, int num_vertices, int num_pos);
+	static Graph* random_orders(generation_context &cntxt, int num_vertices, int num_pos);
 
 };
+}
 
 #endif

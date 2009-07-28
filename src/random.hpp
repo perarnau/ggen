@@ -50,6 +50,10 @@
 #include <iostream>
 #include <boost/config.hpp>
 #include <boost/program_options.hpp>
+
+namespace po =  boost::program_options;
+namespace ggen {
+
 /* This file is the gls random number distribution wrapper for ggen,
  * It is designed to handle the creation, and "normal" utilization of
  * gsl for ggen, according to user defined command line argument.
@@ -90,7 +94,7 @@ class ggen_rng {
 		ggen_rng();
 		
 		/** Destroys the rng
-		 * Also destroy the GSL rng
+		 * Also destroy the GSL rng and save its state if possible
 		 */
 		~ggen_rng();
 	
@@ -110,18 +114,21 @@ class ggen_rng {
 		 * @return the GSL random number generator
 		 */
 		const gsl_rng* get_gsl();
-		
+	
+		/** Sets the file to be used for loading/saving the generator state.
+		 * @param filename : the name of the file
+		 */
+		void set_file(char *filename);
+
 		/** Reads the generator state from a given file
 		 * This fail with a warning if the file connot be openned.
-		 * @param filename : the file containing the rng. This file is in binary GSL RNG format.
 		 */
-		void read(std::string filename);
+		void read();
 		
 		/** Writes the generator state to a specific file
 		 * Fails with a warning if the rng cannot be saved
-		 * @param filename : the file which will contain the saved state
 		 */
-		void write(std::string filename);
+		void write();
 		
 		/** Chooses k elements in an array of size n
 		 * @param dest : the destination array
@@ -153,6 +160,9 @@ class ggen_rng {
 	protected:
 		/** The GSL backend random number generator*/
 		gsl_rng* rng;
+
+		/** the file used to save the state */
+		char *file;
 };
 
 /** Class used for testing purposes only.
@@ -274,7 +284,13 @@ class ggen_rnd_gaussian : public ggen_rnd {
 		 * @param args: a vector of arguments to be passed to the gsl constructor : should contain only one double value
 		 */
 		ggen_rnd_gaussian(ggen_rng* rng, std::vector<std::string> args);
-		
+	
+		/** Constructor with correctly typed parameters
+		 * @param rng: the rng associated with this rnd
+		 * @param s : the center of the distribution
+		 */
+		ggen_rnd_gaussian(ggen_rng* rng, double s);
+	
 		/** Gets the next random number fitting the distribution
 		 * @return a random number
 		 */
@@ -297,7 +313,14 @@ class ggen_rnd_flat : public ggen_rnd {
 		 * @param args : this vector should contain two double defining the range of this uniform distribution
 		 */
 		ggen_rnd_flat(ggen_rng* rng, std::vector<std::string> args);
-		
+	
+		/** Constructor with correctly typed parameters
+		 * @param rng: the rng associated with this rnd
+		 * @param mi : the minimum of the distribution
+		 * @param mx : the maximum of the distribution
+		 */
+		ggen_rnd_flat(ggen_rng* rng, double mi, double mx);
+
 		/** Returns the next double in the distribution
 		 * @return a double between min and max chosen uniformly
 		 */
@@ -310,17 +333,6 @@ class ggen_rnd_flat : public ggen_rnd {
 		double max;
 };
 
-///////////////////////////////////////////////////////////////////////////////
-// Command line options handling
-///////////////////////////////////////////////////////////////////////////////
-
-namespace po =  boost::program_options;
-
-po::options_description random_rng_options();
-po::options_description random_rnd_options();
-ggen_rng* random_rng_handle_options_atinit(const po::variables_map& vm);
-void random_rng_handle_options_atexit(const po::variables_map& vm,ggen_rng* rng);
-ggen_rnd* random_rnd_handle_options_atinit(const po::variables_map& vm,ggen_rng* rng);
-void random_rnd_handle_options_atexit(const po::variables_map& vm,ggen_rng* rng, ggen_rnd* rnd);
+};
 
 #endif
