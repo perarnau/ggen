@@ -65,7 +65,7 @@ static const char * general_usage_message[] = {
 	"analyse-graph           : use the graph analysis tools\n",
 	"transform-graph         : use the graph transformation tools\n",
 	"add-property            : use the property adding tools\n",
-	"\n",
+	"extract-property        : extract a property from the graph\n",
 	NULL
 };
 
@@ -97,6 +97,7 @@ int main(int argc,char** argv)
 		{ "analyse-graph", cmd_analyse_graph },
 		{ "transform-graph", cmd_transform_graph },
 		{ "add-property", cmd_add_property },
+		{ "extract-property", cmd_extract_property },
 	};
 	const char *cmd;
 	

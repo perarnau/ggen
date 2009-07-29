@@ -54,5 +54,6 @@ extern int cmd_generate_graph(int argc,char **argv);
 extern int cmd_analyse_graph(int argc, char **argv);
 extern int cmd_transform_graph(int argc, char**argv);
 extern int cmd_add_property(int argc, char**argv);
+extern int cmd_extract_property(int argc, char**argv);
 
 #endif

@@ -43,149 +43,140 @@
  */
 
 #include <iostream>
+#include <fstream>
+#include <climits>
+#include <getopt.h>
 
-/* We use extensively the BOOST library for 
- * handling output, program options and random generators
- */
 #include <boost/config.hpp>
-
-#include <boost/graph/adjacency_list.hpp>
-#include <boost/graph/graph_traits.hpp>
 #include <boost/graph/graphviz.hpp>
 #include <boost/graph/properties.hpp>
 
-#include <boost/program_options.hpp>
-
-#include <iostream>
-
-
-/* GSL statistic functions
- * GSL is prefered over boost accumulators as boost seems to
- * compute statistics by approximation using a cache of values
- */
-#include "gsl/gsl_statistics.h"
-
-
-#include "ggen.hpp"
+#include "types.hpp"
+#include "builtin.hpp"
+#include "graph-properties.hpp"
 #include "dynamic_properties.hpp"
 
 using namespace boost;
-using namespace std;
+using namespace ggen;
 
-////////////////////////////////////////////////////////////////////////////////
-// MAIN
-////////////////////////////////////////////////////////////////////////////////
+static int ask_help = 0;
+static int verbose = 0;
+static char* infile = NULL;
+static int is_edge = 0, is_vertex = 1;
+static const char* name = "node_id";
 
-namespace po = boost::program_options;
+static Graph *g = NULL;
+static dynamic_properties* properties;
+static std::istream *in = &std::cin;
 
-dynamic_properties properties(&create_property_map);
-Graph *g;
+static const char* general_help[] = {
+	"Usage: ggen analyse-graph [options] name\n",
+	"Allowed options:\n",
+	"--help               : ask for help\n",
+	"--verbose            : increase verbosity\n",
+	"--input <filename>   : read the graph for a file\n",
+	"--edge,--vertex      : force the type of the property to extract\n",
+	"\nArguments:\n",
+	"name          : the name of the property to extract\n",
+	NULL
+};
 
-/* Main program
- */
-int main(int argc, char** argv)
+static void print_help(const char* message[]) 
 {
-	istream *infile = NULL;
-	bool edge_property;
-	string name;
+	for(int i =0; message[i] != NULL; i++)
+		std::cout << message[i];
+}
 
-	// Handle command line arguments
-	////////////////////////////////////
-	po::options_description desc("Allowed options");
-	desc.add_options()
-		("help", "produce this help message")
-		
-		/* I/O options */
-		("input,i", po::value<string>(), "Set the input file")
+static int cmd_nb_vertices(int argc, char **argv)
+{
+	read_graphviz(*in, *g,*properties);
+	std::cout << "Number of vertices: " << num_vertices(*g) << std::endl;
+	return 0;
+}
 
-		/* Property options */
-		("name,n",po::value<string>(),"Set the property name to analyse")
-		("edge,e",po::value<bool>()->zero_tokens(),"Analyse an edge property instead of a vertex one")
-	;
+static struct option long_options[] = {
+	{ "help", no_argument, &ask_help, 1 },
+	{ "verbose", no_argument, &verbose, 1 },
+	{ "input", required_argument, NULL, 'i' },
+	{ "edge", no_argument, &is_edge, 1 },
+	{ "vertex", no_argument, &is_vertex, 1 },
+	{ 0,0,0,0 },
+};
 
-	ADD_DBG_OPTIONS(desc);
+static const char short_opts[] = "hvi:";
 
-	po::options_description all;
-	all.add(desc);
+int cmd_extract_property(int argc, char** argv)
+{
+	const char* cmd;
+	int c,err;
+	int option_index = 0;
+	int status = 0;
 	
-	
-	// Parse command line options
-	////////////////////////////////
-	po::variables_map vm;
-	po::store(po::parse_command_line(argc,argv,all),vm);
-	po::notify(vm);
-	
-	if (vm.count("help"))
+	while(1)
 	{
-		std::cout << all << "\n";
-		        return 1;
+		c = getopt_long(argc, argv, short_opts,long_options, &option_index);	
+		if(c == -1)
+			break;
+
+		switch(c)
+		{
+			case 'v':
+			case 'h':
+			case 0:
+				break;
+			case 'i':
+				infile = optarg;
+				break;
+			case '?':
+			default:
+				exit(1);
+		}
 	}
 
-	if (vm.count("input")) 
+	std::ifstream fin;
+	if(infile)
 	{
-		filebuf *fb = new filebuf();
-		fb->open(vm["input"].as<std::string>().c_str(),ios::in);
-		infile = new istream(fb);
+		fin.open(infile);
+		in = &fin;
 	}
-	else
-		infile = &cin;
 
-	if(vm.count("name"))
+	if(is_edge && is_vertex)
 	{
-		name = vm["name"].as<string>();
+		status = 1;
+		std::cerr << "You cannot specify both --edge and --vertex" << std::endl;
 	}
-	else
-		name = "node_id";
-
-	if(vm.count("edge"))
-	{
-		edge_property = true;
-	}
-	else
-		edge_property = false;
-
-	// Graph generation
-	////////////////////////////////
 	
 	g = new Graph();
+	properties = new dynamic_properties(&create_property_map);
+		
+	// now forget the parsed part of argv
+	argc -= optind;
+	argv = &(argv[optind]);
 
-	// Read graph
-	////////////////////////////////////	
-	read_graphviz(*infile, *g,properties);
-	
-	// Statistics
-	// What todo : 	push_back values needed
-	// 		convert the vector to call gsl
-	// 		print the values
-	double mean;
-	std::vector<double> values;
-	if(edge_property)
+	// this is the name
+	if(argc == 1)
+		name = argv[0];
+	else
 	{
-		// iterate over edges and push_back values
-		std::pair<Edge_iter, Edge_iter> ep;
-		for (ep = boost::edges(*g); ep.first != ep.second; ++ep.first)
-			values.push_back(boost::lexical_cast<double>(get(name,properties,*ep.first)));
+		std::cerr << "You must provide a name !" << std::endl;
+		print_help(general_help);
+		goto finish;
+	}
+	read_graphviz(*in, *g, *properties);
+	if(infile)
+		fin.close();
+	
+	if(is_edge)
+	{
+		extract_edge_property(&std::cout,g,properties,name);
 	}
 	else
 	{
-		// iterate over vertices and push_back values
-		std::pair<Vertex_iter, Vertex_iter> vp;
-		for (vp = boost::vertices(*g); vp.first != vp.second; ++vp.first)
-			values.push_back(boost::lexical_cast<double>(get(name,properties,*vp.first)));
+		extract_vertex_property(&std::cout,g,properties,name);
 	}
-
-	double *data = new double [values.size()];
-	copy( values.begin(), values.end(), data);
-	double min,max;
-       	mean = gsl_stats_mean(data, 1, values.size());
-	gsl_stats_minmax(&min,&max,data,1, values.size());
-	std::cout << "Statistics for property " << name << std::endl;
-	std::cout << "Min: " << min << std::endl;
-	std::cout << "Max: " << max << std::endl;
-	std::cout << "Mean: " << mean << std::endl;
-	std::cout << "Standard Deviation: " << gsl_stats_sd_m(data,1,values.size(),mean) << std::endl;
-
-	delete [] data;
+	
+	finish:
 	delete g;
-	return 0;
+	delete properties;
+	return status;
 }
