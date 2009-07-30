@@ -320,7 +320,6 @@ void max_i_s_rec(const Graph& g,std::set<Vertex> *max,std::set<Vertex> current,s
 	// stop condition, we have marked all the vertices of the graph
 	if(allowed.empty())
 	{
-		//std::cerr << "debug,pset " << "current " << current.size() << std::endl;
 		if(max->size() < current.size())
 		{
 			delete max;
@@ -354,10 +353,8 @@ void max_i_s_rec(const Graph& g,std::set<Vertex> *max,std::set<Vertex> current,s
 			Vertex v = target(*op.first,g);
 			a2.erase(v);
 		}
-		// std::cerr<< "debug,2 " << get("node_id",properties,c)  << " current " << current.size() << " allowed " << allowed.size() << std::endl;
 		max_i_s_rec(g,max,c2,a2);
 
-		// std::cerr<< "debug,1 " << get("node_id",properties,c)  << " current " << current.size() << " allowed " << allowed.size() << std::endl;
 		// second recursion, we don't add the vertex to current set
 		max_i_s_rec(g,max,current,allowed);
 	}

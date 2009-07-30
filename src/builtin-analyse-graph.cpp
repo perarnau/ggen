@@ -85,73 +85,57 @@ static const char* general_help[] = {
 	"strong-components    : gives the list of all strong components of the graph\n",
 };
 
-static void print_help(const char* message[]) 
-{
-	for(int i =0; message[i] != NULL; i++)
-		std::cout << message[i];
-}
-
 static int cmd_help(int argc, char **argv)
 {
-	print_help(general_help);
-	return 0;
+	usage(general_help);
 }
 
 static int cmd_nb_vertices(int argc, char **argv)
 {
-	read_graphviz(*in, *g,*properties);
 	std::cout << "Number of vertices: " << num_vertices(*g) << std::endl;
 	return 0;
 }
 
 static int cmd_nb_edges(int argc, char **argv)
 {
-	read_graphviz(*in, *g,*properties);
 	std::cout << "Number of edges: " << num_edges(*g) << std::endl;
 	return 0;
 }
 
 static int cmd_mst(int argc, char **argv)
 {
-	read_graphviz(*in, *g,*properties);
 	minimum_spanning_tree(*g,*properties);
 	return 0;
 }
 
 static int cmd_lp(int argc, char **argv)
 {
-	read_graphviz(*in, *g,*properties);
 	longest_path(*g,*properties);
 	return 0;
 }
 
 static int cmd_npl(int argc, char **argv)
 {
-	read_graphviz(*in, *g,*properties);
 	nodes_per_layer(*g,*properties);
 	return 0;
 }
 
 static int cmd_out_degree(int argc, char **argv)
 {
-	read_graphviz(*in, *g,*properties);
 	out_degree(*g,*properties);
 	return 0;
 }
 static int cmd_in_degree(int argc, char **argv)
 {
-	read_graphviz(*in, *g,*properties);
 	in_degree(*g,*properties);
 }
 static int cmd_max_indep_set(int argc, char **argv)
 {
-	read_graphviz(*in, *g,*properties);
 	max_independent_set(*g,*properties);
 	return 0;
 }
 static int cmd_strong_components(int argc, char **argv)
 {
-	read_graphviz(*in, *g,*properties);
 	strong_components(*g,*properties);
 	return 0;
 }
@@ -212,8 +196,6 @@ int cmd_analyse_graph(int argc,char** argv)
 		in = &fin;
 	}
 	
-	g = new Graph();
-	properties = new dynamic_properties(&create_property_map);
 		
 	// now forget the parsed part of argv
 	argc -= optind;
@@ -225,20 +207,25 @@ int cmd_analyse_graph(int argc,char** argv)
 		cmd = "help";
 
 	int status = 0;
-	// launch command
-	for(int i = 0; i < ARRAY_SIZE(cmd_table); i++)
+	if(!strcmp(cmd,"help"))
+	{
+		usage(general_help);
+	}
+
+	g = new Graph();
+	properties = new dynamic_properties(&create_property_map);
+
+	for(int i = 1; i < ARRAY_SIZE(cmd_table); i++)
 	{
 		struct cmd_table_elt *c = cmd_table+i;
 		if(!strcmp(c->name,cmd))
 		{
+			read_graphviz(*in, *g,*properties);
 			status = c->fn(argc,argv);
 			goto ret;
 		}
 	}
-	// if you finish here the command was wrong
-	std::cerr << "Wrong command !" << std::endl;
-	cmd_help(argc,argv);
-	return 1;
+	die("wrong command");
 	
 	ret:
 	if(infile)

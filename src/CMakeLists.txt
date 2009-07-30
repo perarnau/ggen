@@ -64,7 +64,7 @@ set(CMAKE_C_FLAGS_RELEASE	"-O2")
 ## LIB VARS
 ###################
 
-set(LIB_FILES debug.cpp dynamic_properties.cpp graph-generation.cpp graph-analysis.cpp random.cpp graph-transformation.cpp graph-properties.cpp)
+set(LIB_FILES dynamic_properties.cpp graph-generation.cpp graph-analysis.cpp random.cpp graph-transformation.cpp graph-properties.cpp)
 
 add_library(graph STATIC ${LIB_FILES})
 
@@ -76,7 +76,7 @@ add_library(graph STATIC ${LIB_FILES})
 # Executables
 set(EXECS ggen)
 
-set(EXECS_FILES builtin-generate-graph.cpp ggen.cpp builtin-analyse-graph.cpp builtin-transform-graph.cpp builtin-add-property.cpp builtin-extract-property.cpp)
+set(EXECS_FILES builtin-generate-graph.cpp ggen.cpp builtin-analyse-graph.cpp builtin-transform-graph.cpp builtin-add-property.cpp builtin-extract-property.cpp usage.cpp)
 
 ###################
 ## EXEC RULES

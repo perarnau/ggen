@@ -130,20 +130,15 @@ static const char* flat_help[] = {
 	NULL
 };
 
-static void print_help(const char *message[]) {
-	for(int i = 0; message[i] != NULL; i++)
-		std::cout << message[i];
-}
+static struct help_elt helps[] = {
+	{ "general" , general_help },
+	{ "gaussian", gaussian_help },
+	{ "flat", flat_help },
+};
 
 static int cmd_help(int argc, char** argv)
 {
-	print_help(general_help);
-	if(ask_full_help)
-	{
-		std::cout << "\nDetailled help for each command:" << std::endl;
-		print_help(gaussian_help);
-		print_help(flat_help);
-	}
+	usage_helps(argc,argv,helps,ask_full_help);
 }
 
 static void preop()
@@ -182,16 +177,12 @@ static void postop()
 
 static int cmd_gaussian(int argc, char** argv)
 {
-	int status = 0, err = 0;
-	if(ask_help)
-		goto help;	
+	if(argc == 1)
+		usage(gaussian_help);
 	
 	// get arguments
 	if(argc < 2)
-	{
-		status = 1;
-		goto help;
-	}
+		die("wrong number of arguments");
 
 	double sigma;
 
@@ -200,32 +191,22 @@ static int cmd_gaussian(int argc, char** argv)
 	}
 	catch(std::exception &e)
 	{
-		status = 1;
-		goto help;
+		die("bad arguments");
 	}
+	preop();
 	rnd = new ggen_rnd_gaussian(rng,sigma);
-	 
-	goto ret;
-
-	help:
-	print_help(gaussian_help);
-	
-	ret:	
-	return status;
+	postop();
+	return 0;
 }
 
 static int cmd_flat(int argc, char** argv)
 {
-	int status = 0, err = 0;
-	if(ask_help)
-		goto help;	
+	if(argc == 1)
+		usage(flat_help);
 	
 	// get arguments
 	if(argc < 3)
-	{
-		status = 1;
-		goto help;
-	}
+		die("wrong number of arguments");
 
 	double min,max;	
 
@@ -235,18 +216,12 @@ static int cmd_flat(int argc, char** argv)
 	}
 	catch(std::exception &e)
 	{
-		status = 1;
-		goto help;
+		die("bad arguments");
 	}
-	
+	preop();	
 	rnd = new ggen_rnd_flat(rng,min,max);
-	goto ret;
-
-	help:
-	print_help(flat_help);
-	
-	ret:	
-	return status;
+	postop();
+	return 0;
 }
 
 /* Commands to handle */
@@ -279,10 +254,6 @@ static struct option long_options[] = {
 };
 
 static const char* short_opts = "hi:o:n:s:t:f:";
-
-////////////////////////////////////////////////////////////////////////////////
-// MAIN
-////////////////////////////////////////////////////////////////////////////////
 
 /** 
 * Main program
@@ -335,9 +306,9 @@ int cmd_add_property(int argc,char** argv)
 				name = optarg;
 				break;
 			default:
-				std::cerr << "Something went wrong ! " << c << std::endl;
+				die("someone forgot how to write switches");
 			case '?':
-				exit(1);
+				die("option parsing got mad");
 		}
 	}
 
@@ -360,13 +331,8 @@ int cmd_add_property(int argc,char** argv)
 
 	if(is_edge && is_vertex)
 	{
-		std::cerr << "cannot specify both edge and vertex !" <<std::endl;
-		cmd_help(argc,argv);
-		return 1;
+		die("Cannot specify --edge and --vertex !");
 	}
-
-	g =  new Graph();
-	properties = new dynamic_properties(&create_property_map);
 
 	// now forget the parsed part of argv
 	argc -= optind;
@@ -382,26 +348,21 @@ int cmd_add_property(int argc,char** argv)
 	if(!strcmp("help",cmd))
 	{	
 		status = cmd_help(argc,argv);
-		goto ret;
 	}
+
+	g =  new Graph();
+	properties = new dynamic_properties(&create_property_map);
 
 	for(int i = 1; i < ARRAY_SIZE(cmd_table); i++)
 	{
 		struct cmd_table_elt *c = cmd_table+i;
 		if(!strcmp(c->name,cmd))
 		{
-			preop();
 			status = c->fn(argc,argv);
-			postop();
-			goto ret;
+			delete g;
+			delete properties;
+			return 0;
 		}
 	}
-	// if you finish here the command was wrong
-	std::cerr << "Wrong command !" << std::endl;
-	cmd_help(argc,argv);
-	return 1;
-	
-	ret:
-	delete g;
-	return 0;
+	die("Wrong command !");
 }

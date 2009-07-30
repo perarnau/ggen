@@ -55,7 +55,6 @@
 #include <boost/graph/properties.hpp>
 #include <boost/dynamic_property_map.hpp>
 
-#include "debug.hpp"
 using namespace boost;
 
 namespace ggen {

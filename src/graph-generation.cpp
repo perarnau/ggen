@@ -197,8 +197,6 @@ std::vector <int> generation::layer_allocation(generation_context &cntxt,unsigne
               
 	ggen_rng* rng = cntxt.get_rng(); 
 	std::vector<int>layer_num_vertex;
-	dbg(trace, "no.of layers is = %lu\n",num_layers);
-               
    
 	for(vertices_size i = 0;i < num_vertices; i++)                                   
 	{	
@@ -207,14 +205,6 @@ std::vector <int> generation::layer_allocation(generation_context &cntxt,unsigne
 		 
 		//storing the layer no. just generated into a vector
 		layer_num_vertex.push_back(layer_index);                    
-	}
-                      
-           
-	dbg(trace,"vertex no..............layer_number\n");
-	for(vertices_size i = 0;i < num_vertices; i++)
-	{	 
-		//printing the layer numbers for all the vertices
-		dbg(trace,"%d\t\t%d\n",i,layer_num_vertex[i]);   
 	}
 
 	return layer_num_vertex;           

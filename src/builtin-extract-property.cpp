@@ -81,12 +81,6 @@ static const char* general_help[] = {
 	NULL
 };
 
-static void print_help(const char* message[]) 
-{
-	for(int i =0; message[i] != NULL; i++)
-		std::cout << message[i];
-}
-
 static int cmd_nb_vertices(int argc, char **argv)
 {
 	read_graphviz(*in, *g,*properties);
@@ -142,13 +136,10 @@ int cmd_extract_property(int argc, char** argv)
 
 	if(is_edge && is_vertex)
 	{
-		status = 1;
-		std::cerr << "You cannot specify both --edge and --vertex" << std::endl;
+		die("you cannot specify both --edge and --vertex");
 	}
 	
-	g = new Graph();
-	properties = new dynamic_properties(&create_property_map);
-		
+			
 	// now forget the parsed part of argv
 	argc -= optind;
 	argv = &(argv[optind]);
@@ -157,11 +148,11 @@ int cmd_extract_property(int argc, char** argv)
 	if(argc == 1)
 		name = argv[0];
 	else
-	{
-		std::cerr << "You must provide a name !" << std::endl;
-		print_help(general_help);
-		goto finish;
-	}
+		die("you must %sprovide a name",argc > 1 ? "only ":"");
+
+
+	g = new Graph();
+	properties = new dynamic_properties(&create_property_map);
 	read_graphviz(*in, *g, *properties);
 	if(infile)
 		fin.close();
@@ -175,7 +166,6 @@ int cmd_extract_property(int argc, char** argv)
 		extract_vertex_property(&std::cout,g,properties,name);
 	}
 	
-	finish:
 	delete g;
 	delete properties;
 	return status;

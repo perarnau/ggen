@@ -93,16 +93,9 @@ static const char* general_help[] = {
 	NULL,
 };
 
-static void print_help(const char*message[])
-{
-	for(int i = 0; message[i] != NULL; i++)
-		std::cout << message[i];
-}
-
 static int cmd_help(int argc, char** argv)
 {
-	print_help(general_help);
-	return 0;
+	usage(general_help);
 }
 
 // pre processing operations
@@ -220,9 +213,7 @@ int cmd_transform_graph(int argc, char** argv)
 
 	
 	
-	g = new Graph();
-	properties = new dynamic_properties(&create_property_map);
-		
+			
 	// now forget the parsed part of argv
 	argc -= optind;
 	argv = &(argv[optind]);
@@ -238,9 +229,11 @@ int cmd_transform_graph(int argc, char** argv)
 	if(!strcmp("help", cmd))
 	{
 		status = cmd_help(argc,argv);
-		goto ret;
 	}
 	
+	g = new Graph();
+	properties = new dynamic_properties(&create_property_map);
+
 	for(int i = 1; i < ARRAY_SIZE(cmd_table); i++)
 	{
 		struct cmd_table_elt *c = cmd_table+i;
@@ -252,11 +245,8 @@ int cmd_transform_graph(int argc, char** argv)
 			goto ret;
 		}
 	}
-	// if you finish here the command was wrong
-	std::cerr << "Wrong command !" << std::endl;
-	cmd_help(argc,argv);
-	return 1;
-	
+	die("wrong command");
+
 	ret:
 	delete g;
 	delete properties;

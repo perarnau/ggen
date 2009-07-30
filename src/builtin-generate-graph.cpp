@@ -65,10 +65,10 @@
 #include <fstream>
 
 #include "types.hpp"
+#include "builtin.hpp"
 #include "random.hpp"
 #include "dynamic_properties.hpp"
 #include "graph-generation.hpp"
-#include "builtin.hpp"
 
 using namespace boost;
 using namespace ggen;
@@ -155,23 +155,18 @@ static const char* tgff_help[] = {
 	NULL
 };
 
-static void print_help(const char *message[]) {
-	for(int i = 0; message[i] != NULL; i++)
-		std::cout << message[i];
-}
+static struct help_elt helps[] = {
+	{ "general", general_help },
+	{ "erdos_gnp", gnp_help },
+	{ "erdos_gnm", gnm_help },
+	{ "layer", layer_help },
+	{ "random_orders", random_help },
+	{ "tgff", tgff_help },
+};
 
 static int cmd_help(int argc, char** argv)
 {
-	print_help(general_help);
-	if(ask_full_help)
-	{
-		std::cout << "\nDetailled help for each method:" << std::endl;
-		print_help(gnp_help);
-		print_help(gnm_help);
-		print_help(layer_help);
-		print_help(random_help);
-		print_help(tgff_help);
-	}
+	usage_helps(argc,argv,helps,ask_full_help);
 }
 
 static void write_graph()
@@ -223,7 +218,7 @@ static int cmd_erdos_gnp(int argc, char** argv)
 	goto ret;
 
 	help:
-	print_help(gnp_help);
+	usage(gnp_help);
 	
 	ret:	
 	return status;
@@ -260,7 +255,7 @@ static int cmd_erdos_gnm(int argc, char** argv)
 	goto ret;
 
 	help:
-	print_help(gnm_help);
+	usage(gnm_help);
 	
 	ret:	
 	return status;
@@ -302,7 +297,7 @@ static int cmd_layer(int argc, char** argv)
 	goto ret;
 
 	help:
-	print_help(layer_help);
+	usage(layer_help);
 	
 	ret:	
 	return status;
@@ -340,7 +335,7 @@ static int cmd_random_orders(int argc, char** argv)
 	goto ret;
 
 	help:
-	print_help(random_help);
+	usage(random_help);
 	
 	ret:	
 	return status;
@@ -378,7 +373,7 @@ static int cmd_tgff(int argc, char** argv)
 	goto ret;
 
 	help:
-	print_help(tgff_help);
+	usage(tgff_help);
 	
 	ret:	
 	return status;
@@ -487,15 +482,7 @@ int cmd_generate_graph(int argc,char** argv)
 		rng->read();
 	}
 
-	std::ofstream fout;
-	if(output)
-	{
-		fout.open(output);
-		out = &fout;
-	}
-
-	cntxt->set_rng(rng);
-	
+		
 	// now forget the parsed part of argv
 	argc -= optind;
 	argv = &(argv[optind]);
@@ -506,8 +493,19 @@ int cmd_generate_graph(int argc,char** argv)
 		cmd = "help";
 
 	int status = 0;
-	// launch command
-	for(int i = 0; i < ARRAY_SIZE(cmd_table); i++)
+	if(!strcmp(cmd,"help"))
+		cmd_help(argc,argv);
+
+	std::ofstream fout;
+	if(output)
+	{
+		fout.open(output);
+		out = &fout;
+	}
+
+	cntxt->set_rng(rng);
+	
+	for(int i = 1; i < ARRAY_SIZE(cmd_table); i++)
 	{
 		struct cmd_table_elt *c = cmd_table+i;
 		if(!strcmp(c->name,cmd))
@@ -516,11 +514,8 @@ int cmd_generate_graph(int argc,char** argv)
 			goto ret;
 		}
 	}
-	// if you finish here the command was wrong
-	std::cerr << "Wrong command !" << std::endl;
-	cmd_help(argc,argv);
-	return 1;
-	
+	die("wrong command");
+
 	ret:
 	if(output)
 		fout.close();

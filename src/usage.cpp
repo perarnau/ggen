@@ -1,7 +1,5 @@
 /* Copyright Swann Perarnau 2009
 *
-*   contributor(s) :  
-*
 *   contact : firstname.lastname@imag.fr	
 *
 * This software is a computer program whose purpose is to help the
@@ -34,18 +32,65 @@
 * The fact that you are presently reading this means that you have had
 * knowledge of the CeCILL license and that you accept its terms.
 */
-/* GGen is a random graph generator :
- * it provides means to generate a graph following a
- * collection of methods found in the litterature.
- *
- * This is a research project founded by the MOAIS Team,
- * INRIA, Grenoble Universities.
- */
+#include "types.hpp"
+#include "builtin.hpp"
+#include <stdarg.h>
 
-#include "debug.hpp"
+static void print(const char *prefix, const char *mesg, va_list args)
+{
+	char tab[256];
+	vsnprintf(tab,sizeof(tab), mesg, args);
+	fprintf(stderr, "%s%s\n",prefix,tab);
+}
 
-namespace ggen {
+void die(const char mesg[], ...)
+{
+	va_list args;
 
-short dbg_level = DEBUG_DEFAULT_LEVEL;
+	va_start(args, mesg);
+	print("fatal: ", mesg, args);
+	va_end(args);
+	exit(128);
+}
 
+static void print_help(const char *message[])
+{
+	for(int i = 0; message[i] != NULL; i++)
+		fprintf(stderr,"%s",message[i]);
+}
+
+void usage(const char *message[]) 
+{
+	print_help(message);
+	exit(129);
+}
+
+void usage_helps(int argc, char**argv, help_elt helps[],int ask_full_help)
+{
+	const char* cmd;
+	if(argc > 1)
+		cmd = argv[1];
+	else
+		cmd = helps[0].name;
+
+	if(!strcmp(cmd,helps[0].name))
+	{
+		print_help(helps[0].help);
+		if(ask_full_help)
+		{
+			std::cout << "\nDetailled help for each command:" << std::endl;
+			for(int j = 1; j < ARRAY_SIZE(helps) ; j++)
+				print_help(helps[j].help);
+		}
+		exit(129);
+	}
+
+	for(int i = 1; i < ARRAY_SIZE(helps) ; i++)
+		if(!strcmp(cmd,helps[i].name))
+		{
+			print_help(helps[i].help);
+			exit(129);
+		}
+
+	die("Cannot help on this: %s !",cmd);
 }

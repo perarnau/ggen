@@ -39,17 +39,26 @@
 #include "types.hpp"
 #include "random.hpp"
 using namespace ggen;
+
 /* helps defining a table of all the commands known by a program*/
 struct cmd_table_elt {
 	const char* name;
 	int (*fn)(int, char**);
 };
 
+struct help_elt {
+	const char* name;
+	const char** help;
+};
+
 /* C black magic to compute the size of a flexible array */
 #define ARRAY_SIZE(x) (sizeof(x)/sizeof(x[0]))
 
-/* builtin commands external to ggen */
+extern void die(const char *err,...);
+extern void usage_helps(int argc, char **argv, struct help_elt helps[], int ask_full_help);
+extern void usage(const char *help[]);
 
+/* builtin commands external to ggen */
 extern int cmd_generate_graph(int argc,char **argv);
 extern int cmd_analyse_graph(int argc, char **argv);
 extern int cmd_transform_graph(int argc, char**argv);
