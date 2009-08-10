@@ -35,71 +35,16 @@
 # knowledge of the CeCILL license and that you accept its terms.
 
 ###################
-## DEPENDENIES
-###################
-# For boost
-SET(Boost_USE_STATIC_LIBS OFF)
-SET(Boost_USE_MULTITHREAD OFF)
-FIND_PACKAGE(Boost REQUIRED program_options graph)
-
-# For GSL
-find_package(GSL)
-
-###################
-## DEFINITIONS
+## MAIN
 ###################
 
-add_definitions(-DGGEN_VERSION_STRING=\"${GGEN_VERSION_STRING}\")
-
-# remove deprecated warning about hash_set with gcc 4.3
-ADD_DEFINITIONS(-DBOOST_NO_HASH)
-
-# Some flags definitions
-set(CMAKE_CXX_FLAGS_DEBUG	" -g -O2 -DDEBUG ")
-set(CMAKE_C_FLAGS_DEBUG       	" -g -O2 -DDEBUG ")
-set(CMAKE_CXX_FLAGS_RELEASE	"-O2")
-set(CMAKE_C_FLAGS_RELEASE	"-O2")
-
-###################
-## LIB VARS
-###################
-
-set(LIB_FILES dynamic_properties.cpp graph-generation.cpp graph-analysis.cpp random.cpp graph-transformation.cpp graph-properties.cpp)
-
-add_library(graph STATIC ${LIB_FILES})
-
-
-###################
-## EXEC VARS
-###################
-
-# Executables
-set(EXECS ggen)
-
-set(EXECS_FILES builtin-generate-graph.cpp ggen.cpp builtin-analyse-graph.cpp builtin-transform-graph.cpp builtin-add-property.cpp builtin-extract-property.cpp usage.cpp)
-
-###################
-## EXEC RULES
-###################
-
-add_executable(ggen ${EXECS_FILES})
-target_link_libraries(ggen ${Boost_LIBRARIES} ${GSL_LIBRARIES} graph)
+configure_file(validation_campaign.pl ${CMAKE_BINARY_DIR}/scripts/validation_campaign.pl)
+configure_file(config.pl ${CMAKE_BINARY_DIR}/scripts/config.pl)
 
 ###################
 ## INSTALL RULES
 ###################
 
 # install commands
-install(TARGETS ggen
-	RUNTIME DESTINATION bin)
+install(DIRECTORY scripts DESTINATION scripts)
 
-###################
-## TESTING 
-###################
-#add_subdirectory(tests)
-
-###################
-## SCRIPTS
-###################
-
-add_subdirectory(scripts)
