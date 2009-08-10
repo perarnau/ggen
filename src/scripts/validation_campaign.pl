@@ -18,9 +18,39 @@ sub dbg {
 	print "trace: " . $msg . "\n" if $verbose > 0;
 }
 
+#################################################
+# ANALYSIS METHODS
+#################################################
+
+sub lp {
+	dbg("computing longuest path of generated graphs");
+	my @files = glob("*.dot");
+	for my $f (@files) {
+		my $outname, $number;
+		($outname = $f) =~ s/(.*)\.\d+\.dot/$1.lp/;
+		($number = $f) =~ s/(.*)\.(\d+)\.dot/$2/;
+		open(my $out, ">>",$outname) or die "Can't open outfile: $!";
+
+		my @args = ("analyse-graph", "lp", "-i $f");
+		open(my $fh,"-|",GGEN,@args) or die "Can't run program: $!";
+		while(<$fh>) {
+			print $out "$number:" . $_;
+		}
+		close $fh;
+		close $out;
+	}
+}
+
+
+#################################################
+# MAIN CODE
+#################################################
+
 sub analyse {
 	dbg("executing the analysis command");
-
+	foreach my $a (@Config::analysis) {
+		 eval $a;
+	}
 }
 
 sub run {
@@ -39,7 +69,7 @@ sub run {
 			dbg($m.": RNG file is ".$rng_file);
 			
 			for(my $i = 0; $i < $iterations; $i++) {
-				my $outfile = $m."_".$inlined_args.".".$i;
+				my $outfile = $m."_".$inlined_args.".".$i.".dot";
 				my $cmd = "generate-graph --output ".$outfile." ".$m." ".$ar;
 				my @cmd_args = split(/\s+/,$cmd);
 				system(GGEN,@cmd_args) == 0 or die "Something wrong is going on";
@@ -55,7 +85,7 @@ GetOptions(	'verbose' 	=> \$verbose,
 		'config=s'	=> \$config_file,
 		) or die "Cannot parse options : $!";
 
-{ package Config;use strict; do $config_file or die "Config file not found";}
+{ package Config; do $config_file or die "Config file not found";}
 
 mkdir $prefix;
 chdir $prefix or die "Wrong prefix $prefix";

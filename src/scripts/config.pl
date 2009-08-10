@@ -4,6 +4,10 @@
 
 # This file contains all the arguments we want to launch ggen with.
 # Used by validation_campaign
+
+our @analysis = ("lp");
+
+
 our @methods = ("erdos_gnp", "erdos_gnm");
 
 ## GNP arguments
