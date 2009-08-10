@@ -18,18 +18,16 @@ for(my $i = 10; $i <= 200; $i+=10) {
 }
 
 ## GNM arguments
-# For every probability in probs, generate graphs
+# For every factor in facts, generate graphs
 # with between 10 and 200 vertices and with
-# a number of edges at a constant factor of n
+# a number of edges at this constant factor of n
 my $gnm_args;
-@probs = (0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9);
+my @facts = (1,2,3,4);
 for(my $i = 10; $i <= 200; $i+=10) {
-	for(my $j = 1; $j <= 10; $j++) {
-		my $m = $i*$j;
-		foreach my $p (@probs) {
-			push @gnm_args, $i." ".$m." ".$p;
+	foreach my $f (@facts) {
+			my $m = $i*$f;
+			push @gnm_args, $i." ".$m;
 		}
-	}
 }
 
 ## Global
