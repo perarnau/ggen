@@ -96,7 +96,15 @@ install(TARGETS ggen
 ###################
 ## TESTING 
 ###################
-#add_subdirectory(tests)
+
+enable_testing()
+set(commands analyse-graph generate-graph transform-graph add-property extract-property)
+## basic tests for help message
+foreach(it ${commands})
+	add_test(usage-${it} ${EXECUTABLE_OUTPUT_PATH}/ggen ${it})
+	set_property(TEST usage-${it} PROPERTY TIMEOUT 2)
+	set_property(TEST usage-${it} PROPERTY PASS_REGULAR_EXPRESSION "Usage")
+endforeach(it ${commands})
 
 ###################
 ## SCRIPTS

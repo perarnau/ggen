@@ -145,10 +145,10 @@ int cmd_extract_property(int argc, char** argv)
 	argv = &(argv[optind]);
 
 	// this is the name
-	if(argc == 1)
-		name = argv[0];
+	if(argc != 1 || ask_help)
+		usage(general_help);
 	else
-		die("you must %sprovide a name",argc > 1 ? "only ":"");
+		name = argv[0];
 
 
 	g = new Graph();
