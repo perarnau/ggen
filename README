@@ -13,7 +13,7 @@ REQUIREMENTS:
 INSTALL:
 	- mkdir build
 	- cd build
-	- cmake ../src
+	- cmake ../
 	- make
 
 No install procedure is included for now.
