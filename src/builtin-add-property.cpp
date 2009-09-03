@@ -74,7 +74,7 @@ static int verbose = 0;
 static int ask_help = 0;
 static int ask_full_help = 0;
 
-static int is_edge = 0, is_vertex = 0, do_floor = 0, do_ceil = 0;
+static int is_edge = 0, is_vertex = 0;
 
 static Graph *g = NULL;
 static ggen_rng *rng = NULL;
@@ -101,8 +101,6 @@ static const char* general_help[] = {
 	"\nProperty options:\n",
 	"--name      <string>     : the name of the property\n",
 	"--edge,--vertex          : force the type of property to add\n",
-	"--floor                  : use the floor function to truncate random numbers when adding the property\n",
-	"--ceil                   : same use than floor, but with the ceil function\n",
 	"\nRandom Numbers options:\n",
 	"--seed      <uint64>     : specify the generator seed\n",
 	"--rng-file  <filename>   : load and save the generator state in a specific file\n", 
@@ -244,8 +242,6 @@ static struct option long_options[] = {
 	{ "name", required_argument, NULL, 'n' },
 	{ "edge", no_argument, &is_edge, 1 },
 	{ "vertex", no_argument, &is_vertex, 1 },
-	{ "floor" , no_argument, &do_floor, 1 },
-	{ "ceil", no_argument, &do_ceil, 1 },
 	/* random number generator */
 	{ "seed", required_argument, NULL, 's' },
 	{ "rng-type", required_argument, NULL, 't' },
