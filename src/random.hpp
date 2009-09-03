@@ -59,15 +59,6 @@ namespace ggen {
  * gsl for ggen, according to user defined command line argument.
  */
 
-/* First thing to do it to define the complete collection of supported random number
- * distributions */
-
-#define GGEN_RND_GAUSSIAN 	0
-#define GGEN_RND_FLAT 		1
-#define GGEN_RND_MAX 		2
-
-#define GGEN_RND_DEFAULT GGEN_RND_FLAT
-
 
 /* GSL RNG types */
 
@@ -231,9 +222,8 @@ class ggen_rng_testing : public ggen_rng {
 		bool b;
 };
 
-/******************************************************************************
+/* *****************************************************************************
  * GGEN GSL Random Number Distribution,
- * Factory pattern
  * Handle all creation and access to gsl_rnd
 ******************************************************************************/
 
@@ -258,14 +248,6 @@ class ggen_rnd {
 		 */
 		~ggen_rnd();		
 		
-		/** Creates the good rnd given a type asked
-		 * @param rng : the rng behind the rnd
-		 * @param ggen_rnd_type : the type of distribution wanted
-		 * @param args : a vector of all arguments needed for a given distribution
-		 * @return a random number distribution in compliance with the type and args given, or NULL if an error occurs.
-		 */
-		static ggen_rnd* create_rnd(ggen_rng* rng, const unsigned int ggen_rnd_type, std::vector<std::string> args); 
-	
 	protected:
 		/** The random number generator used for the generation of a given distribution*/
 		ggen_rng* rng;
@@ -279,13 +261,7 @@ class ggen_rnd {
  */
 class ggen_rnd_gaussian : public ggen_rnd {
 	public:
-		/** The constructor for a gaussian distribution
-		 * @param rng : the rng associated with this rnd
-		 * @param args: a vector of arguments to be passed to the gsl constructor : should contain only one double value
-		 */
-		ggen_rnd_gaussian(ggen_rng* rng, std::vector<std::string> args);
-	
-		/** Constructor with correctly typed parameters
+		/** Constructor
 		 * @param rng: the rng associated with this rnd
 		 * @param s : the center of the distribution
 		 */
@@ -308,13 +284,7 @@ class ggen_rnd_gaussian : public ggen_rnd {
 class ggen_rnd_flat : public ggen_rnd {
 	public:
 		
-		/** Construct a rnd fitting the uniform distribution in a given range
-		 * @param rng : the rng associated with this rnd
-		 * @param args : this vector should contain two double defining the range of this uniform distribution
-		 */
-		ggen_rnd_flat(ggen_rng* rng, std::vector<std::string> args);
-	
-		/** Constructor with correctly typed parameters
+		/** Constructor
 		 * @param rng: the rng associated with this rnd
 		 * @param mi : the minimum of the distribution
 		 * @param mx : the maximum of the distribution

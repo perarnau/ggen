@@ -224,20 +224,6 @@ unsigned long int ggen_rng_testing::uniform_int(unsigned long int n)
 /* Base class
  *************/
 
-/* factory method */
-ggen_rnd* ggen_rnd::create_rnd(ggen_rng* rng, const unsigned int ggen_rnd_type, std::vector<std::string> args)
-{
-	switch(ggen_rnd_type)
-	{
-		case GGEN_RND_GAUSSIAN:
-			return new ggen_rnd_gaussian(rng, args);
-		case GGEN_RND_FLAT:
-			return new ggen_rnd_flat(rng, args);
-		default:
-			return NULL;
-	}
-}
-
 ggen_rnd::ggen_rnd(ggen_rng* r)
 {
 	rng = r;
@@ -255,14 +241,6 @@ ggen_rnd::~ggen_rnd()
 *  Gaussian Distribution 
 */
 
-ggen_rnd_gaussian::ggen_rnd_gaussian(ggen_rng* rng, std::vector<std::string> args) : ggen_rnd(rng)
-{
-	if(args.size() == 1)
-		sigma = boost::lexical_cast<double>(args[0]);
-	else
-		; //TODO error handling + bad lexical cast exception
-}
-
 ggen_rnd_gaussian::ggen_rnd_gaussian(ggen_rng* rng, double s) : ggen_rnd(rng)
 {
 	sigma = s;
@@ -277,17 +255,6 @@ double ggen_rnd_gaussian::get()
 /*
 *  Flat (Uniform) Distribution
 */
-
-ggen_rnd_flat::ggen_rnd_flat(ggen_rng* rng, std::vector<std::string> args) : ggen_rnd(rng)
-{
-	if(args.size() == 2)
-	{
-		min = boost::lexical_cast<double>(args[0]);
-		max = boost::lexical_cast<double>(args[1]);
-	}
-	else
-		; //TODO error handling;
-}
 
 ggen_rnd_flat::ggen_rnd_flat(ggen_rng* rng, double mi, double mx) : ggen_rnd(rng)
 {
