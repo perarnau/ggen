@@ -72,7 +72,7 @@ static const char* general_help[] = {
 	"Allowed options:\n",
 	"--help               : ask for help\n",
 	"--verbose            : increase verbosity\n",
-	"--input <filename>   : read the graph for a file\n",
+	"--input <filename>   : read the graph from a file\n",
 	"\nAllowed commands:\n",
 	"nb-vertices          : gives the number of vertices in the graph\n",
 	"nb-edges             : gives the number of edges in the graph\n",
