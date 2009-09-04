@@ -1,9 +1,9 @@
 #!/usr/bin/env python
-# -*- coding: utf8 -*-
+# -*- coding: utf-8 -*-
 
 
 # A Particularly Stupid Scheduling simulator
-# Copyrigth Swann Perarnau 2009
+# Copyright Swann Perarnau 2009
 # Licenced under the terms of the GPLv3.
 # contact: firstname . lastname AT imag.fr
 
