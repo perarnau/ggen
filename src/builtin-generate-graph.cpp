@@ -520,6 +520,9 @@ int cmd_generate_graph(int argc,char** argv)
 	if(output)
 		fout.close();
 
+	if(filed)
+		rng->write();
+
 	delete cntxt;
 	delete g;
 	
