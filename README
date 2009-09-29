@@ -3,8 +3,9 @@ GGen : a graph generator
 ########################
 
 This is a work in progress.
-Address any remarks concerning compiling or use to the bug tracker
+Address any remarks concerning compiling or using this tool to the bug tracker
 of http://ggen.ligforge.imag.fr
+If you really want a quick response try mailing the devs directly.
 
 REQUIREMENTS:
 	- CMake
@@ -16,5 +17,5 @@ INSTALL:
 	- cmake ../src
 	- make
 
-No install procedure is included for now.
+No make install procedure is garanteed to work for now.
 
