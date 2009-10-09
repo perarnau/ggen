@@ -21,6 +21,12 @@
 *
 *
 * \section tools_sec Additional Tools
+*	
+*	GGen manipulates the DOT format for which a huge number of tools exists.
+*	We particularly recommend the tools provided by graphviz:
+*
+*	\li gvpr (previously gpr): an awk-like program for dot graphs
+*	\li dot: the graph drawing program
 *
 *
 */
