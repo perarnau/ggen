@@ -423,4 +423,61 @@ void strong_components(const Graph& g, dynamic_properties& properties)
 	}
 }
 
+/**
+ * @param g : the graph analysed
+ * @param properties : the properties associated with the graph
+ * @param current_path : the current path already visited (current_node excluded)
+ * @param current_node : the current node visited
+ * internal recursive function to compute the maximal paths
+ */
+
+static void maximal_paths_internal(const Graph& g, dynamic_properties& properties, std::list< Vertex > current_path, Vertex current_node)
+{
+	// if node is sink, the path is finished: display it
+	// else call recursively on each child
+	if(boost::out_degree(current_node,g) == 0)
+	{
+		// print the path
+		std::list<Vertex>::iterator it;
+		for(it=current_path.begin() ; it != current_path.end(); it++)
+		{
+			std::cout << get("node_id",properties,*it) << " -> "; 
+		}
+		// print the last node
+		std::cout << get("node_id", properties, current_node) << std::endl;
+	}
+	else
+	{
+		// add current_node to path
+		current_path.push_back(current_node);
+		// for each child make a recursive call
+		std::pair< Out_edge_iter, Out_edge_iter> ep;
+		for(ep=boost::out_edges(current_node,g);ep.first != ep.second; ++ep.first)
+		{
+			Vertex v = boost::target(*ep.first,g);
+			maximal_paths_internal(g,properties,current_path,v);
+		}
+	}
+}
+
+/** 
+ * displays the list of all paths of maximum length (ending by a sink) in the graph
+ */
+
+void maximal_paths(const Graph& g, dynamic_properties& properties)
+{
+	// init path
+	std::list<Vertex> path;
+	
+	// find sources to launch the recursion
+	std::pair< Vertex_iter, Vertex_iter > vp;
+	for(vp=boost::vertices(g); vp.first != vp.second; ++vp.first)
+	{
+		if(boost::in_degree(*vp.first,g) == 0)
+		{
+			maximal_paths_internal(g,properties,path,*vp.first);
+		}
+	}
+}
+
 }

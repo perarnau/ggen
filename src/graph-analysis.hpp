@@ -139,4 +139,15 @@ void max_independent_set(const Graph& g, dynamic_properties& properties);
 
 void strong_components(const Graph& g, dynamic_properties& properties);
 
+/** 
+ *
+ * @param g : a graph to analyse
+ * @param properties : the properties associated with the graph
+ *
+ * displays the list of all paths of maximum length (ending by a sink) in the graph
+ */
+
+void maximal_paths(const Graph& g, dynamic_properties& properties);
+
+
 }

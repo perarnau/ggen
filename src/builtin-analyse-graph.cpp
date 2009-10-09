@@ -83,6 +83,8 @@ static const char* general_help[] = {
 	"in-degree            : gives the in_degree of each vertex\n",
 	"max-independent-set  : gives a maximum independent set of the graph\n",
 	"strong-components    : gives the list of all strong components of the graph\n",
+	"maximal-paths        : gives the list of all maximal paths (ending by a sink)\n",
+	NULL,
 };
 
 static int cmd_help(int argc, char **argv)
@@ -140,6 +142,12 @@ static int cmd_strong_components(int argc, char **argv)
 	return 0;
 }
 
+static int cmd_maximal_paths(int argc, char **argv)
+{
+	maximal_paths(*g,*properties);
+	return 0;
+}
+
 static cmd_table_elt cmd_table[] = {
 	{ "help", cmd_help },
 	{ "nb-vertices", cmd_nb_vertices },
@@ -151,6 +159,7 @@ static cmd_table_elt cmd_table[] = {
         { "in-degree", cmd_in_degree },
         { "max-independent-set", cmd_max_indep_set },
         { "strong-components", cmd_strong_components },
+	{ "maximal-paths", cmd_maximal_paths },
 };
 
 static struct option long_options[] = {
