@@ -56,8 +56,6 @@
 */
 
 #include <boost/config.hpp>
-#include <boost/program_options.hpp>
-#include <boost/graph/graphviz.hpp>
 
 #include "types.hpp"
 #include "random.hpp"

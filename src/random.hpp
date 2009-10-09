@@ -49,9 +49,8 @@
 #include <gsl/gsl_randist.h>
 #include <iostream>
 #include <boost/config.hpp>
-#include <boost/program_options.hpp>
+#include <boost/any.hpp>
 
-namespace po =  boost::program_options;
 namespace ggen {
 
 /* This file is the gls random number distribution wrapper for ggen,

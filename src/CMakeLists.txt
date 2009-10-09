@@ -40,7 +40,7 @@
 # For boost
 SET(Boost_USE_STATIC_LIBS OFF)
 SET(Boost_USE_MULTITHREAD OFF)
-FIND_PACKAGE(Boost REQUIRED program_options graph)
+FIND_PACKAGE(Boost REQUIRED graph)
 
 # For GSL
 find_package(GSL)

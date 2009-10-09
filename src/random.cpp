@@ -46,8 +46,9 @@
 #include <gsl/gsl_rng.h>
 #include <gsl/gsl_randist.h>
 #include <cstdio>
+#include <cstring>
 #include <boost/config.hpp>
-#include <boost/program_options.hpp>
+#include <boost/any.hpp>
 
 namespace ggen {
 
