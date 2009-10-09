@@ -6,6 +6,9 @@
     <note priority="high" time="1254241892">
         remove generation_context, this is just stupid unless we add the graph collection facility
     </note>
+    <note priority="high" time="1254381203">
+        add more documentation, maybe a simple tutorial
+    </note>
     <note priority="medium" time="1254241841">
         tests: create tests for all the lib
     </note>
@@ -23,5 +26,8 @@
     </note>
     <note priority="medium" time="1254242167">
         cleanup the builtin code in terms of help handling
+    </note>
+    <note priority="medium" time="1255072094">
+        move matrix translation to a lib-utils file
     </note>
 </todo>
