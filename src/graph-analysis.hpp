@@ -61,6 +61,7 @@ namespace ggen {
 /** minimum_spanning_tree(g)
 *
 * @param g : an object of type Graph to save the generated graph and it should be empty when initialized
+* @param properties : the properties associated with the graph
 */
 void minimum_spanning_tree(const Graph& g, dynamic_properties& properties);
 
@@ -68,6 +69,7 @@ void minimum_spanning_tree(const Graph& g, dynamic_properties& properties);
 /** out_degree(g)
 *
 * @param g : an object of type Graph to save the generated graph and it should be empty when initialized
+* @param properties : the properties associated with the graph
 *
 * It just outputs the out_degree of each node
 */
@@ -76,6 +78,7 @@ void out_degree(const Graph& g, dynamic_properties& properties);
 /** in_degree(g)
 *
 * @param g : an object of type Graph to save the generated graph and it should be empty when initialized
+* @param properties : the properties associated with the graph
 *
 * It just outputs the in_degree of each node
 */
@@ -84,11 +87,10 @@ void in_degree(const Graph& g, dynamic_properties& properties);
 /** nodes_per_layer(g)
 *
 * @param g : an object of type Graph to save the generated graph and it should be empty when initialized
+* @param properties : the properties associated with the graph
 *
 * this metric doesn't have a nice name for now
-*
 * the idea is to compute, for each i the number of nodes at a maximum distance (longest path) i of the source
-*
 * that is a kind of "number of nodes per layer"
 *
 * THIS MIGHT NOT WORK PROPERLY WITH NOT FULLY CONNECTED GRAPHS !!
@@ -98,6 +100,7 @@ void nodes_per_layer(const Graph& g, dynamic_properties& properties);
 /** longest_path(g)
 *
 * @param g : an object of type Graph to save the generated graph and it should be empty when initialized
+* @param properties : the properties associated with the graph
 *
 * computes the longuest path present in the graph, this without weights on nodes nor edges
 */
@@ -118,6 +121,7 @@ void max_i_s_rec(const Graph& g,std::set<Vertex> *max,std::set<Vertex> current,s
 /** max_independent_set(g)
 *
 * @param g : an object of type Graph to save the generated graph and it should be empty when initialized
+* @param properties : the properties associated with the graph
 *
 * stupid "powerset" algorithm to computes the maximum independent set of the graph
 * recursively compute all possible independent sets and find the maximum one
@@ -128,6 +132,7 @@ void max_independent_set(const Graph& g, dynamic_properties& properties);
 /** strong_components(g)
 *
 * @param g : an object of type Graph to save the generated graph and it should be empty when initialized
+* @param properties : the properties associated with the graph
 *
 * computes the list of all connected components. We consider the graph undirected...
 */
