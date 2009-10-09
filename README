@@ -19,3 +19,14 @@ INSTALL:
 
 No make install procedure is garanteed to work for now.
 
+DOC:
+	- make doc
+		will build some doxygen doc from the source,
+		this is not complete yet but each generation method
+		is clearly explained
+	- ggen --help
+		we tryed to make the usage message as good as possible
+		you can ask additional help by giving a command
+		those help message are recursive and sometimes a --full-help exists too.
+
+If you still have questions, mail us.
