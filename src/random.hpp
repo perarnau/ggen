@@ -302,6 +302,29 @@ class ggen_rnd_flat : public ggen_rnd {
 		double max;
 };
 
+/* Exponential distribution
+ ******************************/
+
+/** Implements the exponential distribution
+ */
+class ggen_rnd_exponential : public ggen_rnd {
+	public:
+		
+		/** Constructor
+		 * @param rng: the rng associated with this rnd
+		 * @param mu : the mean of the distribution
+		 */
+		ggen_rnd_exponential(ggen_rng* rng, double mu);
+
+		/** Returns the next double in the distribution
+		 * @return a double between min and max chosen uniformly
+		 */
+		double get();
+	private:
+		/** The mean of this distribution*/
+		double mu;
+};
+
 };
 
 #endif

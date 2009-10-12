@@ -268,4 +268,18 @@ double ggen_rnd_flat::get()
 	return gsl_ran_flat(rng->get_gsl(),min,max);
 }
 
+/*
+*  Exponential Distribution
+*/
+
+ggen_rnd_exponential::ggen_rnd_exponential(ggen_rng* rng, double mu) : ggen_rnd(rng)
+{
+	this->mu = mu; 
+}
+
+double ggen_rnd_exponential::get()
+{
+	return gsl_ran_exponential(rng->get_gsl(),mu);
+}
+
 };

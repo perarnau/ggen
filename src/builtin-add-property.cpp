@@ -108,7 +108,16 @@ static const char* general_help[] = {
 	"\nCommands available:\n",
 	"gaussian                 : add a property following a gaussian distribution\n",
 	"flat                     : add a property following a flat (uniform) distribution\n",
+	"exponential              : add a property following an exponential distribution\n",
 	NULL
+};
+
+static const char* exponential_help[] = {
+	"\nExponential Distribution:\n",
+	"Use an exponential distribution as the random number generator for the property.\n",
+	"Arguments:\n",
+	"     - mu             : the distribution will have a mean of this value\n",
+	NULL	
 };
 
 static const char* gaussian_help[] = {
@@ -130,6 +139,7 @@ static const char* flat_help[] = {
 
 static struct help_elt helps[] = {
 	{ "general" , general_help },
+	{ "exponential", exponential_help },
 	{ "gaussian", gaussian_help },
 	{ "flat", flat_help },
 };
@@ -171,6 +181,30 @@ static void postop()
 
 	if(outfile)
 		fout.close();
+}
+
+static int cmd_exponential(int argc, char** argv)
+{
+	if(argc == 1)
+		usage(exponential_help);
+	
+	// get arguments
+	if(argc < 2)
+		die("wrong number of arguments");
+
+	double mu;
+
+	try {
+		mu = lexical_cast<double>(argv[1]);
+	}
+	catch(std::exception &e)
+	{
+		die("bad arguments");
+	}
+	preop();
+	rnd = new ggen_rnd_exponential(rng,mu);
+	postop();
+	return 0;
 }
 
 static int cmd_gaussian(int argc, char** argv)
@@ -225,6 +259,7 @@ static int cmd_flat(int argc, char** argv)
 /* Commands to handle */
 static struct cmd_table_elt cmd_table[] = {
 	{ "help", cmd_help },
+	{ "exponential", cmd_exponential },
 	{ "gaussian", cmd_gaussian },
 	{ "flat", cmd_flat },
 };
