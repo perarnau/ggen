@@ -183,78 +183,70 @@ static void postop()
 		fout.close();
 }
 
-static int cmd_exponential(int argc, char** argv)
-{
-	if(argc == 1)
-		usage(exponential_help);
-	
-	// get arguments
-	if(argc < 2)
-		die("wrong number of arguments");
-
-	double mu;
-
-	try {
-		mu = lexical_cast<double>(argv[1]);
-	}
-	catch(std::exception &e)
-	{
-		die("bad arguments");
-	}
-	preop();
-	rnd = new ggen_rnd_exponential(rng,mu);
-	postop();
-	return 0;
+/**
+ * macro defining cmd_functions to call create rnds
+ * needs a help struct name_help and a ggen_rnd_name
+ * 1 double argument version
+ */
+#define DEFINE_CMD_1D(name) 				\
+static int cmd_##name(int argc, char **argv) 		\
+{							\
+	if(argc == 1)					\
+	usage(name##_help);				\
+							\
+	if(argc != 2)					\
+	die("wrong number of arguments");		\
+							\
+	double arg;					\
+							\
+	try {						\
+		arg = lexical_cast<double>(argv[1]);	\
+	}						\
+	catch(std::exception &e)			\
+	{						\
+		die("bad arguments");			\
+	}						\
+	preop();					\
+	rnd = new ggen_rnd_##name(rng,arg);		\
+	postop();					\
+	return 0;					\
 }
 
-static int cmd_gaussian(int argc, char** argv)
-{
-	if(argc == 1)
-		usage(gaussian_help);
-	
-	// get arguments
-	if(argc < 2)
-		die("wrong number of arguments");
+DEFINE_CMD_1D(exponential)
+DEFINE_CMD_1D(gaussian)
 
-	double sigma;
-
-	try {
-		sigma = lexical_cast<double>(argv[1]);
-	}
-	catch(std::exception &e)
-	{
-		die("bad arguments");
-	}
-	preop();
-	rnd = new ggen_rnd_gaussian(rng,sigma);
-	postop();
-	return 0;
+/**
+ * macro defining cmd_functions to call create rnds
+ * needs a help struct name_help and a ggen_rnd_name
+ * 2 double arguments version
+ */
+#define DEFINE_CMD_2D(name) 				\
+static int cmd_##name(int argc, char **argv) 		\
+{							\
+	if(argc == 1)					\
+	usage(name##_help);				\
+							\
+	if(argc != 3)					\
+	die("wrong number of arguments");		\
+							\
+	double arg1;					\
+	double arg2;					\
+							\
+	try {						\
+		arg1 = lexical_cast<double>(argv[1]);	\
+		arg2 = lexical_cast<double>(argv[2]);	\
+	}						\
+	catch(std::exception &e)			\
+	{						\
+		die("bad arguments");			\
+	}						\
+	preop();					\
+	rnd = new ggen_rnd_##name(rng,arg1,arg2);	\
+	postop();					\
+	return 0;					\
 }
 
-static int cmd_flat(int argc, char** argv)
-{
-	if(argc == 1)
-		usage(flat_help);
-	
-	// get arguments
-	if(argc < 3)
-		die("wrong number of arguments");
-
-	double min,max;	
-
-	try {
-		min = lexical_cast<double>(argv[1]);
-		max = lexical_cast<double>(argv[2]);
-	}
-	catch(std::exception &e)
-	{
-		die("bad arguments");
-	}
-	preop();	
-	rnd = new ggen_rnd_flat(rng,min,max);
-	postop();
-	return 0;
-}
+DEFINE_CMD_2D(flat)
 
 /* Commands to handle */
 static struct cmd_table_elt cmd_table[] = {
