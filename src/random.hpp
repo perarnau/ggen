@@ -252,78 +252,103 @@ class ggen_rnd {
 		ggen_rng* rng;
 };
 
-/* Gaussian distribution
- ************************/
-
-/** Implements the gaussian distribution
- * Actually a wrapper for gsl gaussian
- */
-class ggen_rnd_gaussian : public ggen_rnd {
-	public:
-		/** Constructor
-		 * @param rng: the rng associated with this rnd
-		 * @param s : the center of the distribution
-		 */
-		ggen_rnd_gaussian(ggen_rng* rng, double s);
-	
-		/** Gets the next random number fitting the distribution
-		 * @return a random number
-		 */
-		double get();
-	private:
-		/** The gaussian distribution will be centered on this value*/
-		double sigma;
+#define HDEF_RND_1D(name)					\
+class ggen_rnd_##name : public ggen_rnd {			\
+	public:							\
+		ggen_rnd_##name(ggen_rng* rng, double arg);	\
+								\
+		double get();					\
+	private:						\
+		double arg;					\
 };
 
-/* Flat (unifrom) distribution
- ******************************/
+HDEF_RND_1D(exponential)
+HDEF_RND_1D(gaussian)
 
-/** Implements the uniform distribution
- */
-class ggen_rnd_flat : public ggen_rnd {
-	public:
-		
-		/** Constructor
-		 * @param rng: the rng associated with this rnd
-		 * @param mi : the minimum of the distribution
-		 * @param mx : the maximum of the distribution
-		 */
-		ggen_rnd_flat(ggen_rng* rng, double mi, double mx);
-
-		/** Returns the next double in the distribution
-		 * @return a double between min and max chosen uniformly
-		 */
-		double get();
-	private:
-		/** The bottom limit of this uniform distribution*/
-		double min;
-		
-		/** The upper limit of this uniform distribution*/
-		double max;
+#define HDEF_RND_2D(name)							\
+class ggen_rnd_##name : public ggen_rnd {					\
+	public:									\
+		ggen_rnd_##name(ggen_rng* rng, double arg1, double arg2);	\
+										\
+		double get();							\
+	private:								\
+		double arg1,arg2;						\
 };
 
-/* Exponential distribution
- ******************************/
+HDEF_RND_2D(flat)
 
-/** Implements the exponential distribution
- */
-class ggen_rnd_exponential : public ggen_rnd {
-	public:
-		
-		/** Constructor
-		 * @param rng: the rng associated with this rnd
-		 * @param mu : the mean of the distribution
-		 */
-		ggen_rnd_exponential(ggen_rng* rng, double mu);
+///* Gaussian distribution
+// ************************/
+//
+///** Implements the gaussian distribution
+// * Actually a wrapper for gsl gaussian
+// */
+//class ggen_rnd_gaussian : public ggen_rnd {
+//	public:
+//		/** Constructor
+//		 * @param rng: the rng associated with this rnd
+//		 * @param s : the center of the distribution
+//		 */
+//		ggen_rnd_gaussian(ggen_rng* rng, double s);
+//	
+//		/** Gets the next random number fitting the distribution
+//		 * @return a random number
+//		 */
+//		double get();
+//	private:
+//		/** The gaussian distribution will be centered on this value*/
+//		double sigma;
+//};
 
-		/** Returns the next double in the distribution
-		 * @return a double between min and max chosen uniformly
-		 */
-		double get();
-	private:
-		/** The mean of this distribution*/
-		double mu;
-};
+///* Flat (unifrom) distribution
+// ******************************/
+//
+///** Implements the uniform distribution
+// */
+//class ggen_rnd_flat : public ggen_rnd {
+//	public:
+//		
+//		/** Constructor
+//		 * @param rng: the rng associated with this rnd
+//		 * @param mi : the minimum of the distribution
+//		 * @param mx : the maximum of the distribution
+//		 */
+//		ggen_rnd_flat(ggen_rng* rng, double mi, double mx);
+//
+//		/** Returns the next double in the distribution
+//		 * @return a double between min and max chosen uniformly
+//		 */
+//		double get();
+//	private:
+//		/** The bottom limit of this uniform distribution*/
+//		double min;
+//		
+//		/** The upper limit of this uniform distribution*/
+//		double max;
+//};
+
+///* Exponential distribution
+// ******************************/
+//
+///** Implements the exponential distribution
+// */
+//class ggen_rnd_exponential : public ggen_rnd {
+//	public:
+//		
+//		/** Constructor
+//		 * @param rng: the rng associated with this rnd
+//		 * @param mu : the mean of the distribution
+//		 */
+//		ggen_rnd_exponential(ggen_rng* rng, double mu);
+//
+//		/** Returns the next double in the distribution
+//		 * @return a double between min and max chosen uniformly
+//		 */
+//		double get();
+//	private:
+//		/** The mean of this distribution*/
+//		double mu;
+//};
 
 };
 

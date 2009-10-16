@@ -237,49 +237,80 @@ ggen_rnd::~ggen_rnd()
 }
 
 
-
 /*
-*  Gaussian Distribution 
-*/
+ * Macro for rnd definitions
+ */
 
-ggen_rnd_gaussian::ggen_rnd_gaussian(ggen_rng* rng, double s) : ggen_rnd(rng)
-{
-	sigma = s;
+#define CDEF_RND_1D(name)							\
+ggen_rnd_##name::ggen_rnd_##name(ggen_rng* rng, double arg) : ggen_rnd(rng) 	\
+{										\
+	this->arg = arg;							\
+}										\
+										\
+double ggen_rnd_##name::get()							\
+{										\
+	return gsl_ran_##name(rng->get_gsl(),this->arg);			\
 }
 
-double ggen_rnd_gaussian::get()
-{
-	return gsl_ran_gaussian(rng->get_gsl(),sigma);
+CDEF_RND_1D(exponential)
+CDEF_RND_1D(gaussian)
+
+#define CDEF_RND_2D(name)									\
+ggen_rnd_##name::ggen_rnd_##name(ggen_rng* rng, double arg1, double arg2) : ggen_rnd(rng) 	\
+{												\
+	this->arg1 = arg1;									\
+	this->arg2 = arg2;									\
+}												\
+												\
+double ggen_rnd_##name::get()									\
+{												\
+	return gsl_ran_##name(rng->get_gsl(),this->arg1,this->arg2);				\
 }
 
+CDEF_RND_2D(flat)
 
-/*
-*  Flat (Uniform) Distribution
-*/
+///*
+//*  Gaussian Distribution 
+//*/
+//
+//ggen_rnd_gaussian::ggen_rnd_gaussian(ggen_rng* rng, double s) : ggen_rnd(rng)
+//{
+//	sigma = s;
+//}
+//
+//double ggen_rnd_gaussian::get()
+//{
+//	return gsl_ran_gaussian(rng->get_gsl(),sigma);
+//}
 
-ggen_rnd_flat::ggen_rnd_flat(ggen_rng* rng, double mi, double mx) : ggen_rnd(rng)
-{
-	min = mi; 
-	max = mx; 
-}
 
-double ggen_rnd_flat::get()
-{
-	return gsl_ran_flat(rng->get_gsl(),min,max);
-}
+///*
+//*  Flat (Uniform) Distribution
+//*/
+//
+//ggen_rnd_flat::ggen_rnd_flat(ggen_rng* rng, double mi, double mx) : ggen_rnd(rng)
+//{
+//	min = mi; 
+//	max = mx; 
+//}
+//
+//double ggen_rnd_flat::get()
+//{
+//	return gsl_ran_flat(rng->get_gsl(),min,max);
+//}
 
-/*
-*  Exponential Distribution
-*/
-
-ggen_rnd_exponential::ggen_rnd_exponential(ggen_rng* rng, double mu) : ggen_rnd(rng)
-{
-	this->mu = mu; 
-}
-
-double ggen_rnd_exponential::get()
-{
-	return gsl_ran_exponential(rng->get_gsl(),mu);
-}
+///*
+//*  Exponential Distribution
+//*/
+//
+//ggen_rnd_exponential::ggen_rnd_exponential(ggen_rng* rng, double mu) : ggen_rnd(rng)
+//{
+//	this->mu = mu; 
+//}
+//
+//double ggen_rnd_exponential::get()
+//{
+//	return gsl_ran_exponential(rng->get_gsl(),mu);
+//}
 
 };
