@@ -77,7 +77,7 @@ static const char* general_help[] = {
 	"nb-vertices          : gives the number of vertices in the graph\n",
 	"nb-edges             : gives the number of edges in the graph\n",
 	"mst                  : compute the Minimum Spanning Tree of the graph\n",
-	"lp                   : compute the Longest Path of the grap\n",
+	"lp                   : compute the Longest Path of the graph\n",
 	"npl                  : compute the Nodes Per Layer of the graph\n",
 	"out-degree           : gives the out_degree of each vertex\n",
 	"in-degree            : gives the in_degree of each vertex\n",
