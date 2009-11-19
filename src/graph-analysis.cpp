@@ -1,25 +1,25 @@
 /* Copyright Swann Perarnau 2009
  *
- *   contributor(s) :  
+ *   contributor(s) :
  *
- *   contact : firstname.lastname@imag.fr	
+ *   contact : firstname.lastname@imag.fr
  *
  * This software is a computer program whose purpose is to help the
  * random generation of graph structures and adding various properties
  * on those structures.
  *
  * This software is governed by the CeCILL  license under French law and
- * abiding by the rules of distribution of free software.  You can  use, 
+ * abiding by the rules of distribution of free software.  You can  use,
  * modify and/ or redistribute the software under the terms of the CeCILL
  * license as circulated by CEA, CNRS and INRIA at the following URL
- * "http://www.cecill.info". 
- * 
+ * "http://www.cecill.info".
+ *
  * As a counterpart to the access to the source code and  rights to copy,
  * modify and redistribute granted by the license, users are provided only
  * with a limited warranty  and the software's author,  the holder of the
  * economic rights,  and the successive licensors  have only  limited
- * liability. 
- * 
+ * liability.
+ *
  * In this respect, the user's attention is drawn to the risks associated
  * with loading,  using,  modifying and/or developing or reproducing the
  * software by the user in light of its specific status of free software,
@@ -27,10 +27,10 @@
  * therefore means  that it is reserved for developers  and  experienced
  * professionals having in-depth computer knowledge. Users are therefore
  * encouraged to load and test the software's suitability as regards their
- * requirements in conditions enabling the security of their systems and/or 
- * data to be ensured and,  more generally, to use and operate it in the 
- * same conditions as regards security. 
- * 
+ * requirements in conditions enabling the security of their systems and/or
+ * data to be ensured and,  more generally, to use and operate it in the
+ * same conditions as regards security.
+ *
  * The fact that you are presently reading this means that you have had
  * knowledge of the CeCILL license and that you accept its terms.
  */
@@ -66,14 +66,10 @@ namespace ggen {
 // Analysis Function
 ////////////////////////////////////////////////////////////////////////////////
 
-/** minimum_spanning_tree(g)
-*
-* @param g : an object of type Graph to save the generated graph and it should be empty when initialized
-*/
 void minimum_spanning_tree(ggen_result_graph *r, const Graph& g, dynamic_properties& properties)
 {
 	Vertex source = *vertices(g).first;
-	// We need a map to store the spanning tree 
+	// We need a map to store the spanning tree
 	std::map< Vertex, Vertex> vvmap;
 	boost::associative_property_map< std::map< Vertex, Vertex> > predmap(vvmap);
 
@@ -100,7 +96,7 @@ void minimum_spanning_tree(ggen_result_graph *r, const Graph& g, dynamic_propert
 		imap.insert(make_pair(*vp.first,i++));
 		dmap.insert(make_pair(*vp.first,0));
 	}
-	
+
 	// Find a source of this graph
 	for (vp = boost::vertices(g); vp.first != vp.second; ++vp.first)
 	{
@@ -112,10 +108,10 @@ void minimum_spanning_tree(ggen_result_graph *r, const Graph& g, dynamic_propert
 		}
 	}
 
-	//compute MST	
+	//compute MST
 	prim_minimum_spanning_tree(g,predmap,root_vertex(source).weight_map(weightmap).vertex_index_map(indexmap).visitor(default_dijkstra_visitor()));
 
-	// Output in DOT format, to do so we contruct a graph
+	// Build the mst has a graph and initialize correctly its properties
 	Graph mst;
 	dynamic_properties p(&create_property_map);
 	std::map< Vertex, Vertex > o2n;
@@ -134,13 +130,6 @@ void minimum_spanning_tree(ggen_result_graph *r, const Graph& g, dynamic_propert
 	r->dump(&p);
 }
 
-
-/** out_degree(g)
-*
-* @param g : an object of type Graph to save the generated graph and it should be empty when initialized
-*
-* It just outputs the out_degree of each node
-*/
 void out_degree(ggen_result_vmap *r, const Graph& g, dynamic_properties& properties)
 {
 	std::pair<Vertex_iter, Vertex_iter> vp;
@@ -151,12 +140,6 @@ void out_degree(ggen_result_vmap *r, const Graph& g, dynamic_properties& propert
 	r->dump(&properties);
 }
 
-/** in_degree(g)
-*
-* @param g : an object of type Graph to save the generated graph and it should be empty when initialized
-*
-* It just outputs the in_degree of each node
-*/
 void in_degree(ggen_result_vmap *r, const Graph& g, dynamic_properties& properties)
 {
 	std::pair<Vertex_iter, Vertex_iter> vp;
@@ -167,18 +150,6 @@ void in_degree(ggen_result_vmap *r, const Graph& g, dynamic_properties& properti
 	r->dump(&properties);
 }
 
-/** nodes_per_layer(g)
-*
-* @param g : an object of type Graph to save the generated graph and it should be empty when initialized
-*
-* this metric doesn't have a nice name for now
-*
-* the idea is to compute, for each i the number of nodes at a maximum distance (longest path) i of the source
-*
-* that is a kind of "number of nodes per layer"
-*
-* THIS MIGHT NOT WORK PROPERLY WITH NOT FULLY CONNECTED GRAPHS !!
-*/
 void nodes_per_layer(const Graph& g, dynamic_properties& properties)
 {
 	std::set< Vertex> src;
@@ -210,7 +181,7 @@ void nodes_per_layer(const Graph& g, dynamic_properties& properties)
 			// we visited the node
 			std::cout << " " << get("node_id",properties,*it);
 			visited.insert(*it);
-			
+
 			// look for its successors
 			std::pair< Out_edge_iter, Out_edge_iter> ep;
 			for(ep = out_edges(*it,g); ep.first != ep.second; *ep.first++)
@@ -239,13 +210,7 @@ void nodes_per_layer(const Graph& g, dynamic_properties& properties)
 		next.clear();
 	}
 }
-/** longest_path(g)
-*
-* @param g : an object of type Graph to save the generated graph and it should be empty when initialized
-*
-* computes the longuest path present in the graph, this without weights on nodes nor edges
-*/
- 
+
 void longest_path(ggen_result_paths *r, const Graph& g, dynamic_properties& properties)
 {
 	// Index map
@@ -261,20 +226,20 @@ void longest_path(ggen_result_paths *r, const Graph& g, dynamic_properties& prop
 		imap.insert(make_pair(*vp.first,i++));
 		lpath.insert(make_pair(*vp.first,0));
 	}
-	
+
 	// result
 	std::list< Vertex> list;
 	std::insert_iterator< std::list<Vertex> > il(list,list.begin());
 
-	// sort topologically 
+	// sort topologically
 	boost::topological_sort(g,il,vertex_index_map(indexmap));
-	
+
 	std::map< Vertex, Vertex> pmap;
 	Vertex maxv;
 	std::list< Vertex >::reverse_iterator it;
 	for(it = list.rbegin(),maxv=*it; it != list.rend(); ++it)
 	{
-		// for each successor of this node, test if we are the best successor	
+		// for each successor of this node, test if we are the best successor
 		std::pair< Out_edge_iter, Out_edge_iter> ep;
 		for(ep= boost::out_edges(*it,g); ep.first != ep.second; ++ep.first)
 		{
@@ -288,7 +253,7 @@ void longest_path(ggen_result_paths *r, const Graph& g, dynamic_properties& prop
 				maxv = w;
 		}
 	}
-	
+
 	// Longest path
 	Vertex s;
 	std::list< Vertex > path;
@@ -306,20 +271,19 @@ void longest_path(ggen_result_paths *r, const Graph& g, dynamic_properties& prop
 /** max_i_s_rec(g, *max, current, allowed)
 *
 * @param g : an object of type Graph to save the generated graph and it should be empty when initialized
-* @param *max :
-* @param current :
-* @param allowed : 
+* @param *max : the current maximal set
+* @param current : the current vertex evaluated
+* @param allowed : the vertices still allowed to include in the maximal set
 *
 * recursive function for the max_independent_set
 */
-
 void max_i_s_rec(const Graph& g,std::set<Vertex> *max,std::set<Vertex> current,std::set<Vertex> allowed)
 {
 	// optimization, if there is not enough available nodes for current
 	// to grow bigger than current max, we can stop
 	if(current.size() + allowed.size() <= max->size())
 		return;
-	
+
 	// stop condition, we have marked all the vertices of the graph
 	if(allowed.empty())
 	{
@@ -336,12 +300,12 @@ void max_i_s_rec(const Graph& g,std::set<Vertex> *max,std::set<Vertex> current,s
 		Vertex c = *it;
 		// remove from allowed
 		allowed.erase(c);
-	
+
 		// first case, we add the vertex, and remove all its adjacent vertices from the graph as they do not comply with
 		// the independent set property
 		std::set<Vertex> c2(current);
 		c2.insert(c);
-		
+
 		std::set<Vertex> a2(allowed);
 		// find the adjacent vertices and do not allow them, we consider the graph undirected here
 		std::pair<In_edge_iter, In_edge_iter> ip;
@@ -363,14 +327,6 @@ void max_i_s_rec(const Graph& g,std::set<Vertex> *max,std::set<Vertex> current,s
 	}
 }
 
-/** max_independent_set(g)
-*
-* @param g : an object of type Graph to save the generated graph and it should be empty when initialized
-*
-* stupid "powerset" algorithm to computes the maximum independent set of the graph
-* recursively compute all possible independent sets and find the maximum one
-*/
-
 void max_independent_set(const Graph& g, dynamic_properties& properties)
 {
 	// the list of sets
@@ -390,13 +346,6 @@ void max_independent_set(const Graph& g, dynamic_properties& properties)
 		std::cout << get("node_id",properties,*vit) << std::endl;
 	}
 }
-
-/** strong_components(g)
-*
-* @param g : an object of type Graph to save the generated graph and it should be empty when initialized
-*
-* computes the list of all connected components. We consider the graph undirected...
-*/
 
 void strong_components(const Graph& g, dynamic_properties& properties)
 {
@@ -427,13 +376,13 @@ void strong_components(const Graph& g, dynamic_properties& properties)
 }
 
 /**
+ * @param r : the ggen_result used to save and dump the result
  * @param g : the graph analysed
  * @param properties : the properties associated with the graph
  * @param current_path : the current path already visited (current_node excluded)
  * @param current_node : the current node visited
  * internal recursive function to compute the maximal paths
  */
-
 static void maximal_paths_internal(ggen_result_paths *r, const Graph& g, dynamic_properties& properties, std::list< Vertex > current_path, Vertex current_node)
 {
 	// if node is sink, the path is finished: save it
@@ -457,7 +406,7 @@ static void maximal_paths_internal(ggen_result_paths *r, const Graph& g, dynamic
 	}
 }
 
-/** 
+/**
  * displays the list of all paths of maximum length (ending by a sink) in the graph
  */
 
@@ -465,7 +414,7 @@ void maximal_paths(ggen_result_paths *r, const Graph& g, dynamic_properties& pro
 {
 	// init path
 	std::list<Vertex> path;
-	
+
 	// find sources to launch the recursion
 	std::pair< Vertex_iter, Vertex_iter > vp;
 	for(vp=boost::vertices(g); vp.first != vp.second; ++vp.first)
