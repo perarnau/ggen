@@ -57,6 +57,10 @@ using namespace boost;
 using namespace std;
 namespace ggen {
 
+void ggen_result::set_stream(ostream *out) {
+	os = out;
+}
+
 /* Graph result */
 
 ggen_rg_stupid::ggen_rg_stupid() {
@@ -72,9 +76,9 @@ void ggen_rg_stupid::save(Graph *graph) {
 	g = graph;
 }
 
-void ggen_rg_stupid::dump(ostream *out, dynamic_properties *properties) {
-	if(g != NULL)
-		write_graphviz(*out,*g,*properties);
+void ggen_rg_stupid::dump(dynamic_properties *properties) {
+	if(g != NULL && os != NULL)
+		write_graphviz(*os,*g,*properties);
 }
 
 /* Paths result */
@@ -91,7 +95,7 @@ void ggen_rp_stupid::save(std::list<Vertex> path) {
 	Lpaths->push_back(path);
 }
 
-void ggen_rp_stupid::dump(ostream *out, dynamic_properties *properties) {
+void ggen_rp_stupid::dump(dynamic_properties *properties) {
 	// output each list independently
 	std::list< std::list< Vertex> >::iterator it;
 	for(it=Lpaths->begin();it != Lpaths->end(); it++) {
@@ -102,13 +106,13 @@ void ggen_rp_stupid::dump(ostream *out, dynamic_properties *properties) {
 			continue;
 
 		Vertex cur = *vit;
-		*out << get("node_id",*properties,cur);
+		*os << get("node_id",*properties,cur);
 		vit++;
 		while(vit != p.end()) {
-			*out << " -> " << get("node_id",*properties,*vit);
+			*os << " -> " << get("node_id",*properties,*vit);
 			vit++;
 		}
-		*out << std::endl;
+		*os << std::endl;
 	}
 }
 
@@ -123,10 +127,10 @@ void ggen_rvm_stupid::save(Vertex key, string value) {
 	map[key] = value;
 }
 
-void ggen_rvm_stupid::dump(ostream *out, dynamic_properties *properties) {
+void ggen_rvm_stupid::dump(dynamic_properties *properties) {
 	std::map< Vertex, std::string >::iterator it;
 	for(it = map.begin(); it!= map.end(); it++) {
-		*out << get("node_id",*properties,it->first) << " : " << it->second << std::endl;
+		*os << get("node_id",*properties,it->first) << " : " << it->second << std::endl;
 	}
 }
 

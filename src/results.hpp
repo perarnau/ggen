@@ -64,8 +64,15 @@ namespace ggen {
  */
 class ggen_result {
 	public:
-		/** dump the result into an outstream */
-		virtual void dump(ostream *out, dynamic_properties *properties);
+		 /** Set the ostream to use for dump 
+		  * @param out the ostream to use for dumping result */
+		void set_stream(ostream *out);
+
+		/** dumps the result 
+		 * @param properties this is needed to acces names of vertices in most results*/
+		virtual void dump(dynamic_properties *properties);
+	protected:
+		ostream *os;
 };
 
 /********************************************************************
@@ -96,7 +103,7 @@ class ggen_rg_stupid : public ggen_result_graph {
 		void save(Graph *graph);
 
 		/** Dumps the graph using graphviz format */
-		void dump(ostream *out, dynamic_properties *properties);
+		void dump(dynamic_properties *properties);
 	private:
 		/** the graph saved */
 		Graph *g;
@@ -133,7 +140,7 @@ class ggen_rp_stupid : public ggen_result_paths {
 		void save(std::list<Vertex> path);
 
 		/** Dumps all paths */
-		void dump(ostream *out, dynamic_properties *properties);
+		void dump(dynamic_properties *properties);
 	private:
 		/** a list of all paths saved */
 		std::list< std::list< Vertex> > *Lpaths;
@@ -173,10 +180,9 @@ class ggen_rvm_stupid : public ggen_result_vmap {
 		void save(Vertex key, string value);
 
 		/** Dumps the map */
-		void dump(ostream *out, dynamic_properties *properties);
+		void dump(dynamic_properties *properties);
 	private:
 		/** the map used for saving */
 		std::map < Vertex, std::string > map;
 };
-
 }
