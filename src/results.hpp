@@ -42,6 +42,9 @@
  * INRIA, Grenoble Universities.
  */
 
+#ifndef RESULTS_HPP
+#define RESULTS_HPP 1
+
 #include <iostream>
 #include <climits>
 
@@ -186,3 +189,4 @@ class ggen_rvm_stupid : public ggen_result_vmap {
 		std::map < Vertex, std::string > map;
 };
 }
+#endif

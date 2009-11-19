@@ -55,6 +55,7 @@
 #include "builtin.hpp"
 #include "graph-analysis.hpp"
 #include "dynamic_properties.hpp"
+#include "results.hpp"
 
 using namespace boost;
 using namespace ggen;
@@ -66,6 +67,49 @@ static char* infile = NULL;
 static Graph *g = NULL;
 static dynamic_properties* properties;
 static std::istream *in = &std::cin;
+
+// A bit of helping code for result handling */
+typedef enum { graph_t , paths, vmap, null } rtype;
+typedef struct {
+	const char* name;
+	rtype type;
+} rtable_elt;
+
+static rtable_elt rtable[] = {
+	{ "mst", graph_t },
+	{ "lp", paths },
+	{ "npl", null },
+	{ "out-degree", vmap },
+	{ "in-degree", vmap },
+	{ "max-independent-set", null },
+	{ "strong-components", null },
+	{ "maximal-paths", paths },
+};
+
+static rtype find_type(char * cmd) {
+	for(int i = 0; i < ARRAY_SIZE(rtable); i++)
+	{
+		rtable_elt *e = rtable+i;
+		if(!strcmp(e->name,cmd))
+		{
+			return e->type;
+		}
+	}
+}
+
+static ggen_result* build_result(char *cmd) {
+	rtype t = find_type(cmd);
+	switch(t) {
+		case null:
+			return NULL;
+		case graph_t:
+			return new ggen_rg_stupid();
+		case paths:
+			return new ggen_rp_stupid();
+		case vmap:
+			return new ggen_rvm_stupid();
+	}
+}
 
 static const char* general_help[] = {
 	"Usage: ggen analyse-graph [options] cmd\n",
@@ -106,7 +150,8 @@ static int cmd_nb_edges(int argc, char **argv)
 
 static int cmd_mst(int argc, char **argv)
 {
-	minimum_spanning_tree(*g,*properties);
+	ggen_result *r = build_result(argv[0]);
+	minimum_spanning_tree(r,*g,*properties);
 	return 0;
 }
 

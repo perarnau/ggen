@@ -53,6 +53,7 @@
 
 #include "types.hpp"
 #include "dynamic_properties.hpp"
+#include "results.hpp"
 
 using namespace boost;
 using namespace std;
@@ -63,7 +64,7 @@ namespace ggen {
 * @param g : an object of type Graph to save the generated graph and it should be empty when initialized
 * @param properties : the properties associated with the graph
 */
-void minimum_spanning_tree(const Graph& g, dynamic_properties& properties);
+void minimum_spanning_tree(ggen_result_graph &r, const Graph& g, dynamic_properties& properties);
 
 
 /** out_degree(g)
@@ -73,7 +74,7 @@ void minimum_spanning_tree(const Graph& g, dynamic_properties& properties);
 *
 * It just outputs the out_degree of each node
 */
-void out_degree(const Graph& g, dynamic_properties& properties);
+void out_degree(ggen_result_vmap &r, const Graph& g, dynamic_properties& properties);
 
 /** in_degree(g)
 *
@@ -82,7 +83,7 @@ void out_degree(const Graph& g, dynamic_properties& properties);
 *
 * It just outputs the in_degree of each node
 */
-void in_degree(const Graph& g, dynamic_properties& properties);
+void in_degree(ggen_result_vmap &r, const Graph& g, dynamic_properties& properties);
 
 /** nodes_per_layer(g)
 *
@@ -104,7 +105,7 @@ void nodes_per_layer(const Graph& g, dynamic_properties& properties);
 *
 * computes the longuest path present in the graph, this without weights on nodes nor edges
 */
-void longest_path(const Graph& g, dynamic_properties& properties);
+void longest_path(ggen_result_paths &r, const Graph& g, dynamic_properties& properties);
 
 /** max_i_s_rec(g, *max, current, allowed)
 *
@@ -147,7 +148,6 @@ void strong_components(const Graph& g, dynamic_properties& properties);
  * displays the list of all paths of maximum length (ending by a sink) in the graph
  */
 
-void maximal_paths(const Graph& g, dynamic_properties& properties);
-
+void maximal_paths(ggen_result_paths &r, const Graph& g, dynamic_properties& properties);
 
 }
