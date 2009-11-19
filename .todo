@@ -24,8 +24,11 @@
     <note priority="medium" time="1254242009">
         add wrappers for other distributions in ggen_rnd
     </note>
-    <note priority="medium" time="1254242135">
+    <note priority="medium" time="1254242135" done="1258623840">
         dissociate the output from the computation in graph-*
+        <comment>
+            still needs some work
+        </comment>
     </note>
     <note priority="medium" time="1254242167">
         cleanup the builtin code in terms of help handling
