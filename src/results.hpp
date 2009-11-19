@@ -188,5 +188,42 @@ class ggen_rvm_stupid : public ggen_result_vmap {
 		/** the map used for saving */
 		std::map < Vertex, std::string > map;
 };
+
+/********************************************************************
+ * Vertex sets specializations
+ *******************************************************************/
+
+/** Specialized result, used to save a list of vertex sets */
+class ggen_result_vsets : public ggen_result {
+	public:
+		/** add a set to the result
+		 * @param set : the set to save
+		 */
+		virtual void save(std::set< Vertex > set) = 0;
+};
+
+/** A stupid implementation of ggen_result_vsets
+ * Saves all sets and then dumps them as successive lists of names
+ */
+class ggen_rvs_stupid : public ggen_result_vsets {
+	public:
+		/** Creates an empty result */
+		ggen_rvs_stupid();
+
+		/** Simple destructor */
+		~ggen_rvs_stupid();
+
+		/** add a set to the result
+		 * @param set : the set to save
+		 */
+		void save(std::set< Vertex > set);
+
+		/** Dumps the sets */
+		void dump(dynamic_properties *properties);
+	private:
+		/** the list used for saving */
+		std::list < std::set< Vertex > > sets;
+};
+
 }
 #endif

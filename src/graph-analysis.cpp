@@ -150,7 +150,7 @@ void in_degree(ggen_result_vmap *r, const Graph& g, dynamic_properties& properti
 	r->dump(&properties);
 }
 
-void nodes_per_layer(const Graph& g, dynamic_properties& properties)
+void nodes_per_layer(ggen_result_vsets *r, const Graph& g, dynamic_properties& properties)
 {
 	std::set< Vertex> src;
 	std::pair< Vertex_iter, Vertex_iter> vp;
@@ -165,21 +165,23 @@ void nodes_per_layer(const Graph& g, dynamic_properties& properties)
 	}
 
 	// now we want to compute our metric
-	// run through the nodes beginning by the source and listing its successors
+	// run through the nodes beginning by the source and list its successors
 	// iff all the predecessors have been visited
 	std::set< Vertex > cur,next;
 	std::set< Vertex > visited;
 	std::set<Vertex>::iterator it;
 	unsigned int i = 0;
-	std::cout << "Nodes Per Layer:" << std::endl;
+	//std::cout << "Nodes Per Layer:" << std::endl;
 	cur = src;
 	while( cur.size() != 0 )
 	{
-		std::cout << "Layer " << i++ << ":";
+		//std::cout << "Layer " << i++ << ":";
+		std::set< Vertex > layer;
 		for(it = cur.begin(); it != cur.end(); it++)
 		{
 			// we visited the node
-			std::cout << " " << get("node_id",properties,*it);
+			//std::cout << " " << get("node_id",properties,*it);
+			layer.insert(*it);
 			visited.insert(*it);
 
 			// look for its successors
@@ -205,10 +207,11 @@ void nodes_per_layer(const Graph& g, dynamic_properties& properties)
 					next.insert(suc);
 			}
 		}
-		std::cout << std::endl;
+		r->save(layer);
 		cur = next;
 		next.clear();
 	}
+	r->dump(&properties);
 }
 
 void longest_path(ggen_result_paths *r, const Graph& g, dynamic_properties& properties)
@@ -327,7 +330,7 @@ void max_i_s_rec(const Graph& g,std::set<Vertex> *max,std::set<Vertex> current,s
 	}
 }
 
-void max_independent_set(const Graph& g, dynamic_properties& properties)
+void max_independent_set(ggen_result_vsets *r, const Graph& g, dynamic_properties& properties)
 {
 	// the list of sets
 	std::set< Vertex > *max = new  std::set< Vertex >();
@@ -339,15 +342,12 @@ void max_independent_set(const Graph& g, dynamic_properties& properties)
 	// launch the recursion
 	max_i_s_rec(g,max,empty,a);
 
-	// display the max independent set
-	std::set<Vertex>::iterator vit;
-	for(vit= max->begin(); vit != max->end(); vit++)
-	{
-		std::cout << get("node_id",properties,*vit) << std::endl;
-	}
+	// save the maximum independant set
+	r->save(*max);
+	r->dump(&properties);
 }
 
-void strong_components(const Graph& g, dynamic_properties& properties)
+void strong_components(ggen_result_vsets *r, const Graph& g, dynamic_properties& properties)
 {
 	// create the component map
 	std::map< Vertex, int > com;
@@ -367,12 +367,21 @@ void strong_components(const Graph& g, dynamic_properties& properties)
 
 	int num = boost::strong_components(g, comp, vertex_index_map(indexmap));
 
-	std::cout << "Total number of components: " << num << std::endl;
+	// create the sets from the map
+	//std::cout << "Total number of components: " << num << std::endl;
 	std::map< Vertex, int>::iterator it;
+	std::map< int, std::set< Vertex > > sets;
 	for(it = com.begin(); it != com.end() ; ++it)
 	{
-		std::cout << "Vertex " <<  get("node_id",properties,it->first) << " is in component " << it->second << std::endl;
+		sets[it->second].insert(it->first);
 	}
+	// save the sets
+	std::map< int, std::set< Vertex > >::iterator sit;
+	for(sit = sets.begin(); sit!= sets.end(); sit++)
+	{
+		r->save(sit->second);
+	}
+	r->dump(&properties);
 }
 
 /**

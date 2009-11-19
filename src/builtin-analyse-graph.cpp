@@ -100,6 +100,16 @@ static ggen_result_vmap* create_result_vmap()
 		die("Unknown result format");
 }
 
+static ggen_result_vsets* create_result_vsets()
+{
+	if(result_format == NULL || !strcmp(result_format,"stupid"))
+	{
+		return new ggen_rvs_stupid();
+	}
+	else
+		die("Unknown result format");
+}
+
 /* usage and cmd functions */
 static const char* general_help[] = {
 	"Usage: ggen analyse-graph [options] cmd\n",
@@ -162,7 +172,10 @@ static int cmd_lp(int argc, char **argv)
 
 static int cmd_npl(int argc, char **argv)
 {
-	nodes_per_layer(*g,*properties);
+	ggen_result_vsets *r = create_result_vsets();
+	r->set_stream(&std::cout);
+	nodes_per_layer(r,*g,*properties);
+	delete r;
 	return 0;
 }
 
@@ -183,12 +196,18 @@ static int cmd_in_degree(int argc, char **argv)
 }
 static int cmd_max_indep_set(int argc, char **argv)
 {
-	max_independent_set(*g,*properties);
+	ggen_result_vsets *r = create_result_vsets();
+	r->set_stream(&std::cout);
+	max_independent_set(r,*g,*properties);
+	delete r;
 	return 0;
 }
 static int cmd_strong_components(int argc, char **argv)
 {
-	strong_components(*g,*properties);
+	ggen_result_vsets *r = create_result_vsets();
+	r->set_stream(&std::cout);
+	strong_components(r,*g,*properties);
+	delete r;
 	return 0;
 }
 

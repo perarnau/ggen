@@ -86,6 +86,7 @@ void in_degree(ggen_result_vmap *r, const Graph& g, dynamic_properties& properti
 
 /** nodes_per_layer(g)
 *
+* @param r : the ggen_result used to save and dump the result
 * @param g : an object of type Graph to save the generated graph and it should be empty when initialized
 * @param properties : the properties associated with the graph
 *
@@ -95,7 +96,7 @@ void in_degree(ggen_result_vmap *r, const Graph& g, dynamic_properties& properti
 *
 * THIS MIGHT NOT WORK PROPERLY WITH NOT FULLY CONNECTED GRAPHS !!
 */
-void nodes_per_layer(const Graph& g, dynamic_properties& properties);
+void nodes_per_layer(ggen_result_vsets *r, const Graph& g, dynamic_properties& properties);
 
 /** longest_path(g)
 *
@@ -109,6 +110,7 @@ void longest_path(ggen_result_paths *r, const Graph& g, dynamic_properties& prop
 
 /** max_independent_set(g)
 *
+* @param r : the ggen_result used to save and dump the result
 * @param g : an object of type Graph to save the generated graph and it should be empty when initialized
 * @param properties : the properties associated with the graph
 *
@@ -116,17 +118,18 @@ void longest_path(ggen_result_paths *r, const Graph& g, dynamic_properties& prop
 * recursively compute all possible independent sets and find the maximum one
 */
 
-void max_independent_set(const Graph& g, dynamic_properties& properties);
+void max_independent_set(ggen_result_vsets *r, const Graph& g, dynamic_properties& properties);
 
 /** strong_components(g)
 *
+* @param r : the ggen_result used to save and dump the result
 * @param g : an object of type Graph to save the generated graph and it should be empty when initialized
 * @param properties : the properties associated with the graph
 *
 * computes the list of all connected components. We consider the graph undirected...
 */
 
-void strong_components(const Graph& g, dynamic_properties& properties);
+void strong_components(ggen_result_vsets *r, const Graph& g, dynamic_properties& properties);
 
 /**
  * @param r : the ggen_result used to save and dump the result
