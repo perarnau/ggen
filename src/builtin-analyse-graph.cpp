@@ -63,60 +63,51 @@ using namespace ggen;
 static int ask_help = 0;
 static int verbose = 0;
 static char* infile = NULL;
+static char* result_format = NULL;
 
 static Graph *g = NULL;
 static dynamic_properties* properties;
 static std::istream *in = &std::cin;
 
-// A bit of helping code for result handling */
-typedef enum { graph_t , paths, vmap, null } rtype;
-typedef struct {
-	const char* name;
-	rtype type;
-} rtable_elt;
-
-static rtable_elt rtable[] = {
-	{ "mst", graph_t },
-	{ "lp", paths },
-	{ "npl", null },
-	{ "out-degree", vmap },
-	{ "in-degree", vmap },
-	{ "max-independent-set", null },
-	{ "strong-components", null },
-	{ "maximal-paths", paths },
-};
-
-static rtype find_type(char * cmd) {
-	for(int i = 0; i < ARRAY_SIZE(rtable); i++)
+/* Result format handling */
+static ggen_result_graph* create_result_graph()
+{
+	if(result_format == NULL || !strcmp(result_format,"stupid"))
 	{
-		rtable_elt *e = rtable+i;
-		if(!strcmp(e->name,cmd))
-		{
-			return e->type;
-		}
+		return new ggen_rg_stupid();
 	}
+	else 
+		die("Unknown result format");		
 }
 
-static ggen_result* build_result(char *cmd) {
-	rtype t = find_type(cmd);
-	switch(t) {
-		case null:
-			return NULL;
-		case graph_t:
-			return new ggen_rg_stupid();
-		case paths:
-			return new ggen_rp_stupid();
-		case vmap:
-			return new ggen_rvm_stupid();
+static ggen_result_paths* create_result_paths()
+{
+	if(result_format == NULL || !strcmp(result_format,"stupid"))
+	{
+		return new ggen_rp_stupid();
 	}
+	else 
+		die("Unknown result format");		
 }
 
+static ggen_result_vmap* create_result_vmap()
+{
+	if(result_format == NULL || !strcmp(result_format,"stupid"))
+	{
+		return new ggen_rvm_stupid();
+	}
+	else 
+		die("Unknown result format");		
+}
+
+/* usage and cmd functions */
 static const char* general_help[] = {
 	"Usage: ggen analyse-graph [options] cmd\n",
 	"Allowed options:\n",
 	"--help               : ask for help\n",
 	"--verbose            : increase verbosity\n",
 	"--input <filename>   : read the graph from a file\n",
+	"--result-format      : change the way results are presented\n",
 	"\nAllowed commands:\n",
 	"nb-vertices          : gives the number of vertices in the graph\n",
 	"nb-edges             : gives the number of edges in the graph\n",
@@ -128,6 +119,9 @@ static const char* general_help[] = {
 	"max-independent-set  : gives a maximum independent set of the graph\n",
 	"strong-components    : gives the list of all strong components of the graph\n",
 	"maximal-paths        : gives the list of all maximal paths (ending by a sink)\n",
+	"\nResult Formats:\n",
+	"Result formats make possible some additional computation during the analysis\n",
+	"As of today, only <stupid> is defined.\n",
 	NULL,
 };
 
@@ -150,14 +144,19 @@ static int cmd_nb_edges(int argc, char **argv)
 
 static int cmd_mst(int argc, char **argv)
 {
-	ggen_result *r = build_result(argv[0]);
+	ggen_result_graph *r = create_result_graph();
+	r->set_stream(&std::cout);
 	minimum_spanning_tree(r,*g,*properties);
+	delete r;
 	return 0;
 }
 
 static int cmd_lp(int argc, char **argv)
 {
-	longest_path(*g,*properties);
+	ggen_result_paths *r = create_result_paths();
+	r->set_stream(&std::cout);
+	longest_path(r,*g,*properties);
+	delete r;
 	return 0;
 }
 
@@ -169,12 +168,18 @@ static int cmd_npl(int argc, char **argv)
 
 static int cmd_out_degree(int argc, char **argv)
 {
-	out_degree(*g,*properties);
+	ggen_result_vmap *r = create_result_vmap();
+	r->set_stream(&std::cout);
+	out_degree(r,*g,*properties);
+	delete r;
 	return 0;
 }
 static int cmd_in_degree(int argc, char **argv)
 {
-	in_degree(*g,*properties);
+	ggen_result_vmap *r = create_result_vmap();
+	r->set_stream(&std::cout);
+	in_degree(r,*g,*properties);
+	delete r;
 }
 static int cmd_max_indep_set(int argc, char **argv)
 {
@@ -189,7 +194,10 @@ static int cmd_strong_components(int argc, char **argv)
 
 static int cmd_maximal_paths(int argc, char **argv)
 {
-	maximal_paths(*g,*properties);
+	ggen_result_paths *r = create_result_paths();
+	r->set_stream(&std::cout);
+	maximal_paths(r,*g,*properties);
+	delete r;
 	return 0;
 }
 
@@ -211,6 +219,7 @@ static struct option long_options[] = {
 	{ "help", no_argument, &ask_help, 1 },
 	{ "verbose", no_argument, &verbose, 1 },
 	{ "input", required_argument, NULL, 'i' },
+	{ "result-format", required_argument, NULL, 'f' },
 	{ 0,0,0,0 },
 };
 
@@ -236,6 +245,9 @@ int cmd_analyse_graph(int argc,char** argv)
 				break;
 			case 'i':
 				infile = optarg;
+				break;
+			case 'f':
+				result_format = optarg;
 				break;
 			case '?':
 			default:

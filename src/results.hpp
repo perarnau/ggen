@@ -67,13 +67,13 @@ namespace ggen {
  */
 class ggen_result {
 	public:
-		 /** Set the ostream to use for dump 
+		/** Set the ostream to use for dump 
 		  * @param out the ostream to use for dumping result */
 		void set_stream(ostream *out);
 
 		/** dumps the result 
 		 * @param properties this is needed to acces names of vertices in most results*/
-		virtual void dump(dynamic_properties *properties);
+		virtual void dump(dynamic_properties *properties) = 0;
 	protected:
 		ostream *os;
 };
@@ -89,7 +89,7 @@ class ggen_result_graph : public ggen_result {
 		 * @param graph the graph to save
 		 * @param properties the graph properties associated
 		 */
-		virtual void save(Graph *graph);
+		virtual void save(Graph *graph) = 0;
 };
 
 /** A stupid result saver
@@ -122,7 +122,7 @@ class ggen_result_paths : public ggen_result {
 		/** saves a path
 		 * @param path the path to save 
 		 */
-		virtual void save(std::list<Vertex> path);
+		virtual void save(std::list<Vertex> path) = 0;
 };
 
 /** A stupid implementation of ggen_result_paths
@@ -161,7 +161,7 @@ class ggen_result_vmap : public ggen_result {
 		 * @param key the vertex key
 		 * @param value the string value
 		 */
-		virtual void save(Vertex key, string value);
+		virtual void save(Vertex key, string value) = 0;
 };
 
 /** A stupid implementation of ggen_result_vmap 

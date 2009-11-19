@@ -70,7 +70,7 @@ namespace ggen {
 *
 * @param g : an object of type Graph to save the generated graph and it should be empty when initialized
 */
-void minimum_spanning_tree(ggen_result_graph &r, const Graph& g, dynamic_properties& properties)
+void minimum_spanning_tree(ggen_result_graph *r, const Graph& g, dynamic_properties& properties)
 {
 	Vertex source = *vertices(g).first;
 	// We need a map to store the spanning tree 
@@ -130,8 +130,8 @@ void minimum_spanning_tree(ggen_result_graph &r, const Graph& g, dynamic_propert
 		if (predmap[*vp.first] != *vp.first)
 			add_edge(o2n[predmap[*vp.first]],o2n[*vp.first],mst);
 	}
-	r.save(&mst);
-	r.dump(&properties);
+	r->save(&mst);
+	r->dump(&p);
 }
 
 
@@ -141,14 +141,14 @@ void minimum_spanning_tree(ggen_result_graph &r, const Graph& g, dynamic_propert
 *
 * It just outputs the out_degree of each node
 */
-void out_degree(ggen_result_vmap &r, const Graph& g, dynamic_properties& properties)
+void out_degree(ggen_result_vmap *r, const Graph& g, dynamic_properties& properties)
 {
 	std::pair<Vertex_iter, Vertex_iter> vp;
 	for(vp = boost::vertices(g); vp.first != vp.second; ++vp.first)
 	{
-		r.save(*vp.first,lexical_cast<std::string>(out_degree(*vp.first,g)));
+		r->save(*vp.first,lexical_cast<std::string>(out_degree(*vp.first,g)));
 	}
-	r.dump(&properties);
+	r->dump(&properties);
 }
 
 /** in_degree(g)
@@ -157,14 +157,14 @@ void out_degree(ggen_result_vmap &r, const Graph& g, dynamic_properties& propert
 *
 * It just outputs the in_degree of each node
 */
-void in_degree(ggen_result_vmap &r, const Graph& g, dynamic_properties& properties)
+void in_degree(ggen_result_vmap *r, const Graph& g, dynamic_properties& properties)
 {
 	std::pair<Vertex_iter, Vertex_iter> vp;
 	for(vp = boost::vertices(g); vp.first != vp.second; ++vp.first)
 	{
-		r.save(*vp.first,lexical_cast<std::string>(in_degree(*vp.first,g)));
+		r->save(*vp.first,lexical_cast<std::string>(in_degree(*vp.first,g)));
 	}
-	r.dump(&properties);
+	r->dump(&properties);
 }
 
 /** nodes_per_layer(g)
@@ -246,7 +246,7 @@ void nodes_per_layer(const Graph& g, dynamic_properties& properties)
 * computes the longuest path present in the graph, this without weights on nodes nor edges
 */
  
-void longest_path(ggen_result_paths &r, const Graph& g, dynamic_properties& properties)
+void longest_path(ggen_result_paths *r, const Graph& g, dynamic_properties& properties)
 {
 	// Index map
 	int i = 0;
@@ -299,8 +299,8 @@ void longest_path(ggen_result_paths &r, const Graph& g, dynamic_properties& prop
 		path.push_front(s);
 		maxv = s;
 	}
-	r.save(path);
-	r.dump(&properties);
+	r->save(path);
+	r->dump(&properties);
 }
 
 /** max_i_s_rec(g, *max, current, allowed)
@@ -434,14 +434,14 @@ void strong_components(const Graph& g, dynamic_properties& properties)
  * internal recursive function to compute the maximal paths
  */
 
-static void maximal_paths_internal(ggen_result_paths &r, const Graph& g, dynamic_properties& properties, std::list< Vertex > current_path, Vertex current_node)
+static void maximal_paths_internal(ggen_result_paths *r, const Graph& g, dynamic_properties& properties, std::list< Vertex > current_path, Vertex current_node)
 {
 	// if node is sink, the path is finished: save it
 	// else call recursively on each child
 	if(boost::out_degree(current_node,g) == 0)
 	{
 		current_path.push_back(current_node);
-		r.save(current_path);
+		r->save(current_path);
 	}
 	else
 	{
@@ -461,7 +461,7 @@ static void maximal_paths_internal(ggen_result_paths &r, const Graph& g, dynamic
  * displays the list of all paths of maximum length (ending by a sink) in the graph
  */
 
-void maximal_paths(ggen_result_paths &r, const Graph& g, dynamic_properties& properties)
+void maximal_paths(ggen_result_paths *r, const Graph& g, dynamic_properties& properties)
 {
 	// init path
 	std::list<Vertex> path;
@@ -475,7 +475,7 @@ void maximal_paths(ggen_result_paths &r, const Graph& g, dynamic_properties& pro
 			maximal_paths_internal(r,g,properties,path,*vp.first);
 		}
 	}
-	r.dump(&properties);
+	r->dump(&properties);
 }
 
 }
