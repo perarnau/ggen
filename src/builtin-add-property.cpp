@@ -109,6 +109,7 @@ static const char* general_help[] = {
 	"gaussian                 : add a property following a gaussian distribution\n",
 	"flat                     : add a property following a flat (uniform) distribution\n",
 	"exponential              : add a property following an exponential distribution\n",
+	"pareto                   : add a property following a pareto distribution\n",
 	NULL
 };
 
@@ -137,11 +138,21 @@ static const char* flat_help[] = {
 	NULL
 };
 
+static const char* pareto_help[] = {
+	"\nPareto Distribution:\n",
+	"Use a pareto distribution as the random number generator for the property.\n",
+	"Arguments:\n",
+	"     - a               : order of the distribution\n",
+	"     - b               : minimum value of the distribution\n",
+	NULL
+};
+
 static struct help_elt helps[] = {
 	{ "general" , general_help },
 	{ "exponential", exponential_help },
 	{ "gaussian", gaussian_help },
 	{ "flat", flat_help },
+	{ "pareto", pareto_help },
 };
 
 static int cmd_help(int argc, char** argv)
@@ -247,6 +258,7 @@ static int cmd_##name(int argc, char **argv) 		\
 }
 
 DEFINE_CMD_2D(flat)
+DEFINE_CMD_2D(pareto)
 
 /* Commands to handle */
 static struct cmd_table_elt cmd_table[] = {
@@ -254,6 +266,7 @@ static struct cmd_table_elt cmd_table[] = {
 	{ "exponential", cmd_exponential },
 	{ "gaussian", cmd_gaussian },
 	{ "flat", cmd_flat },
+	{ "pareto", cmd_pareto },
 };
 
 

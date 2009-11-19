@@ -276,6 +276,7 @@ class ggen_rnd_##name : public ggen_rnd {					\
 };
 
 HDEF_RND_2D(flat)
+HDEF_RND_2D(pareto)
 
 ///* Gaussian distribution
 // ************************/

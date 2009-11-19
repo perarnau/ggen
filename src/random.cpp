@@ -268,6 +268,7 @@ double ggen_rnd_##name::get()									\
 }
 
 CDEF_RND_2D(flat)
+CDEF_RND_2D(pareto)
 
 ///*
 //*  Gaussian Distribution 
