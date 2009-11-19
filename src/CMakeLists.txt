@@ -64,7 +64,7 @@ set(CMAKE_C_FLAGS_RELEASE	"-O2")
 ## LIB VARS
 ###################
 
-set(LIB_FILES dynamic_properties.cpp graph-generation.cpp graph-analysis.cpp random.cpp graph-transformation.cpp graph-properties.cpp)
+set(LIB_FILES dynamic_properties.cpp graph-generation.cpp graph-analysis.cpp random.cpp graph-transformation.cpp graph-properties.cpp results.cpp)
 
 add_library(graph STATIC ${LIB_FILES})
 
