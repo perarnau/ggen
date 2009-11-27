@@ -36,6 +36,6 @@ DX_INIT_DOXYGEN(ggen,doxygen.cfg,doxygen-doc)
 
 
 # output makefiles
-AC_CONFIG_FILES([Makefile src/Makefile lib/Makefile tests/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile lib/Makefile tests/Makefile doc/Makefile])
 # do the output
 AC_OUTPUT
