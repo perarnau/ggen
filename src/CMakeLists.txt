@@ -66,7 +66,7 @@ set(CMAKE_C_FLAGS_RELEASE	"-O2")
 
 set(LIB_FILES dynamic_properties.cpp graph-generation.cpp graph-analysis.cpp random.cpp graph-transformation.cpp graph-properties.cpp results.cpp)
 
-add_library(graph STATIC ${LIB_FILES})
+add_library(graph ${LIB_FILES})
 
 
 ###################
@@ -105,6 +105,9 @@ foreach(it ${commands})
 	set_property(TEST usage-${it} PROPERTY TIMEOUT 2)
 	set_property(TEST usage-${it} PROPERTY PASS_REGULAR_EXPRESSION "Usage")
 endforeach(it ${commands})
+
+# more complicated tests
+add_subdirectory(tests)
 
 ###################
 ## SCRIPTS

@@ -39,32 +39,30 @@
 ###################
 
 # Executables
-#set(TEST_GENERATION generation_test)
 
-#set(TESTS_EXECS ${TEST_GENERATION})
+set(TESTS_EXECS lib_results)
 ###################
 ## EXEC RULES
 ###################
 
-
 # add execs and link
-#foreach(it ${TESTS_EXECS})
-#	add_executable(${it} ${it}.cpp ../random.cpp ../graph_generator.cpp ../dynamic_properties.cpp ../debug.cpp)
-#	target_link_libraries(${it} ${Boost_LIBRARIES} ${GSL_LIBRARIES})
-#endforeach(it ${TESTS_EXECS})
+foreach(it ${TESTS_EXECS})
+	add_executable(${it} ${it}.cpp)
+	target_link_libraries(${it} ${Boost_LIBRARIES} ${GSL_LIBRARIES} graph)
+endforeach(it ${TESTS_EXECS})
 
 ###################
 ## INSTALL RULES
 ###################
 
 # install commands
-#install(TARGETS ${TESTS_EXECS} 
-#	RUNTIME DESTINATION bin/)
+install(TARGETS ${TESTS_EXECS} 
+	RUNTIME DESTINATION bin/)
 
 ###################
 ## TESTING RULES
 ###################
-#enable_testing()
-# Tests on generation algorithms
-#add_test(generation-erdos_gnp ${EXECUTABLE_OUTPUT_PATH}/${TEST_GENERATION} erdos_gnp)
-#add_test(generation-erdos_gnp-dag ${EXECUTABLE_OUTPUT_PATH}/${TEST_GENERATION} erdos_gnp --dag)
+enable_testing()
+# test the ggen_results
+add_test(ggen_results ${EXECUTABLE_OUTPUT_PATH}/lib_results)
+
