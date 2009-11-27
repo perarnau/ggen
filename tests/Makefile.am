@@ -1,5 +1,5 @@
 LIBTESTS_CPPFLAGS = -I$(srcdir)/../lib
-LDADD = $(srcdir)/../lib/libggen.la
+LDADD = ../lib/libggen.la
 AM_COLOR_TESTS = yes
 
 check_PROGRAMS = lib_results
