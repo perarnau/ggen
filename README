@@ -8,19 +8,18 @@ of http://ggen.ligforge.imag.fr
 If you really want a quick response try mailing the devs directly.
 
 REQUIREMENTS:
-	- CMake
+	- autotools
 	- Boost Graph Library and Boost Program Options (>=1.37)
 	- GNU Scientific Library
 INSTALL:
-	- mkdir build
-	- cd build
-	- cmake ../src
+	- ./configure
 	- make
+	- make install
 
 No make install procedure is garanteed to work for now.
 
 DOC:
-	- make doc
+	- make doxygen-doc
 		will build some doxygen doc from the source,
 		this is not complete yet but each generation method
 		is clearly explained
