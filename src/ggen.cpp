@@ -80,7 +80,7 @@ static int cmd_help(int argc,char **argv)
 	return 0;
 }
 
-static const char *ggen_version_string = GGEN_VERSION_STRING;
+static const char *ggen_version_string = PACKAGE_STRING;
 
 static int cmd_version(int argc,char **argv)
 {

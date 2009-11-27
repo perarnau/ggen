@@ -38,6 +38,7 @@
 
 #include "types.hpp"
 #include "random.hpp"
+#include "config.h"
 using namespace ggen;
 
 /* helps defining a table of all the commands known by a program*/

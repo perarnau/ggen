@@ -43,9 +43,9 @@
 #include <boost/graph/properties.hpp>
 #include <boost/graph/graphviz.hpp>
 
-#include "../types.hpp"
-#include "../dynamic_properties.hpp"
-#include "../results.hpp"
+#include "types.hpp"
+#include "dynamic_properties.hpp"
+#include "results.hpp"
 
 
 void test_ggen_result()
