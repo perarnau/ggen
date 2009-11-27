@@ -9,12 +9,17 @@ If you really want a quick response try mailing the devs directly.
 
 REQUIREMENTS:
 	- autotools
+	- libtool
 	- Boost Graph Library and Boost Program Options (>=1.37)
 	- GNU Scientific Library
-INSTALL:
+INSTALL FOR DISTRIBUTION PACKAGE:
 	- ./configure
 	- make
 	- make install
+
+INSTALL FOR DEVELOPPERS:
+	- Run ./autogen.sh before the './configure && make' stuff
+	
 
 No make install procedure is garanteed to work for now.
 
