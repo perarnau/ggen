@@ -1,13 +1,17 @@
 # init autoconf
 AC_INIT([ggen],[0.3],[ggen-devel@ligforge.imag.fr])
+# are we in the right source dir ?
+AC_CONFIG_SRCDIR([src/ggen.cpp])
 # build tools in separate dir
 AC_CONFIG_AUX_DIR([build-aux])
+# macro in srcdir/m4
+AC_CONFIG_MACRO_DIR([m4])
+
 # configuration output in config.h
 AC_CONFIG_HEADERS([config.h])
 
 # automake should fail on any error
 AM_INIT_AUTOMAKE([-Wall -Werror gnu])
-AC_CONFIG_MACRO_DIR([m4])
 # check for programs
 AC_LANG_CPLUSPLUS
 AC_PROG_CXX
