@@ -1,0 +1,24 @@
+- remove generation_context, this is just stupid unless we add the graph collection facility
+  (added 29/09/09, 18:31\n, incomplete, priority high)
+
+- add more documentation, maybe a simple tutorial
+  (added 01/10/09, 09:13\n, incomplete, priority high)
+
+- add checks in binaries when dealing with dag-only methods
+  (added 09/10/09, 14:37\n, incomplete, priority high)
+
+- tests: create tests for all the lib
+  (added 29/09/09, 18:30\n, incomplete, priority medium)
+
+- remove bibliography from the project
+  (added 29/09/09, 18:32\n, incomplete, priority medium)
+
+- add wrappers for other distributions in ggen_rnd
+  (added 29/09/09, 18:33\n, incomplete, priority medium)
+
+- cleanup the builtin code in terms of help handling
+  (added 29/09/09, 18:36\n, incomplete, priority medium)
+
+- move matrix translation to a lib-utils file
+  (added 09/10/09, 09:08\n, incomplete, priority medium)
+
