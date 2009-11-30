@@ -3,7 +3,7 @@
  *
  * firstname DOT lastname AT imag DOT fr
  *
- * This software is governed by the CeCILL license, 
+ * This software is governed by the CeCILL license,
  * see the LICENSE file for a complete copy of the license.
  */
 
@@ -19,9 +19,13 @@
 *
 * \section usage_sec Usage
 *
+* \section Bibliography
+*
+*	All generation methods inside GGen come from academic papers. From more information
+*	on those papers please look at the \ref bibliography page.
 *
 * \section tools_sec Additional Tools
-*	
+*
 *	GGen manipulates the DOT format for which a huge number of tools exists.
 *	We particularly recommend the tools provided by graphviz:
 *
