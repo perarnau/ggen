@@ -90,7 +90,7 @@ set(CPACK_PACKAGE_RESSOURCE_FILE_LICENCE "${CMAKE_SOURCE_DIR}/LICENCE")
 
 # Source package info
 set(CPACK_SOURCE_GENERATOR "TGZ")
-set(CPACK_SOURCE_IGNORE_FILES "/\\\\.svn/;\\\\.swp$;.*~;prototypes/;build/;www/;docs/;\\\\.git/;\\\\.bzr;\\\\.#;/#;cscope.*")
+set(CPACK_SOURCE_IGNORE_FILES "/\\\\.svn/;\\\\.swp$;.*~;prototypes/;build/;www/;bibliography/;\\\\.git/;\\\\.bzr;\\\\.#;/#;cscope.*")
 set(CPACK_SOURCE_INSTALLED_DIRECTORIES "${CMAKE_SOURCE_DIR}/;/")
 
 include(CPack)
