@@ -6,3 +6,4 @@
 	* autogen.sh: add --copy flags to automake
 	* LICENCE -> COPYING: renaming. All refs updated.
 	* NEWS: creation.
+	* .gitignore: ignore version.m4, a generated file
