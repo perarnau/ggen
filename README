@@ -20,9 +20,6 @@ INSTALL FOR DISTRIBUTION PACKAGE:
 INSTALL FOR DEVELOPPERS:
 	- Run ./autogen.sh before the './configure && make' stuff
 	
-
-No make install procedure is garanteed to work for now.
-
 DOC:
 	- make doxygen-doc
 		will build some doxygen doc from the source,
