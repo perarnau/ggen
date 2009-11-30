@@ -1,9 +1,11 @@
 lib_LTLIBRARIES = libggen.la
-libggen_la_SOURCES = dynamic_properties.cpp dynamic_properties.hpp\
-		     graph-generation.cpp graph-generation.hpp\
-		     graph-analysis.cpp graph-analysis.hpp\
-		     random.cpp random.hpp\
-		     graph-transformation.cpp graph-transformation.hpp\
-		     graph-properties.cpp graph-properties.hpp\
-		     results.cpp results.hpp\
-		     types.hpp
+
+LIBCPPSOURCES = dynamic_properties.cpp graph-generation.cpp graph-analysis.cpp random.cpp\
+		graph-transformation.cpp graph-properties.cpp results.cpp
+
+LIBHPPSOURCES = dynamic_properties.hpp graph-generation.hpp graph-analysis.hpp random.hpp\
+		graph-transformation.hpp graph-properties.hpp results.hpp types.hpp
+ 
+
+libggen_la_SOURCES = $(LIBCPPSOURCES) $(LIBHPPSOURCES)
+include_HEADERS = $(LIBHPPSOURCES)
