@@ -144,7 +144,7 @@ using <a href="http://ligforge.imag.fr/sendmessage.php?touser=189">this
 form</a>.
 </p>
 
-<?php if ($handle=fopen('http://'.$domain.'/export/projnews.php?group_name='.$group_name,'r')){
+<?php if ($handle=fopen('http://'.$domain.'/export/projnews.php?group_name='.$group_name.'&show_summaries=1','r')){
 $contents = '';
 while (!feof($handle)) {
 	$contents .= fread($handle, 8192);

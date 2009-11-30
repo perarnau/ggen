@@ -11,6 +11,7 @@ REQUIREMENTS:
 	- libtool
 	- Boost Graph Library and Boost Program Options (>=1.37)
 	- GNU Scientific Library
+
 INSTALL FROM DISTRIBUTION PACKAGE:
 	- ./configure
 	- make
