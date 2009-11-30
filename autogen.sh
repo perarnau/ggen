@@ -1,5 +1,6 @@
 #!/bin/sh
 set -x
+sh version.sh
 aclocal -I m4 || exit 1
 autoheader || exit 1
 libtoolize || exit 1
