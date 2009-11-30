@@ -1,12 +1,12 @@
 # init autoconf
-AC_INIT([ggen],[0.2],[ggen-devel@ligforge.imag.fr])
+AC_INIT([ggen],[0.3],[ggen-devel@ligforge.imag.fr])
 # build tools in separate dir
 AC_CONFIG_AUX_DIR([build-aux])
 # configuration output in config.h
 AC_CONFIG_HEADERS([config.h])
 
 # automake should fail on any error
-AM_INIT_AUTOMAKE([-Wall -Werror foreign])
+AM_INIT_AUTOMAKE([-Wall -Werror gnu])
 AC_CONFIG_MACRO_DIR([m4])
 # check for programs
 AC_LANG_CPLUSPLUS

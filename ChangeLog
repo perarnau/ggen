@@ -1,0 +1,8 @@
+2009-11-30	Swann Perarnau	<firstname DOT lastname AT imag.fr>
+	
+	* ChangeLog: creation.
+	* AUTHORS: creation.
+	* configure.ac: adhere to gnu coding standards.
+	* autogen.sh: add --copy flags to automake
+	* LICENCE -> COPYING: renaming. All refs updated.
+	* NEWS: creation.
