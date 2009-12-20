@@ -1,3 +1,8 @@
+2009-12-20	Swann Perarnau	<firstname DOT lastname AT imag.fr>
+
+	* autogen.sh: create build-aux mandatory directory before calling
+	autoconf
+
 2009-11-30	Swann Perarnau	<firstname DOT lastname AT imag.fr>
 	
 	* ChangeLog: creation.
