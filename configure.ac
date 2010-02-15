@@ -1,5 +1,5 @@
 # init autoconf
-AC_INIT([ggen],[0.3],[ggen-devel@ligforge.imag.fr])
+AC_INIT([ggen],[0.3.1],[ggen-devel@ligforge.imag.fr])
 # build tools in separate dir
 AC_CONFIG_AUX_DIR([build-aux])
 # configuration output in config.h
