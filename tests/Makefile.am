@@ -1,5 +1,6 @@
-LIBTESTS_CPPFLAGS = -I$(srcdir)/../lib
-LDADD = ../lib/libggen.la
+LIBTESTS_CPPFLAGS = -I$(srcdir)/../src
+LDADD = ../src/libggen.la
+# automake config
 AM_COLOR_TESTS = yes
 
 check_PROGRAMS = lib_results

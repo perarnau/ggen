@@ -31,6 +31,6 @@ fi
 PKG_CHECK_MODULES([GSL],[gsl])
 
 # output makefiles
-AC_CONFIG_FILES([Makefile src/Makefile lib/Makefile tests/Makefile doc/Makefile])
+AC_CONFIG_FILES([Makefile src/Makefile tests/Makefile])
 # do the output
 AC_OUTPUT
