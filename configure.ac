@@ -20,7 +20,18 @@ AC_PROG_CC_STDC
 AC_PROG_CPP
 AC_PROG_LIBTOOL
 
+# support for testing with valgrind
+AC_ARG_ENABLE(valgrind,
+[AC_HELP_STRING([--enable-valgrind],[Also valgrind on checks (default is no).])],
+[valgrind=true],[valgrind=false])
 
+if [[ "x$valgrind" = xtrue ]]; then
+	AC_PATH_PROG(VALGRIND, valgrind, no)
+	if [[  "x$HAVE_VALGRIND" = xno ]]; then
+		AC_MSG_ERROR([Valgrind not found in PATH. ])
+	fi
+fi
+AM_CONDITIONAL([TEST_VALGRIND],[test "x$valgrind" = xtrue])
 
 #check for GSL
 PKG_CHECK_MODULES([GSL],[gsl])
