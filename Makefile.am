@@ -1,5 +1,4 @@
 ACLOCAL_AMFLAGS = -I m4
-SUBDIRS = lib src tests doc
+SUBDIRS = lib src tests
 
-include aminclude.am
-EXTRA_DIST = autogen.sh $(DX_CONFIG) version.sh ChangeLog
+EXTRA_DIST = autogen.sh version.sh ChangeLog

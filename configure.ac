@@ -30,15 +30,6 @@ if test "$BOOST_GRAPH_LIB" = ""; then
 	AC_MSG_ERROR([No usable boost::graph found])
 fi
 
-DX_HTML_FEATURE(ON)
-DX_CHM_FEATURE(OFF)
-DX_CHI_FEATURE(OFF)
-DX_MAN_FEATURE(OFF)
-DX_RTF_FEATURE(OFF)
-DX_XML_FEATURE(OFF)
-DX_PDF_FEATURE(OFF)
-DX_PS_FEATURE(OFF)
-DX_INIT_DOXYGEN(ggen,doxygen.cfg,doxygen-doc)
 
 
 # output makefiles
