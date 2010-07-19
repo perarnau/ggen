@@ -1,7 +1,16 @@
-AM_CXXFLAGS = $(BOOST_CPPFLAGS) -I$(srcdir)/../lib
-AM_LDFLAGS = $(BOOST_LDFLAGS) -l$(BOOST_GRAPH_LIB)
+AM_CPPFLAGS = @CGRAPH_CFLAGS@ @IGRAPH_CFLAGS@ @GSL_CFLAGS@
+
+lib_LTLIBRARIES = libggen.la
+
+LIBCSOURCES = graph-generation.c graph-analysis.c graph-transformation.c
+
+LIBHSOURCES = ggen.h
+
+libggen_la_SOURCES = $(LIBCSOURCES) $(LIBHSOURCES)
+include_HEADERS = $(LIBHSOURCES)
 
 bin_PROGRAMS = ggen
-ggen_SOURCES = builtin-generate-graph.cpp ggen.cpp builtin-analyse-graph.cpp builtin-transform-graph.cpp builtin-add-property.cpp builtin-extract-property.cpp usage.cpp
-ggen_LDADD = ../lib/libggen.la
-dist_ggen_SOURCES = builtin.hpp
+ggen_SOURCES = builtin-generate-graph.c ggen-tool.c builtin-analyse-graph.c \
+	       builtin-transform-graph.c builtin-add-property.c \
+	       builtin-extract-property.c usage.c builtin.h utils.h utils.c
+ggen_LDADD = libggen.la @CGRAPH_LIBS@ @IGRAPH_LIBS@ @GSL_LIBS@

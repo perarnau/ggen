@@ -1,23 +1,23 @@
 /* Copyright Swann Perarnau 2009
 *
-*   contact : firstname.lastname@imag.fr	
+*   contact : Swann.Perarnau@imag.fr
 *
 * This software is a computer program whose purpose is to help the
 * random generation of graph structures and adding various properties
 * on those structures.
 *
 * This software is governed by the CeCILL  license under French law and
-* abiding by the rules of distribution of free software.  You can  use, 
+* abiding by the rules of distribution of free software.  You can  use,
 * modify and/ or redistribute the software under the terms of the CeCILL
 * license as circulated by CEA, CNRS and INRIA at the following URL
-* "http://www.cecill.info". 
-* 
+* "http://www.cecill.info".
+*
 * As a counterpart to the access to the source code and  rights to copy,
 * modify and redistribute granted by the license, users are provided only
 * with a limited warranty  and the software's author,  the holder of the
 * economic rights,  and the successive licensors  have only  limited
-* liability. 
-* 
+* liability.
+*
 * In this respect, the user's attention is drawn to the risks associated
 * with loading,  using,  modifying and/or developing or reproducing the
 * software by the user in light of its specific status of free software,
@@ -25,10 +25,10 @@
 * therefore means  that it is reserved for developers  and  experienced
 * professionals having in-depth computer knowledge. Users are therefore
 * encouraged to load and test the software's suitability as regards their
-* requirements in conditions enabling the security of their systems and/or 
-* data to be ensured and,  more generally, to use and operate it in the 
-* same conditions as regards security. 
-* 
+* requirements in conditions enabling the security of their systems and/or
+* data to be ensured and,  more generally, to use and operate it in the
+* same conditions as regards security.
+*
 * The fact that you are presently reading this means that you have had
 * knowledge of the CeCILL license and that you accept its terms.
 */
@@ -41,19 +41,17 @@
 * INRIA, Grenoble Universities.
 */
 
-
-#include <iostream>
+#include <stdio.h>
+#include <stdlib.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <string.h>
 
-/* We use extensively the BOOST library for 
-* handling output, program options and random generators
-*/
-
-#include "builtin.hpp"
+#include "builtin.h"
+#include "ggen.h"
+#include <config.h>
 
 static const char * general_usage_message[] = {
 	"Usage: ggen [options] cmd args\n\n",
@@ -71,7 +69,7 @@ static const char * general_usage_message[] = {
 
 void print_usage(const char **message) {
 	for(int i=0; message[i] != NULL; i++)
-		std::cout << message[i];		
+		fprintf(stdout,"%s",message[i]);
 }
 
 static int cmd_help(int argc,char **argv)
@@ -84,7 +82,7 @@ static const char *ggen_version_string = PACKAGE_STRING;
 
 static int cmd_version(int argc,char **argv)
 {
-	std::cout << "ggen: version " << ggen_version_string << std::endl;
+	fprintf(stdout,"ggen: version %s\n",ggen_version_string);
 	return 0;
 }
 
@@ -100,7 +98,7 @@ int main(int argc,char** argv)
 		{ "extract-property", cmd_extract_property },
 	};
 	const char *cmd;
-	
+
 	// get rid of program name
 	*argv++;
 	argc--;
@@ -122,6 +120,9 @@ int main(int argc,char** argv)
 	// transform --help and --version into commands
 	if(!strncmp(cmd,"--",2))
 		cmd += 2;
+
+	// initialize igraph attributes for all commands
+	igraph_i_set_attribute_table(&igraph_cattribute_table);
 
 	// launch command
 	for(int i = 0; i < ARRAY_SIZE(cmd_table); i++)

@@ -42,214 +42,188 @@
  * INRIA, Grenoble Universities.
  */
 
-#include <iostream>
-#include <fstream>
-#include <climits>
 #include <getopt.h>
+#include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
 
-#include <boost/config.hpp>
-#include <boost/graph/graphviz.hpp>
-#include <boost/graph/properties.hpp>
-
-#include "types.hpp"
-#include "builtin.hpp"
-#include "graph-analysis.hpp"
-#include "dynamic_properties.hpp"
-#include "results.hpp"
-
-using namespace boost;
-using namespace ggen;
+#include "builtin.h"
+#include "ggen.h"
+#include "utils.h"
 
 static int ask_help = 0;
-static int verbose = 0;
 static char* infile = NULL;
-static char* result_format = NULL;
 
-static Graph *g = NULL;
-static dynamic_properties* properties;
-static std::istream *in = &std::cin;
-
-/* Result format handling */
-static ggen_result_graph* create_result_graph()
-{
-	if(result_format == NULL || !strcmp(result_format,"stupid"))
-	{
-		return new ggen_rg_stupid();
-	}
-	else
-		die("Unknown result format");
-}
-
-static ggen_result_paths* create_result_paths()
-{
-	if(result_format == NULL || !strcmp(result_format,"stupid"))
-	{
-		return new ggen_rp_stupid();
-	}
-	else
-		die("Unknown result format");
-}
-
-static ggen_result_vmap* create_result_vmap()
-{
-	if(result_format == NULL || !strcmp(result_format,"stupid"))
-	{
-		return new ggen_rvm_stupid();
-	}
-	else
-		die("Unknown result format");
-}
-
-static ggen_result_vsets* create_result_vsets()
-{
-	if(result_format == NULL || !strcmp(result_format,"stupid"))
-	{
-		return new ggen_rvs_stupid();
-	}
-	else
-		die("Unknown result format");
-}
+static igraph_t g;
 
 /* usage and cmd functions */
 static const char* general_help[] = {
 	"Usage: ggen analyse-graph [options] cmd\n",
 	"Allowed options:\n",
 	"--help               : ask for help\n",
-	"--verbose            : increase verbosity\n",
 	"--input <filename>   : read the graph from a file\n",
-	"--result-format      : change the way results are presented\n",
 	"\nAllowed commands:\n",
 	"nb-vertices          : gives the number of vertices in the graph\n",
 	"nb-edges             : gives the number of edges in the graph\n",
 	"mst                  : compute the Minimum Spanning Tree of the graph\n",
 	"lp                   : compute the Longest Path of the graph\n",
-	"npl                  : compute the Nodes Per Layer of the graph\n",
 	"out-degree           : gives the out_degree of each vertex\n",
 	"in-degree            : gives the in_degree of each vertex\n",
 	"max-independent-set  : gives a maximum independent set of the graph\n",
 	"strong-components    : gives the list of all strong components of the graph\n",
 	"maximal-paths        : gives the list of all maximal paths (ending by a sink)\n",
-	"\nResult Formats:\n",
-	"Result formats make possible some additional computation during the analysis\n",
-	"As of today, only <stupid> is defined.\n",
 	NULL,
 };
 
 static int cmd_help(int argc, char **argv)
 {
 	usage(general_help);
+	return 0;
 }
 
 static int cmd_nb_vertices(int argc, char **argv)
 {
-	std::cout << "Number of vertices: " << num_vertices(*g) << std::endl;
+	fprintf(stdout,"Number of vertices: %lu\n",(unsigned long)igraph_vcount(&g));
 	return 0;
 }
 
 static int cmd_nb_edges(int argc, char **argv)
 {
-	std::cout << "Number of edges: " << num_edges(*g) << std::endl;
+	fprintf(stdout,"Number of vertices: %lu\n",(unsigned long)igraph_ecount(&g));
 	return 0;
 }
 
 static int cmd_mst(int argc, char **argv)
 {
-	ggen_result_graph *r = create_result_graph();
-	r->set_stream(&std::cout);
-	minimum_spanning_tree(r,*g,*properties);
-	delete r;
-	return 0;
+	int err;
+	igraph_t mst;
+	err = igraph_minimum_spanning_tree_unweighted(&g,&mst);
+	if(err) return err;
+
+	err = ggen_write_graph(&g,stdout);
+	igraph_destroy(&mst);
+	return err;
 }
 
 static int cmd_lp(int argc, char **argv)
 {
-	ggen_result_paths *r = create_result_paths();
-	r->set_stream(&std::cout);
-	longest_path(r,*g,*properties);
-	delete r;
-	return 0;
-}
+	int err = 0;
+	unsigned long i = 0;
+	igraph_vector_t *lp = NULL;
+	lp = ggen_analyze_longest_path(&g);
+	if(!lp) return 1;
 
-static int cmd_npl(int argc, char **argv)
-{
-	ggen_result_vsets *r = create_result_vsets();
-	r->set_stream(&std::cout);
-	nodes_per_layer(r,*g,*properties);
-	delete r;
+	for(i = 0; i < igraph_vector_size(lp); i++)
+	{
+		fprintf(stdout,"%lu",(unsigned long)VECTOR(*lp)[i]);
+	}
+	fprintf(stdout,"\n");
+
+	igraph_vector_destroy(lp);
+	free(lp);
 	return 0;
 }
 
 static int cmd_out_degree(int argc, char **argv)
 {
-	ggen_result_vmap *r = create_result_vmap();
-	r->set_stream(&std::cout);
-	out_degree(r,*g,*properties);
-	delete r;
-	return 0;
+	int err = 0;
+	unsigned long i;
+	igraph_vector_t d;
+	err = igraph_vector_init(&d,igraph_vcount(&g));
+	if(err) goto ret;
+
+	err = igraph_degree(&g,&d,igraph_vss_all(),IGRAPH_OUT,0);
+	if(err) goto error;
+
+	for(i = 0; i < igraph_vcount(&g); i++)
+	{
+		fprintf(stdout,"%lu,%lu\n",i,(unsigned long)VECTOR(d)[i]);
+	}
+error:
+	igraph_vector_destroy(&d);
+ret:
+	return err;
 }
+
 static int cmd_in_degree(int argc, char **argv)
 {
-	ggen_result_vmap *r = create_result_vmap();
-	r->set_stream(&std::cout);
-	in_degree(r,*g,*properties);
-	delete r;
+	int err = 0;
+	unsigned long i = 0;
+	igraph_vector_t d;
+	err = igraph_vector_init(&d,igraph_vcount(&g));
+	if(err) goto ret;
+
+	err = igraph_degree(&g,&d,igraph_vss_all(),IGRAPH_IN,0);
+	if(err) goto error;
+
+	for(i = 0; i < igraph_vcount(&g); i++)
+	{
+		fprintf(stdout,"%lu,%lu\n",i,(unsigned long)VECTOR(d)[i]);
+	}
+error:
+	igraph_vector_destroy(&d);
+ret:
+	return err;
 }
+
 static int cmd_max_indep_set(int argc, char **argv)
 {
-	ggen_result_vsets *r = create_result_vsets();
-	r->set_stream(&std::cout);
-	max_independent_set(r,*g,*properties);
-	delete r;
-	return 0;
+	int err = 0;
+	unsigned long i = 0;
+	igraph_vector_ptr_t l;
+
+	err = igraph_vector_ptr_init(&l,igraph_vcount(&g));
+	if(err) return 1;
+
+	err = igraph_largest_independent_vertex_sets(&g,&l);
+	if(err) goto error;
+
+	for(i = 0; i < igraph_vector_ptr_size(&l); i++)
+	{
+		fprintf(stdout,"%lu",(unsigned long)VECTOR(l)[i]);
+	}
+	fprintf(stdout,"\n");
+error:
+	igraph_vector_ptr_destroy(&l);
+	return err;
 }
 static int cmd_strong_components(int argc, char **argv)
 {
-	ggen_result_vsets *r = create_result_vsets();
-	r->set_stream(&std::cout);
-	strong_components(r,*g,*properties);
-	delete r;
+	int err;
+	igraph_integer_t n;
+	err = igraph_clusters(&g,NULL,NULL,&n,IGRAPH_STRONG);
+	if(err) return err;
+
+	fprintf(stdout,"Nb of strong components: %lu\n",(unsigned long)n);
 	return 0;
 }
 
-static int cmd_maximal_paths(int argc, char **argv)
-{
-	ggen_result_paths *r = create_result_paths();
-	r->set_stream(&std::cout);
-	maximal_paths(r,*g,*properties);
-	delete r;
-	return 0;
-}
-
-static cmd_table_elt cmd_table[] = {
+static struct cmd_table_elt cmd_table[] = {
 	{ "help", cmd_help },
 	{ "nb-vertices", cmd_nb_vertices },
 	{ "nb-edges",   cmd_nb_edges },
         { "mst", cmd_mst },
         { "lp", cmd_lp },
-        { "npl", cmd_npl },
         { "out-degree", cmd_out_degree },
         { "in-degree", cmd_in_degree },
         { "max-independent-set", cmd_max_indep_set },
         { "strong-components", cmd_strong_components },
-	{ "maximal-paths", cmd_maximal_paths },
 };
 
 static struct option long_options[] = {
 	{ "help", no_argument, &ask_help, 1 },
-	{ "verbose", no_argument, &verbose, 1 },
 	{ "input", required_argument, NULL, 'i' },
-	{ "result-format", required_argument, NULL, 'f' },
 	{ 0,0,0,0 },
 };
 
-static const char short_opts[] = "hvi:";
+static const char short_opts[] = "hi:";
 
 int cmd_analyse_graph(int argc,char** argv)
 {
 	const char* cmd;
 	int c,err;
 	int option_index = 0;
-
+	FILE * in;
 	while(1)
 	{
 		c = getopt_long(argc, argv, short_opts,long_options, &option_index);
@@ -258,29 +232,17 @@ int cmd_analyse_graph(int argc,char** argv)
 
 		switch(c)
 		{
-			case 'v':
 			case 'h':
 			case 0:
 				break;
 			case 'i':
 				infile = optarg;
 				break;
-			case 'f':
-				result_format = optarg;
-				break;
 			case '?':
 			default:
 				exit(1);
 		}
 	}
-
-	std::ifstream fin;
-	if(infile)
-	{
-		fin.open(infile);
-		in = &fin;
-	}
-
 
 	// now forget the parsed part of argv
 	argc -= optind;
@@ -292,31 +254,40 @@ int cmd_analyse_graph(int argc,char** argv)
 		cmd = "help";
 
 	int status = 0;
-	if(!strcmp(cmd,"help"))
+	if(!strcmp(cmd,"help") || ask_help)
 	{
 		usage(general_help);
+		goto ret;
 	}
 
-	g = new Graph();
-	properties = new dynamic_properties(&create_property_map);
+	// read graph
+	if(infile)
+	{
+		fprintf(stderr,"Using %s as graph file\n",infile);
+		in = fopen(infile,"r");
+		if(!in)
+		{
+			fprintf(stderr,"failed to open file %s for graph input\n",infile);
+			status = 1;
+			goto ret;
+		}
+		status = ggen_read_graph(&g,in);
+		fclose(in);
+		if(status) goto ret;
+	}
 
 	for(int i = 1; i < ARRAY_SIZE(cmd_table); i++)
 	{
 		struct cmd_table_elt *c = cmd_table+i;
 		if(!strcmp(c->name,cmd))
 		{
-			read_graphviz(*in, *g,*properties);
 			status = c->fn(argc,argv);
 			goto ret;
 		}
 	}
-	die("wrong command");
-
-	ret:
-	if(infile)
-		fin.close();
-
-	delete g;
-	delete properties;
-	return 0;
+	fprintf(stderr,"Wrong command\n");
+	status = 1;
+ret:
+	igraph_destroy(&g);
+	return status;
 }
