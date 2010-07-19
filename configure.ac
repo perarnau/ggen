@@ -18,10 +18,6 @@ AM_INIT_AUTOMAKE([-Wall -Werror gnu])
 AC_LANG_CPLUSPLUS
 AC_PROG_CXX
 AC_PROG_LIBTOOL
-#check for GSL, see GSL manual for help
-AC_CHECK_LIB([m],[cos],[],AC_MSG_ERROR("could not find the math library"))
-AC_CHECK_LIB([gslcblas],[cblas_dgemm],[],AC_MSG_ERROR("could not find the GSL/CBLAS library"))
-AC_CHECK_LIB([gsl],[gsl_blas_dgemm],[], AC_MSG_ERROR("could not find the GSL library"))
 
 #check for BOOST
 AX_BOOST_BASE([1.37])
@@ -31,6 +27,8 @@ if test "$BOOST_GRAPH_LIB" = ""; then
 fi
 
 
+#check for GSL
+PKG_CHECK_MODULES([GSL],[gsl])
 
 # output makefiles
 AC_CONFIG_FILES([Makefile src/Makefile lib/Makefile tests/Makefile doc/Makefile])
