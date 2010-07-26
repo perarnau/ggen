@@ -1,0 +1,12 @@
+prefix=@prefix@
+exec_prefix=@prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: libggen
+Description: A library for DAG generation and analysis
+Version: @VERSION@
+URL: http://ggen.ligforge.imag.fr
+Requires: igraph gsl
+Libs: -L${libdir} -lggen
+Cflags: -I${includedir}

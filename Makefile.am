@@ -1,4 +1,7 @@
 ACLOCAL_AMFLAGS = -I m4
 SUBDIRS = src tests
 
-EXTRA_DIST = autogen.sh version.sh ChangeLog
+pkgconfigdir = $(libdir)/pkgconfig
+pkgconfig_DATA = ggen.pc
+
+EXTRA_DIST = autogen.sh version.sh ChangeLog ggen.pc
