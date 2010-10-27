@@ -158,6 +158,8 @@ static int preop()
 			infile = NULL;
 		}
 	}
+	else
+		in = stdin;
 	err = ggen_read_graph(&g,in);
 	if(infile)
 		fclose(in);
@@ -179,6 +181,8 @@ static int postop()
 			outfile = NULL;
 		}
 	}
+	else
+		out = stdout;
 	err = ggen_write_graph(&g,out);
 	if(outfile)
 		fclose(out);

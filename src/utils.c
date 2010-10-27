@@ -261,7 +261,7 @@ int ggen_write_graph(igraph_t *g, FILE *output)
 	unsigned long i,j;
 	unsigned long vcount = igraph_vcount(g);
 	igraph_integer_t from,to;
-	char name[80] = "";
+	char name[GGEN_DEFAULT_NAME_SIZE];
 	char *str = NULL;
 	igraph_strvector_t gnames,vnames,enames;
 	igraph_vector_t gtypes,vtypes,etypes;
@@ -306,7 +306,7 @@ int ggen_write_graph(igraph_t *g, FILE *output)
 		str = (char *)VAS(g,GGEN_VERTEX_NAME_ATTR,i);
 		if(!str)
 		{
-			snprintf(name,80,"%lu",i);
+			snprintf(name,GGEN_DEFAULT_NAME_SIZE,"%lu",i);
 			f = agnode(cg,name,1);
 		}
 		else
@@ -348,7 +348,12 @@ int ggen_write_graph(igraph_t *g, FILE *output)
 	/* add graph properties */
 	for(i = 0; i < igraph_strvector_size(&gnames); i++)
 	{
-		agattr(cg,AGRAPH,(char *)STR(gnames,i),(char *)GAS(g,STR(gnames,i)));
+		if(VECTOR(gtypes)[i]==IGRAPH_ATTRIBUTE_NUMERIC) {
+			snprintf(name,GGEN_DEFAULT_NAME_SIZE,"%f",(double)GAN(g,STR(gnames,i)));
+			agattr(cg,AGRAPH,(char *)STR(gnames,i),name);
+		}
+		else
+			agattr(cg,AGRAPH,(char *)STR(gnames,i),(char *)GAS(g,STR(gnames,i)));
 	}
 
 	/* add vertex properties */
@@ -359,7 +364,13 @@ int ggen_write_graph(igraph_t *g, FILE *output)
 		for(j = 0; j < vcount; j++)
 		{
 			f = (Agnode_t *) VECTOR(vertices)[j];
-			agxset(f,attr,(char *)VAS(g,STR(vnames,i),j));
+			if(VECTOR(vtypes)[i]==IGRAPH_ATTRIBUTE_NUMERIC) {
+				snprintf(name,GGEN_DEFAULT_NAME_SIZE,"%f",
+						(double)VAN(g,STR(vnames,i),j));
+				agxset(f,attr,name);
+			}
+			else
+				agxset(f,attr,(char *)VAS(g,STR(vnames,i),j));
 		}
 	}
 
@@ -374,7 +385,13 @@ int ggen_write_graph(igraph_t *g, FILE *output)
 			f = (Agnode_t *) VECTOR(vertices)[(unsigned long)from];
 			t = (Agnode_t *) VECTOR(vertices)[(unsigned long)to];
 			edge = agedge(cg,f,t,NULL,0);
-			agxset(edge,attr,(char *)EAS(g,STR(enames,i),j));
+			if(VECTOR(etypes)[i]==IGRAPH_ATTRIBUTE_NUMERIC) {
+				snprintf(name,GGEN_DEFAULT_NAME_SIZE,"%f",
+						(double)EAN(g,STR(enames,i),j));
+				agxset(edge,attr,name);
+			}
+			else
+				agxset(edge,attr,(char *)EAS(g,STR(enames,i),j));
 		}
 	}
 

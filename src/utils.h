@@ -51,6 +51,7 @@ int s2d(char *s,double *d);
 #define GGEN_GRAPH_NAME_ATTR "__ggen_graph_name"
 #define GGEN_DEFAULT_GRAPH_NAME "dag"
 #define GGEN_VERTEX_NAME_ATTR "__ggen_vname"
+#define GGEN_DEFAULT_NAME_SIZE 80
 int ggen_read_graph(igraph_t *g,FILE *input);
 
 int ggen_write_graph(igraph_t *g,FILE *output);
