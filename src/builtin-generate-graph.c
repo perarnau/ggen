@@ -212,7 +212,7 @@ static int cmd_lbl(int argc, char** argv)
 	err = s2d(argv[3],&p);
 	if(err) goto ret;
 
-	g = ggen_generate_erdos_lbl(rng,n,l,p);
+	g = ggen_generate_erdos_lbl(rng,n,p,l);
 	if(g == NULL)
 		err = 1;
 ret:
@@ -248,7 +248,7 @@ static int cmd_fifo(int argc, char** argv)
 	err = s2ul(argv[2],&o);
 	if(err) goto ret;
 
-	err = s2ul(argv[2],&i);
+	err = s2ul(argv[3],&i);
 	if(err) goto ret;
 
 	g = ggen_generate_fifo(rng,n,o,i);

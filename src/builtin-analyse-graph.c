@@ -260,34 +260,41 @@ int cmd_analyse_graph(int argc,char** argv)
 		goto ret;
 	}
 
-	// read graph
-	if(infile)
-	{
-		fprintf(stderr,"Using %s as graph file\n",infile);
-		in = fopen(infile,"r");
-		if(!in)
-		{
-			fprintf(stderr,"failed to open file %s for graph input\n",infile);
-			status = 1;
-			goto ret;
-		}
-		status = ggen_read_graph(&g,in);
-		fclose(in);
-		if(status) goto ret;
-	}
-
 	for(int i = 1; i < ARRAY_SIZE(cmd_table); i++)
 	{
 		struct cmd_table_elt *c = cmd_table+i;
 		if(!strcmp(c->name,cmd))
 		{
+			// read graph
+			if(infile)
+			{
+				fprintf(stdout,"Using %s as graph file\n",infile);
+				in = fopen(infile,"r");
+				if(!in)
+				{
+					fprintf(stderr,
+						"failed to open file %s for graph input\n",
+						infile);
+					status = 1;
+					goto ret;
+				}
+			}
+			else {
+				fprintf(stdout,"Using standard input\n");
+				in = stdin;
+			}
+			status = ggen_read_graph(&g,in);
+			if(infile)
+				fclose(in);
+			if(status) goto ret;
 			status = c->fn(argc,argv);
-			goto ret;
+			goto end;
 		}
 	}
 	fprintf(stderr,"Wrong command\n");
 	status = 1;
-ret:
+end:
 	igraph_destroy(&g);
+ret:
 	return status;
 }
