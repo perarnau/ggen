@@ -53,76 +53,14 @@
 #include "ggen.h"
 #include "utils.h"
 
-static int ask_help = 0;
-static char* infile = NULL;
-static char* outfile = NULL;
-static FILE *out;
-static FILE *in;
-
-static igraph_t g;
-
-
-static const char* general_help[] = {
-	"Usage: ggen transform-graph [options] cmd\n",
-	"Allowed options:\n",
-	"--help                  : ask for help\n",
-	"--input     <filename>  : read input from a given file\n",
-	"--ouput     <filename>  : use a given file as output\n",
-	"\nAllowed commands:\n",
+const char* help_transform[] = {
+	"Commands:\n",
 	"remove-sinks            : remove all sinks present in the graph\n",
 	"remove-sources          : remove all sources present in the graph\n",
 	"add-sink                : add a node connected to all previous sinks\n",
 	"add-source              : add a node connected to all previous sources\n",
 	NULL,
 };
-
-static int cmd_help(int argc, char** argv)
-{
-	usage(general_help);
-	return 0;
-}
-
-// pre processing operations
-static int preop()
-{
-	int err;
-	if(infile)
-	{
-		fprintf(stderr,"Using %s as input file\n",infile);
-		in = fopen(infile,"r");
-		if(!in)
-		{
-			fprintf(stderr,"failed to open file %s for graph input, using stdin instead\n",infile);
-			in = stdout;
-			infile = NULL;
-		}
-	}
-	err = ggen_read_graph(&g,in);
-	if(infile)
-		fclose(in);
-	return err;
-}
-
-// post processing operations
-static int postop()
-{
-	int err;
-	if(outfile)
-	{
-		fprintf(stderr,"Using %s as output file\n",outfile);
-		out = fopen(outfile,"w");
-		if(!out)
-		{
-			fprintf(stderr,"failed to open file %s for graph output, using stdout instead\n",outfile);
-			out = stdout;
-			outfile = NULL;
-		}
-	}
-	err = ggen_write_graph(&g,out);
-	if(outfile)
-		fclose(out);
-	return err;
-}
 
 static int cmd_remove_sinks(int argc, char** argv)
 {
@@ -144,85 +82,10 @@ static int cmd_add_source(int argc, char** argv)
 	return ggen_transform_add(&g,GGEN_TRANSFORM_SOURCE);
 }
 
-static struct cmd_table_elt cmd_table[] = {
-	{ "help", cmd_help },
-	{ "remove-sinks", cmd_remove_sinks },
-	{ "remove-sources", cmd_remove_sources },
-	{ "add-sink", cmd_add_sink },
-	{ "add-source", cmd_add_source },
+struct second_lvl_cmd cmds_transform[] = {
+	{ "remove-sinks", 0, NULL, cmd_remove_sinks },
+	{ "remove-sources", 0, NULL, cmd_remove_sources },
+	{ "add-sink", 0, NULL, cmd_add_sink },
+	{ "add-source", 0, NULL, cmd_add_source },
+	{ 0, 0, 0, 0},
 };
-
-static struct option long_options[] = {
-	{ "help", no_argument, &ask_help, 1 },
-	{ "input", required_argument, NULL, 'i' },
-	{ "output", required_argument, NULL, 'o'},
-	{0, 0, 0, 0},
-};
-
-static const char* short_opts = "hi:o:";
-
-int cmd_transform_graph(int argc, char** argv)
-{
-	const char* cmd;
-	int c;
-	int option_index = 0;
-	int status = 0;
-	while(1)
-	{
-		c = getopt_long(argc, argv, short_opts,long_options, &option_index);
-		if(c == -1)
-			break;
-
-		switch(c)
-		{
-			case 'h':
-			case 0:
-				break;
-			case 'i':
-				infile = optarg;
-				break;
-			case 'o':
-				outfile = optarg;
-				break;
-			case '?':
-			default:
-				exit(1);
-		}
-	}
-
-	// now forget the parsed part of argv
-	argc -= optind;
-	argv = &(argv[optind]);
-
-	// this is the command
-	cmd = argv[0];
-	if(!cmd)
-		cmd = "help";
-
-	// launch command, we skip help because
-	// all the other command need pre and post processing
-	if(!strcmp("help", cmd) || ask_help)
-	{
-		status = cmd_help(argc,argv);
-		goto ret;
-	}
-
-	for(int i = 1; i < ARRAY_SIZE(cmd_table); i++)
-	{
-		struct cmd_table_elt *c = cmd_table+i;
-		if(!strcmp(c->name,cmd))
-		{
-			status = preop();
-			if(status) goto ret;
-			status = c->fn(argc,argv);
-			if(status) goto ret;
-			status = postop();
-			if(status) goto ret;
-			goto ret;
-		}
-	}
-	die("wrong command");
-
-ret:
-	return status;
-}

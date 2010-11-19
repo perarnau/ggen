@@ -57,35 +57,8 @@
 #include "ggen.h"
 #include "utils.h"
 
-static int ask_help = 0;
-static int ask_full_help = 0;
-
-static int is_edge = 0, is_vertex = 0;
-
-static char* infile = NULL;
-static FILE *in;
-
-static char* outfile = NULL;
-static FILE *out;
-
-static char *prop = NULL;
-
-static igraph_t g;
-static gsl_rng *rng = NULL;
-
-static const char* general_help[] = {
-	"Usage: ggen add-property [options] cmd args\n\n",
-	"Generic options:\n",
-	"--help                   : ask for help. When a method is provided only display help for this method\n",
-	"--full-help              : display the full help message, including a detailled description of each command\n",
-	"--input     <filename>   : specify an input file for the graph\n",
-	"--output    <filename>   : specify a file for saved the graph\n",
-	"\nProperty options:\n",
-	"--name                   : the name of the new property\n",
-	"--edge,--vertex          : force the type of property to add\n",
-	"\nRandom Numbers options:\n",
-	"--rng-file  <filename>   : load and save the generator state in a specific file\n",
-	"\nCommands available:\n",
+const char* help_add_prop[] = {
+	"Commands:\n",
 	"gaussian                 : add a property following a gaussian distribution\n",
 	"flat                     : add a property following a flat (uniform) distribution\n",
 	"exponential              : add a property following an exponential distribution\n",
@@ -128,92 +101,45 @@ static const char* pareto_help[] = {
 };
 
 
-static int cmd_help(int argc, char** argv);
 static int cmd_exponential(int argc, char** argv);
 static int cmd_gaussian(int argc, char** argv);
 static int cmd_flat(int argc, char** argv);
 static int cmd_pareto(int argc, char** argv);
 
 /* Commands to handle */
-static struct cmd_table_elt cmd_table[] = {
-	{ "help", cmd_help, general_help, 0 },
-	{ "exponential", cmd_exponential , exponential_help, 1},
-	{ "gaussian", cmd_gaussian, gaussian_help, 1 },
-	{ "flat", cmd_flat, flat_help, 2 },
-	{ "pareto", cmd_pareto, pareto_help, 2 },
+struct second_lvl_cmd cmds_add_prop[] = {
+	{ "exponential", 1, exponential_help, cmd_exponential},
+	{ "gaussian", 1, gaussian_help, cmd_gaussian},
+	{ "flat", 2, flat_help, cmd_flat},
+	{ "pareto", 2, pareto_help, cmd_pareto},
+	{ 0, 0, 0, 0},
 };
-
-// pre processing operations
-static int preop()
-{
-	int err;
-	if(infile)
-	{
-		fprintf(stderr,"Using %s as input file\n",infile);
-		in = fopen(infile,"r");
-		if(!in)
-		{
-			fprintf(stderr,"failed to open file %s for graph input, using stdin instead\n",infile);
-			in = stdout;
-			infile = NULL;
-		}
-	}
-	else
-		in = stdin;
-	err = ggen_read_graph(&g,in);
-	if(infile)
-		fclose(in);
-	return err;
-}
-
-// post processing operations
-static int postop()
-{
-	int err;
-	if(outfile)
-	{
-		fprintf(stderr,"Using %s as output file\n",outfile);
-		out = fopen(outfile,"w");
-		if(!out)
-		{
-			fprintf(stderr,"failed to open file %s for graph output, using stdout instead\n",outfile);
-			out = stdout;
-			outfile = NULL;
-		}
-	}
-	else
-		out = stdout;
-	err = ggen_write_graph(&g,out);
-	if(outfile)
-		fclose(out);
-	return err;
-}
 
 /**
  * macro defining cmd_functions to call create rnds
  * needs a help struct name_help and a ggen_rnd_name
  * 1 double argument version
  */
-#define DEFINE_CMD_1D(name)				\
-static int cmd_##name(int argc, char **argv)		\
+#define DEFINE_CMD_1D(dist)				\
+static int cmd_##dist(int argc, char **argv)		\
 {							\
 	int err;					\
 	double arg;					\
 	unsigned long count,i;				\
 							\
-	err = s2d(argv[1],&arg);			\
+	err = s2d(argv[0],&arg);			\
 	if(err) return 1;				\
 							\
-	if(is_edge)					\
+	if(ptype == EDGE_PROPERTY)			\
 		count = igraph_ecount(&g);		\
 	else						\
 		count = igraph_vcount(&g);		\
 							\
 	for(i = 0; i < count; i++) {			\
-		if(is_edge)				\
-			SETEAN(&g,prop,i,gsl_ran_##name(rng,arg));\
+		if(ptype == EDGE_PROPERTY)		\
+			SETEAN(&g,name,i,gsl_ran_##dist(rng,arg));\
 		else					\
-			SETVAN(&g,prop,i,gsl_ran_##name(rng,arg));\
+			SETVAN(&g,name,i,gsl_ran_##dist(rng,arg));\
 	}						\
 							\
 	return err;					\
@@ -227,29 +153,29 @@ DEFINE_CMD_1D(gaussian)
  * needs a help struct name_help and a ggen_rnd_name
  * 2 double arguments version
  */
-#define DEFINE_CMD_2D(name)				\
-static int cmd_##name(int argc, char **argv)		\
+#define DEFINE_CMD_2D(dist)				\
+static int cmd_##dist(int argc, char **argv)		\
 {							\
 	int err;					\
 	double arg1,arg2;				\
 	unsigned long count,i;				\
 							\
-	err = s2d(argv[1],&arg1);			\
+	err = s2d(argv[0],&arg1);			\
 	if(err) return 1;				\
 							\
 	err = s2d(argv[1],&arg2);			\
 	if(err) return 1;				\
 							\
-	if(is_edge)					\
+	if(ptype == EDGE_PROPERTY)			\
 		count = igraph_ecount(&g);		\
 	else						\
 		count = igraph_vcount(&g);		\
 							\
 	for(i = 0; i < count; i++) {			\
-		if(is_edge)				\
-			SETEAN(&g,prop,i,gsl_ran_##name(rng,arg1,arg2));\
+		if(ptype == EDGE_PROPERTY)		\
+			SETEAN(&g,name,i,gsl_ran_##dist(rng,arg1,arg2));\
 		else					\
-			SETVAN(&g,prop,i,gsl_ran_##name(rng,arg1,arg2));\
+			SETVAN(&g,name,i,gsl_ran_##dist(rng,arg1,arg2));\
 	}						\
 							\
 	return err;					\
@@ -257,138 +183,3 @@ static int cmd_##name(int argc, char **argv)		\
 
 DEFINE_CMD_2D(flat)
 DEFINE_CMD_2D(pareto)
-
-static int cmd_help(int argc, char** argv)
-{
-	usage_helps(argc,argv,cmd_table,ask_full_help);
-	return 0;
-}
-
-
-/* all command line arguments */
-static struct option long_options[] = {
-	/* general options */
-	{ "help", no_argument, &ask_help, 1 },
-	{ "full-help", no_argument, &ask_full_help, 1 },
-	{ "input", required_argument, NULL, 'i' },
-	{ "output", required_argument, NULL, 'o' },
-	/* property options */
-	{ "name", required_argument, NULL, 'n' },
-	{ "edge", no_argument, &is_edge, 1 },
-	{ "vertex", no_argument, &is_vertex, 1 },
-	/* random number generator */
-	{ "rng-file", required_argument, NULL, 'f' },
-	{ 0, 0, 0, 0},
-};
-
-static const char* short_opts = "i:o:n:f:";
-
-/**
-* Main program
-*
-*/
-int cmd_add_property(int argc,char** argv)
-{
-	const char* cmd;
-	int c;
-	int option_index = 0;
-	char *file = NULL;
-	int status = 0;
-	// parse other options
-	while(1)
-	{
-		c = getopt_long(argc, argv, short_opts,long_options, &option_index);
-		if(c == -1)
-			break;
-
-		switch(c)
-		{
-			case 0:
-				break;
-			case 'f':
-				file = optarg;
-				break;
-			case 'o':
-				outfile = optarg;
-				break;
-			case 'i':
-				infile = optarg;
-				break;
-			case 'n':
-				prop = optarg;
-				break;
-			default:
-				die("someone forgot how to write switches");
-			case '?':
-				die("option parsing got mad");
-		}
-	}
-
-	if(is_edge && is_vertex)
-	{
-		die("Cannot specify --edge and --vertex !");
-	}
-
-	// now forget the parsed part of argv
-	argc -= optind;
-	argv = &(argv[optind]);
-
-	// this is the command
-	cmd = argv[0];
-	if(!cmd || !strcmp("help",cmd))
-	{
-		status = cmd_help(argc,argv);
-		goto ret;
-	}
-
-	// init rng
-	status = ggen_rng_init(&rng);
-	if(status) goto ret;
-
-	/* load rng from file if possible */
-	if(file)
-	{
-		fprintf(stderr,"Using %s as RNG state file\n",file);
-		status = ggen_rng_load(&rng,file);
-		if(status) goto cleanup;
-	}
-
-	for(int i = 1; i < ARRAY_SIZE(cmd_table); i++)
-	{
-		struct cmd_table_elt *c = cmd_table+i;
-		if(!strcmp(c->name,cmd))
-		{
-			if(ask_help || c->nargs != argc -1)
-			{
-				usage(c->help);
-				goto ret;
-			}
-
-			status = preop();
-			if(status) goto ret;
-
-			status = c->fn(argc,argv);
-
-			if(status)
-			{
-				usage(c->help);
-				goto cleanup;
-			}
-			status = postop();
-			goto cleanup;
-		}
-	}
-	fprintf(stderr,"Wrong command\n");
-	status = 1;
-	goto cleanup;
-out:
-	if(file)
-		status = ggen_rng_save(&rng,file);
-
-cleanup:
-	igraph_destroy(&g);
-	gsl_rng_free(rng);
-ret:
-	return status;
-
-}

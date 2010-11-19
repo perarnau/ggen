@@ -54,16 +54,7 @@
 #include "builtin.h"
 #include "ggen.h"
 #include "utils.h"
-#include <config.h>
-
-/* globals needed by all commands */
-
-static int ask_help = 0;
-static int ask_full_help = 0;
-
-igraph_t *g = NULL;
-gsl_rng *rng = NULL;
-FILE* out = NULL;
+#include "config.h"
 
 /* cmd declarations, we need this to be able to declare
  * the general struct
@@ -76,19 +67,8 @@ static int cmd_fifo(int argc, char** argv);
 static int cmd_ro(int argc, char** argv);
 
 /* help strings, there is a lot of them */
-
-static const char* general_help[] = {
-	"Usage: ggen generate-graph [options] method args\n\n",
-	"Generic options:\n",
-	"--help                   : ask for help. When a method is provided only display help for this method\n",
-	"--full-help              : print the full help\n",
-	"--output    <filename>   : specify a file for saved the graph\n",
-	"\nRandom Numbers options:\n",
-	"--rng-file  <filename>   : load and save the generator state in a specific file\n",
-	"GSL_RNG_SEED             : use this environment variable to change the RNG seed\n",
-	"GSL_RNG_TYPE             : use this environment variable to change the RNG type\n",
-	"Look at the gsl documentation for more info.\n",
-	"\nMethods available:\n",
+const char* help_generate[] = {
+	"Methods:\n",
 	"gnp                      : the classical adjacency matrix method\n",
 	"gnm                      : selection of edges in the complete graph\n",
 	"lbl                      : the classical layer by layer method\n",
@@ -96,6 +76,7 @@ static const char* general_help[] = {
 	"fifo                     : succeeding expension and contraction phases\n",
 	NULL
 };
+
 
 static const char* gnp_help[] = {
 	"\nErdos GNP:\n",
@@ -144,21 +125,14 @@ static const char* fifo_help[] = {
 	NULL
 };
 
-/* Commands to handle */
-static struct cmd_table_elt cmd_table[] = {
-	{ "help", cmd_help, general_help, 0 },
-	{ "gnp", cmd_gnp, gnp_help, 2 },
-	{ "gnm", cmd_gnm, gnm_help, 2 },
-	{ "lbl", cmd_lbl, lbl_help, 3 },
-	{ "ro", cmd_ro, ro_help, 2 },
-	{ "fifo" , cmd_fifo, fifo_help, 3},
+struct second_lvl_cmd cmds_generate[] = {
+	{ "gnp", 2, gnp_help, cmd_gnp },
+	{ "gnm", 2, gnm_help, cmd_gnm },
+	{ "lbl", 3, lbl_help, cmd_lbl },
+	{ "ro", 2, ro_help, cmd_ro },
+	{ "fifo" , 3, fifo_help, cmd_fifo },
+	{ 0, 0, 0, 0},
 };
-
-static int cmd_help(int argc, char** argv)
-{
-	usage_helps(argc,argv,cmd_table,ask_full_help);
-	return 0;
-}
 
 static int cmd_gnp(int argc, char** argv)
 {
@@ -166,14 +140,14 @@ static int cmd_gnp(int argc, char** argv)
 	unsigned long number;
 	double prob;
 
-	err = s2ul(argv[1],&number);
+	err = s2ul(argv[0],&number);
 	if(err) goto ret;
 
-	err = s2d(argv[2],&prob);
+	err = s2d(argv[1],&prob);
 	if(err) goto ret;
 
-	g = ggen_generate_erdos_gnp(rng,number,prob);
-	if(g == NULL)
+	g_p = ggen_generate_erdos_gnp(rng,number,prob);
+	if(g_p == NULL)
 		err = 1;
 ret:
 	return err;
@@ -184,14 +158,14 @@ static int cmd_gnm(int argc, char** argv)
 	int err = 0;
 	unsigned long n,m;
 
-	err = s2ul(argv[1],&n);
+	err = s2ul(argv[0],&n);
 	if(err) goto ret;
 
-	err = s2ul(argv[2],&m);
+	err = s2ul(argv[1],&m);
 	if(err) goto ret;
 
-	g = ggen_generate_erdos_gnm(rng,n,m);
-	if(g == NULL)
+	g_p = ggen_generate_erdos_gnm(rng,n,m);
+	if(g_p == NULL)
 		err = 1;
 ret:
 	return err;
@@ -203,17 +177,17 @@ static int cmd_lbl(int argc, char** argv)
 	unsigned long n,l;
 	double p;
 
-	err = s2ul(argv[1],&n);
+	err = s2ul(argv[0],&n);
 	if(err) goto ret;
 
-	err = s2ul(argv[2],&l);
+	err = s2ul(argv[1],&l);
 	if(err) goto ret;
 
-	err = s2d(argv[3],&p);
+	err = s2d(argv[2],&p);
 	if(err) goto ret;
 
-	g = ggen_generate_erdos_lbl(rng,n,p,l);
-	if(g == NULL)
+	g_p = ggen_generate_erdos_lbl(rng,n,p,l);
+	if(g_p == NULL)
 		err = 1;
 ret:
 	return err;
@@ -224,14 +198,14 @@ static int cmd_ro(int argc, char** argv)
 	int err = 0;
 	unsigned long n,o;
 
-	err = s2ul(argv[1],&n);
+	err = s2ul(argv[0],&n);
 	if(err) goto ret;
 
-	err = s2ul(argv[2],&o);
+	err = s2ul(argv[1],&o);
 	if(err) goto ret;
 
-	g = ggen_generate_random_orders(rng,n,o);
-	if(g == NULL)
+	g_p = ggen_generate_random_orders(rng,n,o);
+	if(g_p == NULL)
 		err = 1;
 ret:
 	return err;
@@ -242,160 +216,18 @@ static int cmd_fifo(int argc, char** argv)
 	int err = 0;
 	unsigned long n,i,o;
 
-	err = s2ul(argv[1],&n);
+	err = s2ul(argv[0],&n);
 	if(err) goto ret;
 
-	err = s2ul(argv[2],&o);
+	err = s2ul(argv[1],&o);
 	if(err) goto ret;
 
-	err = s2ul(argv[3],&i);
+	err = s2ul(argv[2],&i);
 	if(err) goto ret;
 
-	g = ggen_generate_fifo(rng,n,o,i);
-	if(g == NULL)
+	g_p = ggen_generate_fifo(rng,n,o,i);
+	if(g_p == NULL)
 		err = 1;
 ret:
 	return err;
-}
-
-static int preop(char *rngfile)
-{
-	int status = 0;
-	/* initialize gsl_rng */
-	status = ggen_rng_init(&rng);
-	if(status) return 1;
-
-	/* load rng from file if possible */
-	if(rngfile)
-	{
-		fprintf(stderr,"Using %s as RNG state file\n",rngfile);
-		status = ggen_rng_load(&rng,rngfile);
-		if(status)
-			gsl_rng_free(rng);
-	}
-
-	return status;
-}
-
-static int postop(char *output,char *rngfile)
-{
-	int status = 0;
-	if(output)
-	{
-		fprintf(stderr,"Using %s as output file\n",output);
-		out = fopen(output,"w");
-		if(!out)
-		{
-			fprintf(stderr,"failed to open file %s for graph output, using stdout instead\n",output);
-			out = stdout;
-			output = NULL;
-		}
-	}
-	else
-		out = stdout;
-
-	status = ggen_write_graph(g,out);
-
-	if(rngfile)
-		status |= ggen_rng_save(&rng,rngfile);
-
-	if(output)
-		fclose(out);
-
-	igraph_destroy(g);
-	free(g);
-	gsl_rng_free(rng);
-	return status;
-}
-
-
-/* all command line arguments */
-static struct option long_options[] = {
-	/* general options */
-	{ "help", no_argument, &ask_help, 1 },
-	{ "full-help", no_argument, &ask_full_help, 1 },
-	{ "output", required_argument, NULL, 'o' },
-	/* random number generator */
-	{ "rng-file", required_argument, NULL, 'f' },
-	{ 0, 0, 0, 0},
-};
-
-static const char* short_opts = "ho:f:";
-
-////////////////////////////////////////////////////////////////////////////////
-// MAIN
-////////////////////////////////////////////////////////////////////////////////
-
-int cmd_generate_graph(int argc,char** argv)
-{
-	const char* cmd;
-	int c;
-	int option_index = 0;
-	char *file = NULL;
-	char *output = NULL;
-	int status = 0;
-	// parse other options
-	while(1)
-	{
-		c = getopt_long(argc, argv, short_opts,long_options, &option_index);
-		if(c == -1)
-			break;
-
-		switch(c)
-		{
-			case 'v':
-			case 'h':
-			case 0:
-				break;
-			case 'f':
-				file = optarg;
-				break;
-			case 'o':
-				output = optarg;
-				break;
-			case '?':
-			default:
-				exit(1);
-		}
-	}
-
-	// now forget the parsed part of argv
-	argc -= optind;
-	argv = &(argv[optind]);
-
-	// this is the command
-	cmd = argv[0];
-	// test for help
-	if(!cmd || !strcmp(cmd,"help"))
-	{
-		status = cmd_help(argc,argv);
-		goto ret;
-	}
-
-	for(int i = 1; i < ARRAY_SIZE(cmd_table); i++)
-	{
-		struct cmd_table_elt *c = cmd_table+i;
-		if(!strcmp(c->name,cmd))
-		{
-			if(ask_help || c->nargs != argc -1)
-			{
-				usage(c->help);
-				goto ret;
-			}
-			status = preop(file);
-			if(status) goto ret;
-
-			status = c->fn(argc,argv);
-			if(status)
-			{
-				usage(c->help);
-			}
-			status |= postop(output,file);
-			goto ret;
-		}
-	}
-	fprintf(stderr,"Wrong command\n");
-	status = 1;
-ret:
-	return status;
 }

@@ -35,27 +35,71 @@
 
 #ifndef BUILTIN_H
 #define BUILTIN_H
+#include "ggen.h"
 
-/* helps defining a table of all the commands known by a program*/
-struct cmd_table_elt {
-	const char* name;
-	int (*fn)(int, char**);
+/* The ggen tool works on two levels:
+ * - the first level define which part of ggen we are going to use
+ *	it also handles input, output and rng initialization
+ * - the second level is the real command to launch.
+ *	those commands and their descriptions are saved in builtin-*
+ *	files.
+ */
+
+/* since most commands share the use of graph and rng, they are
+ * passed globally from one function to the other.
+ */
+extern igraph_t g;
+extern igraph_t *g_p;
+extern gsl_rng *rng;
+extern FILE *infile;
+extern FILE *outfile;
+extern char *name;
+
+#define EDGE_PROPERTY 0
+#define VERTEX_PROPERTY 1
+#define	GRAPH_PROPERTY 2
+extern int ptype;
+
+struct second_lvl_cmd {
+	const char *name;
+	unsigned int nargs;
 	const char **help;
-	const int nargs;
+	int (*fn)(int,char**);
+};
+
+/* flags tell us which options
+ * are possible with a command
+ */
+#define NEED_INPUT	1	// a graph needs read
+#define NEED_OUTPUT	2	// a graph needs output
+#define IS_GRAPH_P	4	// a graph pointer needs output
+#define NEED_RNG	8	// a rng must be initialized
+#define NEED_TYPE	16	// a type must be set
+#define NEED_NAME	32	// a name must be set
+
+struct first_lvl_cmd {
+	const char *name;
+	struct second_lvl_cmd *cmds;
+	unsigned int flags;
+	const char** help;
 };
 
 /* C black magic to compute the size of a flexible array */
 #define ARRAY_SIZE(x) (sizeof(x)/sizeof(x[0]))
 
-extern void die(const char *err,...);
-extern void usage_helps(int argc, char **argv, struct cmd_table_elt helps[], int ask_full_help);
-extern void usage(const char *help[]);
+/* second lvl commands and help arrays are provided
+ * by builtin-* files
+ */
+extern const char *help_generate[];
+extern const char *help_analyse[];
+extern const char *help_transform[];
+extern const char *help_add_prop[];
+extern const char *help_analyse_prop[];
 
-/* builtin commands external to ggen */
-extern int cmd_generate_graph(int argc,char **argv);
-extern int cmd_analyse_graph(int argc, char **argv);
-extern int cmd_transform_graph(int argc, char**argv);
-extern int cmd_add_property(int argc, char**argv);
-extern int cmd_extract_property(int argc, char**argv);
+extern struct second_lvl_cmd cmds_generate[];
+extern struct second_lvl_cmd cmds_analyse[];
+extern struct second_lvl_cmd cmds_transform[];
+extern struct second_lvl_cmd cmds_add_prop[];
+extern struct second_lvl_cmd cmds_analyse_prop[];
 
 #endif
