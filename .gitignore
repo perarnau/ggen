@@ -1,4 +1,8 @@
-*.in
+Makefile.in
+Makefile
+*.o
+*.lo
+*.la
 build-aux
 aclocal.m4
 m4/libtool.m4
