@@ -45,12 +45,12 @@
  */
 
 enum log_level {
-	LOG_QUIET = 0,
-	LOG_ERROR = 1,
-	LOG_WARNING = 2,
-	LOG_NORMAL = 3,
-	LOG_INFO =4,
-	LOG_DEBUG = 5
+	LOG_QUIET	= 0,
+	LOG_ERROR	= 1,
+	LOG_WARNING	= 2,
+	LOG_NORMAL	= 3,
+	LOG_INFO	= 4,
+	LOG_DEBUG	= 5
 };
 
 /* initialize logging, must be called first,
@@ -60,10 +60,17 @@ enum log_level {
 int log_init(FILE* f, const char *nm);
 
 /* set log filter, only levels equals or lower than filter are logged
+ * return previous filter level
  */
-void log_set_level(enum log_level l);
+enum log_level log_filter_above(enum log_level l);
 
 /* logs the msg with level l. Message follows printf syntax */
 void log_msg(enum log_level l,const char *file, unsigned int line, const char *format, ...);
+
+#define error(...)	log_msg(LOG_ERROR,__FILE__,__LINE__, __VA_ARGS__)
+#define warning(...)	log_msg(LOG_WARNING,__FILE__,__LINE__, __VA_ARGS__)
+#define normal(...)	log_msg(LOG_NORMAL,__FILE__,__LINE__, __VA_ARGS__)
+#define info(...)	log_msg(LOG_INFO,__FILE__,__LINE__, __VA_ARGS__)
+#define debug(...)	log_msg(LOG_DEBUG,__FILE__,__LINE__, __VA_ARGS__)
 
 #endif // LOG_H

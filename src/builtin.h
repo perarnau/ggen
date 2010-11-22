@@ -36,7 +36,7 @@
 #ifndef BUILTIN_H
 #define BUILTIN_H
 #include "ggen.h"
-
+#include "log.h"
 /* The ggen tool works on two levels:
  * - the first level define which part of ggen we are going to use
  *	it also handles input, output and rng initialization

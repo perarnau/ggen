@@ -61,9 +61,12 @@ static const char * general_help[] = {
 	"--help,-h               : print this help message\n",
 	"--full-help             : display as much help as possible\n",
 	"--version,-V            : print program version\n",
-	"--input,-i   <file>     : use file as input, default to stdin\n",
-	"--output,-o  <file>     : use file as output, default to stdout\n",
-	"--rng-file   <file>     : use file to save rng state\n",
+	"--log-file,-f   <file>  : use file for logging\n",
+	"--log-level,-l  <int>   : set verbosity for logging\n",
+	"                          0 is quiet, 5 is debugging\n",
+	"--input,-i      <file>  : use file as input, default to stdin\n",
+	"--output,-o     <file>  : use file as output, default to stdout\n",
+	"--rng-file,-r   <file>  : use file to save rng state\n",
 	"                          if possible, will load state before cmd\n"
 	"--edge                  : manipulate an edge property\n",
 	"--vertex                : manipulate a vertex property \n",
@@ -99,6 +102,32 @@ static char* rngfname = NULL;
 static char* infname = NULL;
 static char* outfname = NULL;
 
+/* logging variables */
+static char* logfname = NULL;
+static FILE* logfile = NULL;
+static char* logval = NULL;
+
+/*========= LOGGING POLICY ===========
+ * GGen now integrates logging facilities.
+ * This paragraph explains how ggen log events
+ * and how it should always be implemented.
+ *
+ * Logging should be activated as soon as possible.
+ * It should only replace output on stderr. No display
+ * targetted for stdout should be changed: this includes
+ * command results and legitimate help (those that are asked).
+ *
+ * Error in the program should go to logging level ERROR.
+ * NORMAL level includes any trace of the command asked and
+ * operation realized.
+ * WARNING is for special behaviors: not failling on rng-file
+ * read for example.
+ * INFO adds values information about commands
+ * DEBUG should be used by developers only and should not
+ * be included in release code.
+ */
+
+
 /* global variables */
 igraph_t g;
 igraph_t *g_p = NULL;
@@ -116,6 +145,8 @@ static struct option long_options[] = {
 	{ "version", no_argument, &ask_version, 1 },
 	{ "input", required_argument, NULL, 'i' },
 	{ "output", required_argument, NULL, 'o' },
+	{ "log-file", required_argument, NULL, 'f' },
+	{ "log-level", required_argument, NULL, 'l'},
 	/* random number generator */
 	{ "rng-file", required_argument, NULL, 'r' },
 	/* properties options */
@@ -125,7 +156,7 @@ static struct option long_options[] = {
 	{ 0, 0, 0, 0},
 };
 
-static const char* short_opts = "hVi:o:r:n:";
+static const char* short_opts = "hVi:o:r:n:f:l:";
 
 void print_help(const char **message) {
 	for(int i=0; message[i] != NULL; i++)
@@ -183,19 +214,21 @@ int handle_second_lvl(int argc,char **argv,struct first_lvl_cmd *fl, struct seco
 	// check number of arguments
 	if(argc != sl->nargs)
 	{
-		fprintf(stderr,"error: wrong number of arguments");
+		info("Expected %u arguments, found %u\n",sl->nargs,argc);
+		error("Wrong number of arguments");
 		return 1;
 	}
 	// open input
 	if(fl->flags & NEED_INPUT)
 	{
+		normal("Configuring input\n");
 		if(infname)
 		{
-			fprintf(stderr,"Using %s as input file\n",infname);
+			info("Using %s as input file\n",infname);
 			infile = fopen(infname,"r");
 			if(!infile)
 			{
-				fprintf(stderr,"failed to open file %s for graph input, using stdin instead\n",infname);
+				warning("failed to open file %s for graph input, using stdin instead\n",infname);
 				infile = stdin;
 				infname = NULL;
 			}
@@ -208,42 +241,46 @@ int handle_second_lvl(int argc,char **argv,struct first_lvl_cmd *fl, struct seco
 			fclose(infile);
 		if(status)
 		{
-			fprintf(stderr,"error during graph reading\n");
+			error("Failed to read graph\n");
 			goto free_ing;
 		}
+		normal("Input configured and graph read\n");
 	}
 	// load rng
 	if(fl->flags & NEED_RNG)
 	{
+		normal("Configuring random number generator\n");
 		status = ggen_rng_init(&rng);
 		if(status)
 		{
-			fprintf(stderr,"error during rng init\n");
+			error("Failed to initialize RNG\n");
 			goto free_ing;
 		}
 		if(rngfname)
 		{
-			fprintf(stderr,"Using %s as RNG state file\n",rngfname);
+			info("Using %s as RNG state file\n",rngfname);
 			status = ggen_rng_load(&rng,rngfname);
 			if(status == 1)
-				fprintf(stderr,"failed to read rng state, will continue anyway\n");
+				warning("RNG State file not found, will continue anyway\n");
 			else if(status != 0)
 			{
-				fprintf(stderr,"error during rng read, will stop\n");
+				error("Reading RNG State from file failed.\n");
 				goto free_rng;
 			}
 		}
-
+		normal("RNG configured\n");
 	}
 	// set name
 	if((fl->flags & NEED_NAME) && name == NULL)
 	{
 		name = "newproperty";
+		info("Property name needed, using %s as default\n",name);
 	}
 	// set type
 	if((fl->flags & NEED_TYPE) && ptype == -1)
 	{
 		ptype = VERTEX_PROPERTY;
+		info("Property type needed, using VERTEX as default\n");
 	}
 
 	// output is a bit different from input:
@@ -251,57 +288,61 @@ int handle_second_lvl(int argc,char **argv,struct first_lvl_cmd *fl, struct seco
 	// if it does not generate a graph
 	// need_output tells us if a resulting graph needs
 	// to be wrote, not if the output can be redirected
+	normal("Configuring output\n");
 	if(outfname)
 	{
-		fprintf(stderr,"Using %s as output file\n",outfname);
+		info("Opening %s for writing\n",outfname);
 		outfile = fopen(outfname,"w");
 		if(!outfile)
 		{
-			fprintf(stderr,"failed to open file %s for graph output, using stdout instead\n",outfname);
+			warning("Failed to open file %s for output, using stdout instead\n",outfname);
 			outfile = stdout;
 			outfname = NULL;
 		}
 	}
 	else
 		outfile = stdout;
+	normal("Ouput configured\n");
 
 	// launch cmd
 	status = sl->fn(argc,argv);
 	if(status)
 	{
-		fprintf(stderr,"error during command\n");
+		error("Command Failed\n");
 		goto err;
 	}
 
 	if(fl->flags & NEED_OUTPUT)
 	{
+		normal("Printing graph\n");
 		if(fl->flags & IS_GRAPH_P)
 			status = ggen_write_graph(g_p,outfile);
 		else
 			status = ggen_write_graph(&g,outfile);
 
-		if(outfname)
-			fclose(outfile);
-
 		if(status)
 		{
-			fprintf(stderr,"error during graph saving\n");
+			error("Writing graph failed\n");
 			goto free_outg;
 		}
+		else
+			normal("Graph printed\n");
 	}
 	if((fl->flags & NEED_RNG) && rngfname)
 	{
+		normal("Saving RNG state\n");
 		status = ggen_rng_save(&rng,rngfname);
 		if(status)
 		{
-			fprintf(stderr,"error during rng save\n");
+			error("RNG saving failed\n");
 		}
-	}
-	if(outfname)
-	{
-		fclose(outfile);
+		else
+			normal("RNG Saved\n");
 	}
 free_outg:
+	if(outfname)
+		fclose(outfile);
+
 	if(fl->flags & IS_GRAPH_P)
 	{
 		igraph_destroy(g_p);
@@ -324,30 +365,31 @@ int handle_first_lvl(int argc, char **argv, struct first_lvl_cmd *c)
 	if(argc == 0)
 	{
 		print_first_lvl_help(c);
-		return 0;
+		return 1;
 	}
 	// check that user didn't ask for something crazy
 	if(infname != NULL && !(c->flags & NEED_INPUT))
 	{
-		fprintf(stderr,"error: I don't need an input file\n");
+		error("Input file not needed\n");
 		return 1;
 	}
 	if(name != NULL && !(c->flags & NEED_NAME))
 	{
-		fprintf(stderr,"error: I don't need an name\n");
+		error("Property name not needed\n");
 		return 1;
 	}
 	if(ptype != -1 && !(c->flags & NEED_TYPE))
 	{
-		fprintf(stderr,"error: I don't need an property type\n");
+		error("Property type not needed\n");
 		return 1;
 	}
 	if(rngfname != NULL && !(c->flags & NEED_RNG))
 	{
-		fprintf(stderr,"error: I don't need an rng file\n");
+		error("RNG state file not needed\n");
 		return 1;
 	}
 	// find second lvl command
+	info("Searching subcommand %s\n",argv[0]);
 	for(int j = 0; c->cmds[j].name != NULL; j++)
 	{
 		struct second_lvl_cmd *sl = c->cmds+j;
@@ -360,7 +402,7 @@ int handle_first_lvl(int argc, char **argv, struct first_lvl_cmd *c)
 		}
 	}
 	// no valid subcmd
-	fprintf(stderr,"error:wrong cmd\n");
+	error("Wrong subcommand\n");
 	return 1;
 }
 
@@ -383,7 +425,7 @@ int main(int argc,char** argv)
 		{
 			case 0:
 				break;
-			case 'f':
+			case 'r':
 				rngfname = optarg;
 				break;
 			case 'o':
@@ -400,6 +442,12 @@ int main(int argc,char** argv)
 				break;
 			case 'V':
 				ask_version =1;
+				break;
+			case 'f':
+				logfname = optarg;
+				break;
+			case 'l':
+				logval = optarg;
 				break;
 			default:
 				fprintf(stderr,"ggen bug: someone forgot how to write a switch\n");
@@ -426,13 +474,48 @@ int main(int argc,char** argv)
 	if(argc == 0)
 	{
 		print_help(general_help);
-		exit(EXIT_SUCCESS);
+		exit(EXIT_FAILURE);
 	}
+	// initialize logging
+	if(logfname != NULL)
+	{
+		logfile = fopen(logfname,"w");
+		if(!logfile)
+		{
+			fprintf(stderr,"failed to open file %s for logging, using stderr instead\n",logfname);
+			logfile = stderr;
+			logfname = NULL;
+		}
+	}
+	else
+		logfile = stderr;
+	status = log_init(logfile,"ggen");
+	if(status)
+	{
+		fprintf(stderr,"error during log initialization\n");
+		exit(EXIT_FAILURE);
+	}
+	// now set level according to options
+	if(logval != NULL)
+	{
+		unsigned long l;
+		status = s2ul(logval,&l);
+		if(status)
+		{
+			warning("Cannot convert log level option to int\n");
+		}
+		if(l < LOG_QUIET || l > LOG_DEBUG)
+			warning("Incorrect log level value\n");
+		else
+			log_filter_above((enum log_level)l);
+	}
+	normal("Logging facility initialized\n");
 
 	// initialize igraph attributes for all commands
 	igraph_i_set_attribute_table(&igraph_cattribute_table);
 
 	// find the command to launch
+	info("Searching for command %s\n",argv[0]);
 	for(int i = 0; i < ARRAY_SIZE(cmd_table); i++)
 	{
 		struct first_lvl_cmd *c = cmd_table+i;
@@ -441,9 +524,17 @@ int main(int argc,char** argv)
 			argc--;
 			argv++;
 			status = handle_first_lvl(argc,argv,c);
-			return status;
+			goto end;
 		}
 	}
-	fprintf(stderr,"error: wrong command\n");
-	exit(EXIT_FAILURE);
+	status = EXIT_FAILURE;
+	error("Command not found\n");
+end:
+	// close logging
+	normal("Closing log\n");
+	if(logfname)
+	{
+		fclose(logfile);
+	}
+	return status;
 }

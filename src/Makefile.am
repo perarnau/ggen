@@ -12,5 +12,5 @@ include_HEADERS = $(LIBHSOURCES)
 bin_PROGRAMS = ggen
 ggen_SOURCES = builtin-generate-graph.c ggen-tool.c builtin-analyse-graph.c \
 	       builtin-transform-graph.c builtin-add-property.c \
-	       builtin-analyse-property.c builtin.h utils.h utils.c
+	       builtin-analyse-property.c builtin.h utils.h utils.c log.c log.h
 ggen_LDADD = libggen.la @CGRAPH_LIBS@ @IGRAPH_LIBS@ @GSL_LIBS@

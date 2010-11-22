@@ -60,16 +60,18 @@ int log_init(FILE *f,const char *nm)
 	return 0;
 }
 
-void log_set_level(enum log_level l)
+enum log_level log_filter_above(enum log_level l)
 {
+	enum log_level r = log_filter;
 	log_filter = l;
+	return r;
 }
 
 void log_msg(enum log_level l,const char *file, unsigned int line, const char *format, ...)
 {
 	va_list ap;
 	if(l <= log_filter) {
-		fprintf(logfd,"%s:%s:%s:%u",namespace,log_string[l],file,line);
+		fprintf(logfd,"%s:\t%s:\t%s:\t%u:\t",namespace,log_string[l],file,line);
 		va_start(ap,format);
 		vfprintf(logfd,format,ap);
 		va_end(ap);

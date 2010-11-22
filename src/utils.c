@@ -38,6 +38,7 @@
 #include <string.h>
 
 #include "utils.h"
+#include "log.h"
 
 /* gsl rng stuff */
 int ggen_rng_init(gsl_rng **r)
@@ -48,8 +49,8 @@ int ggen_rng_init(gsl_rng **r)
 	T = gsl_rng_default;
 	*r = gsl_rng_alloc(T);
 
-	fprintf(stderr,"Using %s as RNG.\n",gsl_rng_name(*r));
-	fprintf(stderr,"Using %lu as RNG seed.\n",gsl_rng_default_seed);
+	info("Using %s as RNG.\n",gsl_rng_name(*r));
+	info("Using %lu as RNG seed.\n",gsl_rng_default_seed);
 	return 0;
 }
 
@@ -90,7 +91,7 @@ int s2ul(char *s,unsigned long *l)
 	r = strtoul(s,&err,0);
 	if(errno)
 	{
-		fprintf(stderr,"error in %s: %s (%c).\n",__func__,strerror(errno),*err);
+		error("Failed to convert string to unsigned long: %s\n",strerror(errno));
 		return 1;
 	}
 	*l = r;
@@ -107,7 +108,7 @@ int s2d(char *s,double *d)
 	r = strtod(s,&err);
 	if(errno)
 	{
-		fprintf(stderr,"error in %s: %s (%c).\n",__func__,strerror(errno),*err);
+		error("Failed to convert string to double: %s\n",strerror(errno));
 		return 1;
 	}
 	*d = r;
@@ -126,7 +127,7 @@ static unsigned long find_id(unsigned long id,igraph_vector_t v,unsigned long n)
 		if(VECTOR(v)[i] == id)
 			return i;
 
-	fprintf(stderr,"fatal: %s should not fail.\n",__func__);
+	error("BUG: this function should not fail: %s\n",__func__);
 	return 0;
 }
 
@@ -151,7 +152,7 @@ int ggen_read_graph(igraph_t *g,FILE *input)
 
 	if(!agisdirected(cg))
 	{
-		fprintf(stderr,"Error: read graph is undirected\n");
+		error("Input graph is undirected\n");
 		err = 1;
 		goto error_d;
 	}
