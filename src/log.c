@@ -71,7 +71,10 @@ void log_msg(enum log_level l,const char *file, unsigned int line, const char *f
 {
 	va_list ap;
 	if(l <= log_filter) {
-		fprintf(logfd,"%s:\t%s:\t%s:\t%u:\t",namespace,log_string[l],file,line);
+		if(log_filter == LOG_DEBUG)
+			fprintf(logfd,"%s:\t%s:\t%s:\t%u:\t",namespace,log_string[l],file,line);
+		else
+			fprintf(logfd,"%s:\t%s:\t",namespace,log_string[l]);
 		va_start(ap,format);
 		vfprintf(logfd,format,ap);
 		va_end(ap);
