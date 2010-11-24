@@ -64,6 +64,7 @@ enum log_level log_filter_above(enum log_level l)
 {
 	enum log_level r = log_filter;
 	log_filter = l;
+	info("Logging filter set at %s level\n",log_string[l]);
 	return r;
 }
 

@@ -496,19 +496,24 @@ int main(int argc,char** argv)
 		exit(EXIT_FAILURE);
 	}
 	// now set level according to options
+	unsigned long l;
 	if(logval != NULL)
 	{
-		unsigned long l;
 		status = s2ul(logval,&l);
 		if(status)
 		{
 			warning("Cannot convert log level option to int\n");
+			l = LOG_NORMAL;
 		}
-		if(l < LOG_QUIET || l > LOG_DEBUG)
-			warning("Incorrect log level value\n");
-		else
-			log_filter_above((enum log_level)l);
+		else if(l < LOG_QUIET || l > LOG_DEBUG)
+		{
+			warning("Incorrect log level value, must be between %d and %d\n",LOG_QUIET,LOG_DEBUG);
+			l = LOG_NORMAL;
+		}
 	}
+	else
+		l = LOG_NORMAL;
+	log_filter_above((enum log_level)l);
 	normal("Logging facility initialized\n");
 
 	// initialize igraph attributes for all commands
