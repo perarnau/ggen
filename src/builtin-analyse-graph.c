@@ -56,13 +56,13 @@ const char* help_analyse[] = {
 	"Commands:\n",
 	"nb-vertices          : gives the number of vertices in the graph\n",
 	"nb-edges             : gives the number of edges in the graph\n",
-	"mst                  : compute the Minimum Spanng Tree of the graph\n",
+	"mst                  : compute the Minimum Spanning Tree of the graph\n",
 	"lp                   : compute the Longest Path of the graph\n",
-	"out-degree           : gives the out_degree of each vertex\n",
-	"in-degree            : gives the in_degree of each vertex\n",
+	"out-degree           : gives the outdegree of each vertex\n",
+	"in-degree            : gives the indegree of each vertex\n",
 	"max-independent-set  : gives a maximum independent set of the graph\n",
-	"strong-components    : gives the list of all strong components of the graph\n",
-	"maximal-paths        : gives the list of all maximal paths (endg by a sink)\n",
+	"strong-components    : gives the number of strong components in the graph\n",
+	"maximal-paths        : gives the list of all maximal paths (ending by a sink)\n",
 	NULL,
 };
 
