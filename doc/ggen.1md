@@ -1,0 +1,275 @@
+% GGEN(1) GGen Command Line Client
+% Swann Perarnau
+
+# NAME
+
+ggen - command line interface to the ggen library.
+
+# SYNOPSIS
+
+`ggen` [\-\-version] [\-\-help] _MODULE_ _COMMAND_ [_ARGS_]
+
+# DESCRIPTION
+
+GGen is a command-line interface to the ggen graph generator library. It provides
+all the libggen functions as well as some trivial additional graph metrics.
+Graphs are manipuled as DOT files, see `dot(1)` for more information.
+
+GGen fonctionalities are encapsuled into _MODULES_, each of them providing a different
+part of the ggen library: generators, analysers and transformers of graph, as well
+as annotations analysis (generally called graph properties).
+
+Inside a module, the _COMMAND_ is the name of the function you want to access.
+
+# OPTIONS
+
+Some of the options described here are only available for specific commands. For example
+`--input` and `--output` only make sense for commands taking a graph as input/output.
+
++ `-h, --help`
+
+	Display help message and exit. The help message is specialized if
+	target module or function is specified.
+
++ `--full-help`
+
+	Display as much help as possible.
+
++ `-v, --version`
+
+	Output version information and exit.
+
++ `-f, --log-file` *file*
+
+	Write logging to *file*.
+
++ `-l, --log-level` *int*
+
+	Set logging verbosity. O is quiet (no output),
+	5 is maximum (debugging).
+
++ `-i, --input` *file*
+
+	Read input from *file* instead of standard input.
+			  
++ `-o, --output` *file*
+
+	Write output to *file* instead of standard output.
+			  
++ `-r, --rng-file` *file*
+
+	Read/Write Random Number Generator from/to *file*.
+	If file does not exist, it will still be used to write
+	the RNG at the end of computation.
+
++ `--edge,--vertex`
+
+	Manipulating edge or vertex properties.
+
++  `--name` *string*
+
+	Set to *string* the name of the property.
+
+# COMMANDS
+
+Each module provides a different set of commands.
+
+## generate-graph 
+
+You should read the `ggen(3)` manual for a description of each generation method.
+By default the resulting graph is printed on standard output.
+
++ `gnp` *n:int* *p:float*
+
+	Calls ggen_generate_erdos_gnp from libggen.
+
++ `gnm` *n:int* *m:int*
+
+	Calls ggen_generate_erdos_gnm from libggen.
+
++ `lbl` *n:int* *nbl:int* *p:float*
+
+	Calls ggen_generate_erdos_lbl from libggen.
+
++ `fifo` *n:int* *od:int* *id:int*
+	
+	Calls ggen_generate_fifo from libggen.
+
++ `ro` *n:int* *orders:int*
+
+	Calls ggen_generate_random_orders from libggen.
+
+## analyse-graph
+
+This module always requires a graph as input.
+
++ `nb-vertices`
+
+	Prints the number of vertices.
+
++ `nb-edges`
+
+	Prints the number of edges.
+
++ `mst`
+	
+	Prints the Minimum Spanning Tree (as a graph).
+
++ `lp`
+	Prints the Longest Path (as a list of nodes, in order).
+
++ `out-degree`
+
+	Prints the outdegree of each vertex.
+
++ `in-degree`
+
+	Prints the indegree of each vertex.
+
++ `max-independent-set`
+
+	Prints a maximum independent set (as a list of nodes).
+
++ `strong-components`
+
+	Prints the number of strong components.
+
++ `maximal-paths`
+
+	Prints the list of paths starting on a source and ending on a sink.
+	*WARNING* this method print a huge number of paths, and take a _long_ time
+	to compute.
+
+## transform-graph
+
+This module requires a graph as input and will by default print the resulting
+graph on standard output.
+
++ `remove-sinks`
+
+	Removes all sinks.
+
++ `remove-sources`
+
+	Removes all sources.
+
++ `add-sink`
+
+	Adds a node connected to all previous sinks.
+
++ `add-source`
+
+	Adds a node connected to all previous sources.
+
+## add-property
+
+This module requires a graph as input and will by default print the resulting
+graph on standard output.
+
+This module annotates the graph by adding on each vertex or edge a property
+randomly choosen using the given distribution.
+
++ `gaussian` *sigma:float*
+	
+	Uses a gaussian distribution centered on _sigma_.
+
++ `flat` *min:float* *max:float*
+	
+	Uses a flat (uniform) distribution limited by _min_ and _max_ (included).
+
++ `exponential` *mu*
+
+	Uses an exponential distribution having a mean of _mu_.
+
++ `pareto` *a:float* *b:float*
+
+	Uses a pareto distribution with order _a_ and minimum value _b_.
+
+## analyse-property
+
+This module requires a graph as input.
+The *--name* option is used to select the property to analyse.
+
++ `print`
+	
+	Prints for each vertex/edge the property value.
+
++ `stats`
+
+	Prints the mean and stddev of the property.
+
++ `hist` *nbins:int* *min:float* *max:float*
+
+	Prints an histogram (gsl_histogram like) using _nbins_ bins with
+	a minimum value of _min_ and a maximum value of _max_.
+
+# NOTES
+
+The ggen command line client is designed so that you can pipe the graph outputs back
+into the analyser modules.
+
+Two environment variables can be used to change the random number genetor used by ggen.
+They are defined and used by the underlying GNU Scientific library. Reading the [GSL Manual][] is recommended
+to understand their use.
+
++ `GSL_RNG_SEED`
+
+	Changes the seed used to initialize the RNG.
+
++ `GSL_RNG_TYPE`
+
+	Changes the random number generator type.
+
+# BUGS
+
+No known bugs. Note that you can introduce bugs by yourself if you are playing with the seed, the type or the state file
+of the random number generator. These variables require carefull use and a deep understanding of their consequences.
+
+Some of the classical bugs falsely reported:
+
++ multiple instances of ggen generating the same graph:
+
+	Either each instance read the same state file or the same seed was used (`time` is a very bad seed, use `/dev/urandom` instead).
+
++ generated graph are of bad quality
+
+	First, some of these bugs can be real ones (if a graph generation does not seems to respect the spec, contact us).
+	
+	But, maybe, you used the same state file for too long: each random number generator has a period. Generation methods
+	roughly call the rng _n_ times. If you use the state file for too long you might bump against your rng period (if you
+	are very unlucky this can have consequences on the generation quality).
+	
+	Try to use a different state file in this case.
+
++ I get *strange results* when simulating my algorithm against your graphs
+
+	Congratulations ! You just bumped into the very problem we are trying to raise awareness of: comparing algorithms using badly chosen 
+	generation methods can lead to meaningless simulation results.
+	
+	You should have a clear model of the kind of graph your application should take as
+	input before selecting a generation method and its parameters.
+	
+	You should also analyse the characteristics of your inputs graph to ensure
+	they match your model.
+
+
+# REPORTING BUGS
+
+If you find any bug or have any comment on this library, use
+our [mailing-list][].
+
+# COPYRIGHT
+
+Copyright (C) 2009-2011 Swann Perarnau and others.   
+License CeCILL: Open Source, GPL Compatible <http://www.cecill.info>   
+This is free software: you are free to change and redistribute it.   
+There is NO WARRANTY, to the extent permitted by law.   
+
+# SEE ALSO
+
+This tool was presented in a full article at the [Simutools][] Conference in
+March 2010.  You can find a copy of this article on the GGen [website][].
+
+[mailing-list]: ggen-commits@ligforge.imag.fr 
+[website]: http://ggen.ligforge.imag.fr
+[simutools]: http://www.simutools.org/2010/

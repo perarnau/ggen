@@ -43,6 +43,6 @@ PKG_CHECK_MODULES([CGRAPH],[libcgraph])
 # configuration output in config.h
 AC_CONFIG_HEADERS([config.h])
 # output makefiles
-AC_CONFIG_FILES([Makefile src/Makefile tests/Makefile ggen.pc])
+AC_CONFIG_FILES([Makefile src/Makefile doc/Makefile tests/Makefile ggen.pc])
 # do the output
 AC_OUTPUT
