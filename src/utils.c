@@ -289,10 +289,7 @@ int ggen_write_graph(igraph_t *g, FILE *output)
 	if(!str)
 		cg = agopen(GGEN_DEFAULT_GRAPH_NAME,Agdirected,NULL);
 	else
-	{
 		cg = agopen(str,Agdirected,NULL);
-		DELGA(g,GGEN_GRAPH_NAME_ATTR);
-	}
 
 	if(!cg)
 	{
@@ -314,9 +311,6 @@ int ggen_write_graph(igraph_t *g, FILE *output)
 			f = agnode(cg,str,1);
 		VECTOR(vertices)[i] = (void *)f;
 	}
-	/* delete the vertex attribute now we have set vertices */
-	if(str)
-		DELVA(g,GGEN_VERTEX_NAME_ATTR);
 
 	/* We have finished with dangerous attributes accesses */
 	igraph_set_error_handler(error_handler);
