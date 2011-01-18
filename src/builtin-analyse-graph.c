@@ -95,12 +95,17 @@ static int cmd_lp(int argc, char **argv)
 	int err = 0;
 	unsigned long i = 0;
 	igraph_vector_t *lp = NULL;
+	char name[GGEN_DEFAULT_NAME_SIZE];
+	char *s = NULL;
 	lp = ggen_analyze_longest_path(&g);
 	if(!lp) return 1;
 
-	for(i = 0; i < igraph_vector_size(lp); i++)
+	s = ggen_vname(name,&g,(unsigned long)VECTOR(*lp)[0]);
+	fprintf(outfile,"%s",s==NULL?name:s);
+	for(i = 1; i < igraph_vector_size(lp); i++)
 	{
-		fprintf(outfile,"%lu",(unsigned long)VECTOR(*lp)[i]);
+		s = ggen_vname(name,&g,(unsigned long)VECTOR(*lp)[i]);
+		fprintf(outfile,",%s",s==NULL?name:s);
 	}
 	fprintf(outfile,"\n");
 
@@ -114,6 +119,8 @@ static int cmd_out_degree(int argc, char **argv)
 	int err = 0;
 	unsigned long i;
 	igraph_vector_t d;
+	char name[GGEN_DEFAULT_NAME_SIZE];
+	char *s = NULL;
 	err = igraph_vector_init(&d,igraph_vcount(&g));
 	if(err) goto ret;
 
@@ -122,7 +129,8 @@ static int cmd_out_degree(int argc, char **argv)
 
 	for(i = 0; i < igraph_vcount(&g); i++)
 	{
-		fprintf(outfile,"%lu,%lu\n",i,(unsigned long)VECTOR(d)[i]);
+		s = ggen_vname(name,&g,i);
+		fprintf(outfile,"%s,%lu\n",s==NULL?name:s,(unsigned long)VECTOR(d)[i]);
 	}
 error:
 	igraph_vector_destroy(&d);
@@ -135,6 +143,8 @@ static int cmd_in_degree(int argc, char **argv)
 	int err = 0;
 	unsigned long i = 0;
 	igraph_vector_t d;
+	char name[GGEN_DEFAULT_NAME_SIZE];
+	char *s = NULL;
 	err = igraph_vector_init(&d,igraph_vcount(&g));
 	if(err) goto ret;
 
@@ -143,7 +153,8 @@ static int cmd_in_degree(int argc, char **argv)
 
 	for(i = 0; i < igraph_vcount(&g); i++)
 	{
-		fprintf(outfile,"%lu,%lu\n",i,(unsigned long)VECTOR(d)[i]);
+		s = ggen_vname(name,&g,i);
+		fprintf(outfile,"%s,%lu\n",s==NULL?name:s,(unsigned long)VECTOR(d)[i]);
 	}
 error:
 	igraph_vector_destroy(&d);
@@ -155,6 +166,8 @@ static int cmd_max_indep_set(int argc, char **argv)
 {
 	int err = 0;
 	unsigned long i = 0;
+	char name[GGEN_DEFAULT_NAME_SIZE];
+	char *s = NULL;
 	igraph_vector_ptr_t l;
 
 	err = igraph_vector_ptr_init(&l,igraph_vcount(&g));
@@ -163,9 +176,12 @@ static int cmd_max_indep_set(int argc, char **argv)
 	err = igraph_largest_independent_vertex_sets(&g,&l);
 	if(err) goto error;
 
-	for(i = 0; i < igraph_vector_ptr_size(&l); i++)
+	s = ggen_vname(name,&g,(unsigned long)VECTOR(l)[0]);
+	fprintf(outfile,"%s",s==NULL?name:s);
+	for(i = 1; i < igraph_vector_ptr_size(&l); i++)
 	{
-		fprintf(outfile,"%lu",(unsigned long)VECTOR(l)[i]);
+		s = ggen_vname(name,&g,(unsigned long)VECTOR(l)[i]);
+		fprintf(outfile,",%s",s==NULL?name:s);
 	}
 	fprintf(outfile,"\n");
 error:

@@ -56,4 +56,11 @@ int ggen_read_graph(igraph_t *g,FILE *input);
 
 int ggen_write_graph(igraph_t *g,FILE *output);
 
+/* get vertex name:
+ * if name exists in graph, will return a pointer to it.
+ * if not, will print at most GGEN_DEFAULT_NAME_SIZE into buf
+ */
+char * ggen_vname(char *buf, igraph_t *g, unsigned long id);
+
+
 #endif

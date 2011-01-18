@@ -118,6 +118,37 @@ int s2d(char *s,double *d)
 
 /* graph io */
 /* this use cgraph to read/write dot */
+static char * vid2vname_unsafe(char *s, igraph_t *g, unsigned long id)
+{
+	char *str = NULL;
+	/* try to find a vertex name */
+	str = (char *)VAS(g,GGEN_VERTEX_NAME_ATTR,id);
+	if(!str)
+	{
+		snprintf(s,GGEN_DEFAULT_NAME_SIZE,"%lu",id);
+		return NULL;
+	}
+	else
+		return str;
+}
+
+
+char * ggen_vname(char *s, igraph_t *g, unsigned long id)
+{
+	/* WARNING: this should be changed if igraph-0.6 gets
+	 * stable.
+	 * We need to ignore some igraph_cattribute errors
+	 * because we try to retrieve special attributes (ggen specifics).
+	 * igraph version 0.6 include a cattribute_has_attr that should be
+	 * used instead of ignoring errors.
+	 */
+	char * r = NULL;
+	igraph_error_handler_t *error_handler;
+	error_handler = igraph_set_error_handler(igraph_error_handler_ignore);
+	r = vid2vname_unsafe(s,g,id);
+	igraph_set_error_handler(error_handler);
+	return r;
+}
 
 /* find an id in an array */
 static unsigned long find_id(unsigned long id,igraph_vector_t v,unsigned long n)
@@ -300,13 +331,10 @@ int ggen_write_graph(igraph_t *g, FILE *output)
 	/* save a pointer to each vertex */
 	for(i = 0; i < vcount; i++)
 	{
-		/* try to find a vertex name */
-		str = (char *)VAS(g,GGEN_VERTEX_NAME_ATTR,i);
+		/* find a vertex name */
+		str = vid2vname_unsafe(name,g,i);
 		if(!str)
-		{
-			snprintf(name,GGEN_DEFAULT_NAME_SIZE,"%lu",i);
 			f = agnode(cg,name,1);
-		}
 		else
 			f = agnode(cg,str,1);
 		VECTOR(vertices)[i] = (void *)f;
