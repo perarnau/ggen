@@ -74,7 +74,7 @@ static int cmd_nb_vertices(int argc, char **argv)
 
 static int cmd_nb_edges(int argc, char **argv)
 {
-	fprintf(outfile,"Number of vertices: %lu\n",(unsigned long)igraph_ecount(&g));
+	fprintf(outfile,"Number of edges: %lu\n",(unsigned long)igraph_ecount(&g));
 	return 0;
 }
 
