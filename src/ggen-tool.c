@@ -215,7 +215,7 @@ int handle_second_lvl(int argc,char **argv,struct first_lvl_cmd *fl, struct seco
 	if(argc != sl->nargs)
 	{
 		info("Expected %u arguments, found %u\n",sl->nargs,argc);
-		error("Wrong number of arguments");
+		error("Wrong number of arguments\n");
 		return 1;
 	}
 	// open input
