@@ -1,7 +1,7 @@
 .1md.1:
-	pandoc -s -t man $< -o $@
+	@PANDOC@ -s -t man $< -o $@
 .3md.3:
-	pandoc -s -t man $< -o $@
+	@PANDOC@ -s -t man $< -o $@
 
 man1_MANS = ggen.1
 
