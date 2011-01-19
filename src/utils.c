@@ -383,29 +383,37 @@ int ggen_write_graph(igraph_t *g, FILE *output)
 	/* add graph properties */
 	for(i = 0; i < igraph_strvector_size(&gnames); i++)
 	{
-		if(VECTOR(gtypes)[i]==IGRAPH_ATTRIBUTE_NUMERIC) {
-			snprintf(name,GGEN_DEFAULT_NAME_SIZE,"%f",(double)GAN(g,STR(gnames,i)));
-			agattr(cg,AGRAPH,(char *)STR(gnames,i),name);
+		if(strcmp(GGEN_GRAPH_NAME_ATTR,STR(gnames,i)))
+		{
+			if(VECTOR(gtypes)[i]==IGRAPH_ATTRIBUTE_NUMERIC) {
+				snprintf(name,GGEN_DEFAULT_NAME_SIZE,"%f",
+						(double)GAN(g,STR(gnames,i)));
+				agattr(cg,AGRAPH,(char *)STR(gnames,i),name);
+			}
+			else
+				agattr(cg,AGRAPH,(char *)STR(gnames,i),
+						(char *)GAS(g,STR(gnames,i)));
 		}
-		else
-			agattr(cg,AGRAPH,(char *)STR(gnames,i),(char *)GAS(g,STR(gnames,i)));
 	}
 
 	/* add vertex properties */
 	for(i = 0; i < igraph_strvector_size(&vnames); i++)
 	{
-		/* creates the attribute but we still need to set it for each vertex */
-		attr = agattr(cg,AGNODE,(char *)STR(vnames,i),GGEN_CGRAPH_DEFAULT_VALUE);
-		for(j = 0; j < vcount; j++)
+		if(strcmp(GGEN_VERTEX_NAME_ATTR,STR(vnames,i)))
 		{
-			f = (Agnode_t *) VECTOR(vertices)[j];
-			if(VECTOR(vtypes)[i]==IGRAPH_ATTRIBUTE_NUMERIC) {
-				snprintf(name,GGEN_DEFAULT_NAME_SIZE,"%f",
-						(double)VAN(g,STR(vnames,i),j));
-				agxset(f,attr,name);
+			/* creates the attribute but we still need to set it for each vertex */
+			attr = agattr(cg,AGNODE,(char *)STR(vnames,i),GGEN_CGRAPH_DEFAULT_VALUE);
+			for(j = 0; j < vcount; j++)
+			{
+				f = (Agnode_t *) VECTOR(vertices)[j];
+				if(VECTOR(vtypes)[i]==IGRAPH_ATTRIBUTE_NUMERIC) {
+					snprintf(name,GGEN_DEFAULT_NAME_SIZE,"%f",
+							(double)VAN(g,STR(vnames,i),j));
+					agxset(f,attr,name);
+				}
+				else
+					agxset(f,attr,(char *)VAS(g,STR(vnames,i),j));
 			}
-			else
-				agxset(f,attr,(char *)VAS(g,STR(vnames,i),j));
 		}
 	}
 
