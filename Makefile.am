@@ -4,4 +4,10 @@ SUBDIRS = src tests doc
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = ggen.pc
 
+README: README.md
+	@PANDOC@ -s -t plain $< -o $@
+
+clean-local:
+	-rm README
+
 EXTRA_DIST = autogen.sh version.sh ChangeLog ggen.pc
