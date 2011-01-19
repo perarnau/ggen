@@ -1,4 +1,4 @@
-﻿/* Copyright Swann Perarnau 2009
+/* Copyright Swann Perarnau 2009
 *
 *   contact : Swann.Perarnau@imag.fr
 *
