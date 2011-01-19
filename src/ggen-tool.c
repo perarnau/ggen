@@ -250,6 +250,8 @@ int handle_second_lvl(int argc,char **argv,struct first_lvl_cmd *fl, struct seco
 	if(fl->flags & NEED_RNG)
 	{
 		normal("Configuring random number generator\n");
+		// turn off automatic abort on gsl error
+		gsl_set_error_handler_off();
 		status = ggen_rng_init(&rng);
 		if(status)
 		{

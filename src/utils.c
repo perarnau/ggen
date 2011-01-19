@@ -57,27 +57,39 @@ int ggen_rng_init(gsl_rng **r)
 int ggen_rng_save(gsl_rng **r,const char *file)
 {
 	FILE *f;
-	int err;
-	f = fopen(file,"w");
+	int e1,e2;
+	f = fopen(file,"wb");
 	if(!f) return 1;
 
-	err = gsl_rng_fwrite(f,*r);
+	e1 = gsl_rng_fwrite(f,*r);
+	if(e1) error("GSL error: %s\n",gsl_strerror(e1));
 
-	fclose(f);
-	return err;
+	e2 = fclose(f);
+	if(e2) error("I/O error: %s\n",strerror(e2));
+
+	if(e1 || e2)
+		return 2;
+	else
+		return 0;
 }
 
 int ggen_rng_load(gsl_rng **r,const char *file)
 {
 	FILE *f;
-	int err;
-	f = fopen(file,"r");
+	int e1,e2;
+	f = fopen(file,"rb");
 	if(!f) return 1;
 
-	err = gsl_rng_fread(f,*r);
+	e1 = gsl_rng_fread(f,*r);
+	if(e1) error("GSL error: %s\n",gsl_strerror(e1));
 
-	fclose(f);
-	return err;
+	e2 = fclose(f);
+	if(e2) error("I/O error: %s\n",strerror(e2));
+
+	if(e1 || e2)
+		return 2;
+	else
+		return 0;
 }
 
 /* string conversion */
