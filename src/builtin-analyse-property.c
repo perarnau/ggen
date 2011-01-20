@@ -115,10 +115,12 @@ int cmd_print(int argc, char **argv)
 {
 	unsigned long count;
 	int attr_type;
+	char n[GGEN_DEFAULT_NAME_SIZE];
+	char *s;
 	attr_type = find_attribute(&g,ptype,name);
 	if(attr_type == -1)
 	{
-		fprintf(stderr,"error: could not find property (%s)\n",name);
+		error("error: could not find property (%s)\n",name);
 		return 1;
 	}
 	if(ptype == EDGE_PROPERTY)
@@ -127,23 +129,22 @@ int cmd_print(int argc, char **argv)
 		for(unsigned long i = 0; i < count; i++)
 		{
 			if(attr_type == 0)
-				fprintf(outfile,"%lu,%s",i,EAS(&g,name,i));
+				fprintf(outfile,"%lu,%s\n",i,EAS(&g,name,i));
 			else
-				fprintf(outfile,"%lu,%f",i,(double)EAN(&g,name,i));
+				fprintf(outfile,"%lu,%f\n",i,(double)EAN(&g,name,i));
 		}
-		fprintf(outfile,"\n");
 	}
 	else if(ptype == VERTEX_PROPERTY)
 	{
 		count = igraph_vcount(&g);
 		for(unsigned long i = 0; i < count; i++)
 		{
+			s = ggen_vname(n,&g,i);
 			if(attr_type == 0)
-				fprintf(outfile,"%s,%s",VAS(&g,GGEN_VERTEX_NAME_ATTR,i),VAS(&g,name,i));
+				fprintf(outfile,"%s,%s\n",s==NULL?n:s,VAS(&g,name,i));
 			else
-				fprintf(outfile,"%s,%f",VAS(&g,GGEN_VERTEX_NAME_ATTR,i),(double)VAN(&g,name,i));
+				fprintf(outfile,"%s,%f\n",s==NULL?n:s,(double)VAN(&g,name,i));
 		}
-		fprintf(outfile,"\n");
 	}
 	return 0;
 }
@@ -191,14 +192,14 @@ int cmd_stats(int argc, char **argv)
 	attr_type = find_attribute(&g,ptype,name);
 	if(attr_type == -1)
 	{
-		fprintf(stderr,"error: could not find property (%s)\n",name);
+		error("error: could not find property (%s)\n",name);
 		return 1;
 	}
 	size = get_property_size(&g,name,ptype);
 	values = calloc(size,sizeof(double));
 	if(values == NULL)
 	{
-		fprintf(stderr,"error: failed allocation\n");
+		error("error: failed allocation\n");
 		return 1;
 	}
 
@@ -228,36 +229,36 @@ int cmd_hist(int argc, char **argv)
 	attr_type = find_attribute(&g,ptype,name);
 	if(attr_type == -1)
 	{
-		fprintf(stderr,"error: could not find property (%s)\n",name);
+		error("error: could not find property (%s)\n",name);
 		return 1;
 	}
 	else if(attr_type == 0)
 	{
-		fprintf(stderr,"warning: property is a string, will continue anyway\n");
+		error("warning: property is a string, will continue anyway\n");
 	}
 	err = s2ul(argv[0],&size);
 	if(err)
 	{
-		fprintf(stderr,"error: parsing first argument\n");
+		error("error: parsing first argument\n");
 		return 1;
 	}
 	err = s2d(argv[1],&xmin);
 	if(err)
 	{
-		fprintf(stderr,"error: parsing second argument\n");
+		error("error: parsing second argument\n");
 		return 1;
 	}
 	err = s2d(argv[2],&xmax);
 	if(err)
 	{
-		fprintf(stderr,"error: parsing third argument\n");
+		error("error: parsing third argument\n");
 		return 1;
 	}
 	// allocate histogram
 	h = gsl_histogram_alloc(size);
 	if(h == NULL)
 	{
-		fprintf(stderr,"error: allocating histogram\n");
+		error("error: allocating histogram\n");
 		return 1;
 	}
 	gsl_histogram_set_ranges_uniform(h,xmin,xmax);
@@ -270,7 +271,7 @@ int cmd_hist(int argc, char **argv)
 		err = gsl_histogram_increment(h,tmp);
 		if(err)
 		{
-			fprintf(stderr,"error during histogram increment, probably a out of range value\n");
+			error("error during histogram increment, probably an out of range value\n");
 			goto free_h;
 		}
 	}
