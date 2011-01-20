@@ -7,6 +7,8 @@ pkgconfig_DATA = ggen.pc
 README: README.md
 	@PANDOC@ -s -t plain $< -o $@
 
+all-local: README
+
 clean-local:
 	-rm README
 

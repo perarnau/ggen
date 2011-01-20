@@ -7,13 +7,13 @@ This tool was designed to help scheduling researchers with the simulation of the
 algorithms. It provides a collection of classical workflow generation methods,
 algorithms to annotate and analyse the generated graph.
 
-GGen use internally the [Igraph][] and [GNU Scientific Library][] libraries for its data structures
-and random number generators.
+GGen use internally the [Igraph][igraph] and [GNU Scientific Library][gsl]
+libraries for its data structures and random number generators.
 
 The command line client uses [DOT][] as its textual graph file format.
 
 Address any remarks concerning compiling or using this tool to the bug tracker
-of the [GGen Website] or the [GGen Mailing-list][].
+of the [GGen Website][web] or the [GGen Mailing-list][mail].
 
 ## REQUIREMENTS ##
 
@@ -51,3 +51,9 @@ and required arguments.
 As usual the INSTALL file contains additional informations.
 
 If you still have questions, mail us.
+
+[igraph]: http://igraph.sourceforge.net
+[gsl]: http://www.gnu.org/software/gsl/
+[DOT]: http://www.graphviz.org
+[mail]: ggen-commits@ligforge.imag.fr
+[web]: http://ggen.ligforge.imag.fr
