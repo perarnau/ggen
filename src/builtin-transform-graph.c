@@ -57,8 +57,8 @@ const char* help_transform[] = {
 	"Commands:\n",
 	"remove-sinks            : remove all sinks present in the graph\n",
 	"remove-sources          : remove all sources present in the graph\n",
-	"add-sink                : add a node connected to all previous sinks\n",
-	"add-source              : add a node connected to all previous sources\n",
+	"add-sink   <name>       : add a named node connected to all previous sinks\n",
+	"add-source <name>       : add a named node connected to all previous sources\n",
 	NULL,
 };
 
@@ -74,18 +74,26 @@ static int cmd_remove_sources(int argc, char** argv)
 
 static int cmd_add_sink(int argc, char** argv)
 {
-	return ggen_transform_add(&g,GGEN_TRANSFORM_SINK);
+	int err = ggen_transform_add(&g,GGEN_TRANSFORM_SINK);
+	if(err) return err;
+
+	SETVAS(&g,GGEN_VERTEX_NAME_ATTR,igraph_vcount(&g)-1,argv[0]);
+	return 0;
 }
 
 static int cmd_add_source(int argc, char** argv)
 {
-	return ggen_transform_add(&g,GGEN_TRANSFORM_SOURCE);
+	int err = ggen_transform_add(&g,GGEN_TRANSFORM_SOURCE);
+	if(err) return err;
+
+	SETVAS(&g,GGEN_VERTEX_NAME_ATTR,igraph_vcount(&g)-1,argv[0]);
+	return 0;
 }
 
 struct second_lvl_cmd cmds_transform[] = {
 	{ "remove-sinks", 0, NULL, cmd_remove_sinks },
 	{ "remove-sources", 0, NULL, cmd_remove_sources },
-	{ "add-sink", 0, NULL, cmd_add_sink },
-	{ "add-source", 0, NULL, cmd_add_source },
+	{ "add-sink", 1, NULL, cmd_add_sink },
+	{ "add-source", 1, NULL, cmd_add_source },
 	{ 0, 0, 0, 0},
 };
