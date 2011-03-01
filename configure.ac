@@ -27,14 +27,14 @@ AC_ARG_ENABLE(valgrind,
 
 if [[ "x$valgrind" = xtrue ]]; then
 	AC_PATH_PROG(VALGRIND, valgrind, no)
-	if [[  "x$HAVE_VALGRIND" = xno ]]; then
+	if [[  "x$VALGRIND" = xno ]]; then
 		AC_MSG_ERROR([Valgrind not found in PATH. ])
 	fi
 fi
 AM_CONDITIONAL([TEST_VALGRIND],[test "x$valgrind" = xtrue])
 
 AC_PATH_PROG(PANDOC,pandoc,no)
-if [[ "x$HAVE_PANDOC" = xno ]]; then
+if [[ "x$PANDOC" = xno ]]; then
 	AC_MSG_ERROR([Pandoc not found in PATH. ])
 fi
 
