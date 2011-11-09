@@ -44,6 +44,8 @@
 
 #include "ggen.h"
 #include <stdlib.h>
+#include "vector_utils.h"
+#include "bipartite-matching.h"
 
 igraph_vector_t * ggen_analyze_longest_path(igraph_t *g)
 {
@@ -69,7 +71,7 @@ igraph_vector_t * ggen_analyze_longest_path(igraph_t *g)
 	err = igraph_vector_init(&preds,v);
 	if(err) goto error_ip;
 
-	res = malloc(sizeof(igraph_t));
+	res = malloc(sizeof(igraph_vector_t));
 	if(res == NULL) goto cleanup;
 
 	err = igraph_vector_init(res,v);
@@ -140,5 +142,294 @@ error_ip:
 	igraph_vector_destroy(&lengths);
 error_il:
 	igraph_vector_destroy(&topology);
+	return res;
+}
+
+/* An antichain is defined as a set of vertices so that
+ * no path exist between any couple of them.
+ * For example, in the graph :
+ *               1
+ *             /   \
+ *            2     3
+ *             \   /
+ *               4
+ * with edges going downward, the sets {1}, {2,3} and {4} are
+ * antichains, but NOT {1,2}, {1,3} or {2,4}...
+ *
+ * This implementation finds the antichain of maximal size
+ * by solving an equivalent problem : vertex cover on a bipartite
+ * graph. This is solved by computing a maximum matching and
+ * converting it to a vertex cover.
+ *
+ * See the following links to understand what's going on :
+ * https://en.wikipedia.org/wiki/Dilworth%27s_theorem
+ * http://en.wikipedia.org/wiki/K%C3%B6nig%27s_theorem_%28graph_theory%29
+ * http://en.wikipedia.org/wiki/Hopcroft%E2%80%93Karp_algorithm
+ *
+ */
+
+igraph_vector_t * ggen_analyze_longest_antichain(igraph_t *g)
+{
+	/* The following steps are implemented :
+	 *  - Convert our DAG to a specific bipartite graph B
+	 *  - solve maximum matching on B
+	 *  - conver maximum matching to min vectex cover
+	 *  - convert min vertex cover to antichain on G
+	 */
+	int err;
+	unsigned long i,vg,found,added;
+	igraph_t b,gstar;
+	igraph_vector_t edges,*res = NULL;
+	igraph_vector_t c,s,t,todo,n,next,l,r;
+	igraph_eit_t eit;
+	igraph_es_t es;
+	igraph_integer_t from,to;
+	igraph_vit_t vit;
+	igraph_vs_t vs;
+	igraph_real_t value;
+
+	if(g == NULL)
+		return NULL;
+
+	/* before creating the bipartite graph, we need all relations
+	 * between any two vertices : the transitive closure of g */
+	err = igraph_copy(&gstar,g);
+	if(err) return NULL;
+
+	err = ggen_transform_transitive_closure(&gstar);
+	if(err) goto error;
+
+	/* Bipartite convertion : let G = (S,C),
+	 * we build B = (U,V,E) with
+	 *	- U = V = S (each vertex is present twice)
+	 *	- (u,v) \in E iff :
+	 *		- u \in U
+	 *		- v \in V
+	 *		- u < v in C (warning, this means that we take
+	 *		transitive closure into account, not just the
+	 *		original edges)
+	 * We will also need two additional nodes further in the code.
+	 */
+	vg = igraph_vcount(g);
+	err = igraph_empty(&b,vg*2,1);
+	if(err) goto error;
+
+	/* id and id+vg will be a vertex in U and its copy in V,
+	 * iterate over gstar edges to create edges in b
+	 */
+	err = igraph_vector_init(&edges,igraph_ecount(&gstar));
+	if(err) goto d_b;
+	igraph_vector_clear(&edges);
+
+	err = igraph_eit_create(&gstar,igraph_ess_all(IGRAPH_EDGEORDER_ID),&eit);
+	if(err) goto d_edges;
+
+	for(IGRAPH_EIT_RESET(eit); !IGRAPH_EIT_END(eit); IGRAPH_EIT_NEXT(eit))
+	{
+		err = igraph_edge(&gstar,IGRAPH_EIT_GET(eit),&from,&to);
+		if(err)
+		{
+			igraph_eit_destroy(&eit);
+			goto d_edges;
+		}
+		to += vg;
+		igraph_vector_push_back(&edges,(igraph_real_t)from);
+		igraph_vector_push_back(&edges,(igraph_real_t)to);
+	}
+	igraph_eit_destroy(&eit);
+	err = igraph_add_edges(&b,&edges,NULL);
+	if(err) goto d_edges;
+
+	/* maximum matching on b */
+	igraph_vector_clear(&edges);
+	err = bipartite_maximum_matching(&b,&edges);
+	if(err) goto d_edges;
+
+	/* Let M be the max matching, and N be E - M
+	 * Define T as all unmatched vectices from U as well as all vertices
+	 * reachable from those by going left-to-right along N and right-to-left along
+	 * M.
+	 * Define L = U - T, R = V \inter T
+	 * C:= L + R
+	 * C is a minimum vertex cover
+	 */
+	err = igraph_vector_init_seq(&n,0,igraph_ecount(&b)-1);
+	if(err) goto d_edges;
+
+	err = vector_diff(&n,&edges);
+	if(err) goto d_n;
+
+	err = igraph_vector_init(&c,vg);
+	if(err) goto d_n;
+	igraph_vector_clear(&c);
+
+	/* matched vertices : S */
+	err = igraph_vector_init(&s,vg);
+	if(err) goto d_c;
+	igraph_vector_clear(&s);
+
+	for(i = 0; i < igraph_vector_size(&edges); i++)
+	{
+		err = igraph_edge(&b,VECTOR(edges)[i],&from,&to);
+		if(err) goto d_s;
+
+		igraph_vector_push_back(&s,from);
+	}
+	/* we may have inserted the same vertex multiple times */
+	err = vector_uniq(&s);
+	if(err) goto d_s;
+
+	/* unmatched */
+	err = igraph_vector_init_seq(&t,0,vg-1);
+	if(err) goto d_s;
+
+	err = vector_diff(&t,&s);
+	if(err) goto d_t;
+
+	/* alternating paths
+	 */
+	err = igraph_vector_copy(&todo,&t);
+	if(err) goto d_t;
+
+	err = igraph_vector_init(&next,vg);
+	if(err) goto d_todo;
+	igraph_vector_clear(&next);
+	do {
+		vector_uniq(&todo);
+		added = 0;
+		for(i = 0; i < igraph_vector_size(&todo); i++)
+		{
+			if(VECTOR(todo)[i] < vg)
+			{
+				/* scan edges */
+				err = igraph_es_adj(&es,VECTOR(todo)[i],IGRAPH_OUT);
+				if(err) goto d_next;
+				err = igraph_eit_create(&b,es,&eit);
+				if(err)
+				{
+					igraph_es_destroy(&es);
+					goto d_next;
+				}
+				for(IGRAPH_EIT_RESET(eit); !IGRAPH_EIT_END(eit); IGRAPH_EIT_NEXT(eit))
+				{
+					if(igraph_vector_binsearch(&n,IGRAPH_EIT_GET(eit),NULL))
+					{
+						err = igraph_edge(&b,IGRAPH_EIT_GET(eit),&from,&to);
+						if(err)
+						{
+							igraph_eit_destroy(&eit);
+							igraph_es_destroy(&es);
+							goto d_next;
+						}
+						if(!igraph_vector_binsearch(&t,to,NULL))
+						{
+							igraph_vector_push_back(&next,to);
+							added = 1;
+						}
+					}
+				}
+			}
+			else
+			{
+				/* scan edges */
+				err = igraph_es_adj(&es,VECTOR(todo)[i],IGRAPH_IN);
+				if(err) goto d_next;
+				err = igraph_eit_create(&b,es,&eit);
+				if(err)
+				{
+					igraph_es_destroy(&es);
+					goto d_next;
+				}
+				for(IGRAPH_EIT_RESET(eit); !IGRAPH_EIT_END(eit); IGRAPH_EIT_NEXT(eit))
+				{
+					if(igraph_vector_binsearch(&edges,IGRAPH_EIT_GET(eit),NULL))
+					{
+						err = igraph_edge(&b,IGRAPH_EIT_GET(eit),&from,&to);
+						if(err)
+						{
+							igraph_eit_destroy(&eit);
+							igraph_es_destroy(&es);
+							goto d_next;
+						}
+						if(!igraph_vector_binsearch(&t,to,NULL))
+						{
+							igraph_vector_push_back(&next,from);
+							added = 1;
+						}
+					}
+				}
+			}
+			igraph_es_destroy(&es);
+			igraph_eit_destroy(&eit);
+		}
+		igraph_vector_append(&t,&todo);
+		igraph_vector_clear(&todo);
+		igraph_vector_append(&todo,&next);
+		igraph_vector_clear(&next);
+	} while(added);
+
+	err = igraph_vector_init_seq(&l,0,vg-1);
+	if(err) goto d_t;
+
+	err = vector_diff(&l,&t);
+	if(err) goto d_l;
+
+	err = igraph_vector_update(&c,&l);
+	if(err) goto d_l;
+
+	err = igraph_vector_init(&r,vg);
+	if(err) goto d_l;
+	igraph_vector_clear(&r);
+
+	/* compute V \inter T */
+	for(i = 0; i < igraph_vector_size(&t); i++)
+	{
+		if(VECTOR(t)[i] >= vg)
+			igraph_vector_push_back(&r,VECTOR(t)[i]);
+	}
+
+	igraph_vector_add_constant(&r,(igraph_real_t)-vg);
+	err = vector_union(&c,&r);
+	if(err) goto d_r;
+
+	/* our antichain is U - C */
+	res = malloc(sizeof(igraph_vector_t));
+	if(res == NULL) goto d_r;
+
+	err = igraph_vector_init_seq(res,0,vg-1);
+	if(err) goto f_res;
+
+	err = vector_diff(res,&c);
+	if(err) goto d_res;
+
+	goto ret;
+d_res:
+	igraph_vector_destroy(res);
+f_res:
+	free(res);
+	res = NULL;
+ret:
+d_r:
+	igraph_vector_destroy(&r);
+d_l:
+	igraph_vector_destroy(&l);
+d_next:
+	igraph_vector_destroy(&next);
+d_todo:
+	igraph_vector_destroy(&todo);
+d_t:
+	igraph_vector_destroy(&t);
+d_s:
+	igraph_vector_destroy(&s);
+d_c:
+	igraph_vector_destroy(&c);
+d_n:
+	igraph_vector_destroy(&n);
+d_edges:
+	igraph_vector_destroy(&edges);
+d_b:
+	igraph_destroy(&b);
+error:
+	igraph_destroy(&gstar);
 	return res;
 }

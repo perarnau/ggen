@@ -62,7 +62,7 @@ const char* help_analyse[] = {
 	"in-degree            : gives the indegree of each vertex\n",
 	"max-independent-set  : gives a maximum independent set of the graph\n",
 	"strong-components    : gives the number of strong components in the graph\n",
-	"maximal-paths        : gives the list of all maximal paths (ending by a sink)\n",
+	"longest-antichain    : computes the longest antichain of the graph\n",
 	NULL,
 };
 
@@ -199,6 +199,32 @@ static int cmd_strong_components(int argc, char **argv)
 	return 0;
 }
 
+static int cmd_longest_antichain(int argc, char **argv)
+{
+	int err = 0;
+	unsigned long i = 0;
+	igraph_vector_t *a = NULL;
+	char name[GGEN_DEFAULT_NAME_SIZE];
+	char *s = NULL;
+
+	a = ggen_analyze_longest_antichain(&g);
+	if(!a)
+		return 1;
+
+	s = ggen_vname(name,&g,(unsigned long)VECTOR(*a)[0]);
+	fprintf(outfile,"%s",s==NULL?name:s);
+	for(i = 1; i < igraph_vector_size(a); i++)
+	{
+		s = ggen_vname(name,&g,(unsigned long)VECTOR(*a)[i]);
+		fprintf(outfile,",%s",s==NULL?name:s);
+	}
+	fprintf(outfile,"\n");
+
+	igraph_vector_destroy(a);
+	free(a);
+	return 0;
+}
+
 struct second_lvl_cmd  cmds_analyse[] = {
 	{ "nb-vertices", 0, NULL, cmd_nb_vertices },
 	{ "nb-edges", 0, NULL, cmd_nb_edges },
@@ -208,5 +234,6 @@ struct second_lvl_cmd  cmds_analyse[] = {
         { "in-degree", 0, NULL, cmd_in_degree },
         { "max-independent-set", 0, NULL, cmd_max_indep_set },
         { "strong-components", 0, NULL, cmd_strong_components },
+        { "longest-antichain", 0, NULL, cmd_longest_antichain },
 	{ 0, 0, 0, 0},
 };

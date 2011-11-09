@@ -41,46 +41,17 @@
 * INRIA, Grenoble Universities.
 */
 
-#ifndef GGEN_H
-#define GGEN_H 1
+#ifndef VECTOR_UTILS_H
+#define VECTOR_UTILS_H 1
 
-/* igraph is used for graph manipulation */
-#include<igraph/igraph.h>
-/* GNU Scientific Library provides random number generators */
-#include<gsl/gsl_rng.h>
-#include<gsl/gsl_randist.h>
+#include <igraph/igraph.h>
 
-/**********************************************************
- * Analysis methods
- *********************************************************/
+int vector_uniq_sorted(igraph_vector_t *v);
 
-igraph_vector_t * ggen_analyze_longest_path(igraph_t *g);
+int vector_uniq(igraph_vector_t *v);
 
-igraph_vector_t * ggen_analyze_longest_antichain(igraph_t *g);
+int vector_diff(igraph_vector_t *to, igraph_vector_t *from);
 
-/**********************************************************
- * Generation methods
- *********************************************************/
-igraph_t *ggen_generate_erdos_gnm(gsl_rng *r, unsigned long n, unsigned long m);
+int vector_union(igraph_vector_t *to, igraph_vector_t *from);
 
-igraph_t *ggen_generate_erdos_gnp(gsl_rng *r, unsigned long n, double p);
-
-igraph_t *ggen_generate_erdos_lbl(gsl_rng *r, unsigned long n, double p, unsigned long nbl);
-
-igraph_t *ggen_generate_fifo(gsl_rng *r, unsigned long n, unsigned long od, unsigned long id);
-
-igraph_t *ggen_generate_random_orders(gsl_rng *r, unsigned long n, unsigned int orders);
-
-/**********************************************************
- * Transformation methods
- *********************************************************/
-
-enum ggen_transform_t { GGEN_TRANSFORM_SOURCE, GGEN_TRANSFORM_SINK };
-
-int ggen_transform_add(igraph_t *g, enum ggen_transform_t t);
-
-int ggen_transform_delete(igraph_t *g, enum ggen_transform_t t);
-
-int ggen_transform_transitive_closure(igraph_t *g);
-
-#endif // GGEN_H
+#endif // VECTOR_UTILS_H

@@ -41,46 +41,58 @@
 * INRIA, Grenoble Universities.
 */
 
-#ifndef GGEN_H
-#define GGEN_H 1
+#include "vector_utils.h"
 
-/* igraph is used for graph manipulation */
-#include<igraph/igraph.h>
-/* GNU Scientific Library provides random number generators */
-#include<gsl/gsl_rng.h>
-#include<gsl/gsl_randist.h>
+int vector_uniq_sorted(igraph_vector_t *v)
+{
+	unsigned long i,pos,l;
+	/* basic idea : remember the last good number,
+	 * test each index against it.
+	 * It is that simple because the vector is sorted
+	 */
+	pos = 0;
+	l = 1;
+	for(i = 1; i < igraph_vector_size(v); i++)
+	{
+		if(VECTOR(*v)[i] != VECTOR(*v)[pos])
+		{
+			pos++;
+			VECTOR(*v)[pos] = VECTOR(*v)[i];
+		}
+	}
+	igraph_vector_resize(v,pos+1);
+	return 0;
+}
 
-/**********************************************************
- * Analysis methods
- *********************************************************/
+int vector_uniq(igraph_vector_t *v)
+{
+	igraph_vector_sort(v);
+	return vector_uniq_sorted(v);
+}
 
-igraph_vector_t * ggen_analyze_longest_path(igraph_t *g);
+int vector_diff(igraph_vector_t *to, igraph_vector_t *from)
+{
+	unsigned long i,j,found,ts,t,f;
+	ts = igraph_vector_size(to);
+	for(i = 0; i < igraph_vector_size(from);i++)
+	{
+		for(j = 0; j < ts; j++)
+		{
+			t = (unsigned long)VECTOR(*to)[j];
+			f = (unsigned long)VECTOR(*from)[i];
+			if(t == f)
+			{
+				ts--;
+				igraph_vector_remove(to,j);
+				j--;
+			}
+		}
+	}
+	return 0;
+}
 
-igraph_vector_t * ggen_analyze_longest_antichain(igraph_t *g);
-
-/**********************************************************
- * Generation methods
- *********************************************************/
-igraph_t *ggen_generate_erdos_gnm(gsl_rng *r, unsigned long n, unsigned long m);
-
-igraph_t *ggen_generate_erdos_gnp(gsl_rng *r, unsigned long n, double p);
-
-igraph_t *ggen_generate_erdos_lbl(gsl_rng *r, unsigned long n, double p, unsigned long nbl);
-
-igraph_t *ggen_generate_fifo(gsl_rng *r, unsigned long n, unsigned long od, unsigned long id);
-
-igraph_t *ggen_generate_random_orders(gsl_rng *r, unsigned long n, unsigned int orders);
-
-/**********************************************************
- * Transformation methods
- *********************************************************/
-
-enum ggen_transform_t { GGEN_TRANSFORM_SOURCE, GGEN_TRANSFORM_SINK };
-
-int ggen_transform_add(igraph_t *g, enum ggen_transform_t t);
-
-int ggen_transform_delete(igraph_t *g, enum ggen_transform_t t);
-
-int ggen_transform_transitive_closure(igraph_t *g);
-
-#endif // GGEN_H
+int vector_union(igraph_vector_t *to, igraph_vector_t *from)
+{
+	igraph_vector_append(to,from);
+	return vector_uniq(to);
+}

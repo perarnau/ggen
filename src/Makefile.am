@@ -2,7 +2,7 @@ AM_CPPFLAGS = @CGRAPH_CFLAGS@ @IGRAPH_CFLAGS@ @GSL_CFLAGS@
 
 lib_LTLIBRARIES = libggen.la
 
-LIBCSOURCES = graph-generation.c graph-analysis.c graph-transformation.c
+LIBCSOURCES = graph-generation.c graph-analysis.c graph-transformation.c vector_utils.c vector_utils.h bipartite-matching.c bipartite-matching.h
 
 LIBHSOURCES = ggen.h
 
