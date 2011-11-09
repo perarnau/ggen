@@ -153,3 +153,88 @@ error_id:
 	igraph_vector_destroy(&vertices);
 	return err;
 }
+
+int TCdfsR(igraph_t *g, unsigned long from, unsigned long to,
+	igraph_matrix_t *m, igraph_vector_t *pred, unsigned long *cnt,
+	igraph_vector_t *new_edges)
+{
+	unsigned long u,i;
+	int err = 0;
+	igraph_vit_t vit;
+	igraph_vs_t vs;
+	VECTOR(*pred)[to] = *cnt++;
+
+	err = igraph_vs_adj(&vs,to,IGRAPH_OUT);
+	if(err) return 1;
+
+	err = igraph_vit_create(g,vs,&vit);
+	if(err) goto d_vs;
+	for(IGRAPH_VIT_RESET(vit); !IGRAPH_VIT_END(vit);IGRAPH_VIT_NEXT(vit))
+	{
+		u = (unsigned long)IGRAPH_VIT_GET(vit);
+		MATRIX(*m,to,u) = 1;
+		if((unsigned long)VECTOR(*pred)[u] > (unsigned long)VECTOR(*pred)[to])
+			continue;
+		if(VECTOR(*pred)[u] == (igraph_real_t) -1)
+		{
+			err = TCdfsR(g,to,u,m,pred,cnt,new_edges);
+			if(err) goto d_vit;
+		}
+		for(i = 0; i < igraph_vcount(g); i++)
+			if(MATRIX(*m,u,i) == (igraph_real_t)1)
+			{
+				if(MATRIX(*m,to,i) == (igraph_real_t)0)
+				{
+					MATRIX(*m,to,i) = 1;
+					igraph_vector_push_back(new_edges,(igraph_real_t)to);
+					igraph_vector_push_back(new_edges,(igraph_real_t)i);
+				}
+			}
+	}
+d_vit:
+	igraph_vit_destroy(&vit);
+d_vs:
+	igraph_vs_destroy(&vs);
+	return err;
+}
+
+int ggen_transform_transitive_closure(igraph_t *g)
+{
+	unsigned long i,j;
+	unsigned long cnt = 0;
+	int err = 0;
+	igraph_matrix_t m;
+	igraph_vector_t pred;
+	igraph_vector_t new_edges;
+	if(g == NULL)
+		return 1;
+
+	err = igraph_matrix_init(&m,igraph_vcount(g),igraph_vcount(g));
+	if(err) return 1;
+
+	err = igraph_vector_init(&pred,igraph_vcount(g));
+	if(err) goto d_m;
+	igraph_vector_fill(&pred,(igraph_real_t)-1);
+
+	err = igraph_vector_init(&new_edges,igraph_ecount(g)*igraph_vcount(g));
+	if(err) goto d_pred;
+	igraph_vector_clear(&new_edges);
+
+	for(i = 0; i < igraph_vector_size(&pred);i++)
+	{
+		if(VECTOR(pred)[i] == (igraph_real_t)-1)
+		{
+			err = TCdfsR(g,i,i,&m,&pred,&cnt,&new_edges);
+			if(err) goto d_edges;
+		}
+	}
+	/* add edges */
+	err = igraph_add_edges(g,&new_edges,NULL);
+d_edges:
+	igraph_vector_destroy(&new_edges);
+d_pred:
+	igraph_vector_destroy(&pred);
+d_m:
+	igraph_matrix_destroy(&m);
+	return err;
+}

@@ -79,5 +79,6 @@ int ggen_transform_add(igraph_t *g, enum ggen_transform_t t);
 
 int ggen_transform_delete(igraph_t *g, enum ggen_transform_t t);
 
+int ggen_transform_transitive_closure(igraph_t *g);
 
 #endif // GGEN_H

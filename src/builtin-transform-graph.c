@@ -59,6 +59,7 @@ const char* help_transform[] = {
 	"remove-sources          : remove all sources present in the graph\n",
 	"add-sink   <name>       : add a named node connected to all previous sinks\n",
 	"add-source <name>       : add a named node connected to all previous sources\n",
+	"transitive-closure      : make the transitive closure of the graph\n",
 	NULL,
 };
 
@@ -90,10 +91,16 @@ static int cmd_add_source(int argc, char** argv)
 	return 0;
 }
 
+static int cmd_transitive_closure(int argc, char **argv)
+{
+	return ggen_transform_transitive_closure(&g);
+}
+
 struct second_lvl_cmd cmds_transform[] = {
 	{ "remove-sinks", 0, NULL, cmd_remove_sinks },
 	{ "remove-sources", 0, NULL, cmd_remove_sources },
 	{ "add-sink", 1, NULL, cmd_add_sink },
 	{ "add-source", 1, NULL, cmd_add_source },
+	{ "transitive-closure", 0, NULL, cmd_transitive_closure },
 	{ 0, 0, 0, 0},
 };
