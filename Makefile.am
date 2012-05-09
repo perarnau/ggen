@@ -4,7 +4,7 @@ SUBDIRS = src tests doc
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = ggen.pc
 
-README: README.md
+README: README.markdown
 	@PANDOC@ -s -t plain $< -o $@
 
 all-local: README
