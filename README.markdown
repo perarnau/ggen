@@ -1,11 +1,11 @@
 # GGen : a graph generator #
 
-
 GGen is a DAG (Directed Acyclic Graph) generation library and command line client.
 
-This tool was designed to help scheduling researchers with the simulation of their
-algorithms. It provides a collection of classical workflow generation methods,
-algorithms to annotate and analyse the generated graph.
+This tool was designed to help Operation Research (Scheduling)
+researchers with the simulation of their algorithms. It provides a
+collection of classical workload generation methods, algorithms to
+annotate and analyse the generated graph.
 
 GGen use internally the [Igraph][igraph] and [GNU Scientific Library][gsl]
 libraries for its data structures and random number generators.
@@ -19,14 +19,11 @@ of the [GGen Website][web] or the [GGen Mailing-list][mail].
 
 ### Compiling from distribution package ###
 
-- make
-- Igraph
-- GNU Scientific Library 
-- Cgraph (graphviz) 
-- pandoc (for man pages only)
-- pkg-config (optional: you can tell configure were to find the other libs manually)
+While a stable release (0.3) was made a long time ago, it is not supported
+anymore. You can still try to build it, and there is a patch available
+on demand to make it work, but it is NOT recommended.
 
-./configure && make && make install
+Please refer to its README for instructions.
 
 ### Compiling from repository ###
 
@@ -35,6 +32,7 @@ of the [GGen Website][web] or the [GGen Mailing-list][mail].
 - GNU Scientific Library 
 - Cgraph (graphviz) 
 - pkg-config (optional: you can tell configure were to find the other libs manually)
+- pandoc
 
 ./autogen.sh && ./configure && make && make install
 
@@ -47,8 +45,6 @@ The command line client as an extensive --help. It displays help recursively on 
 and required arguments.
 
 ## Additional Info ##
-
-As usual the INSTALL file contains additional informations.
 
 If you still have questions, mail us.
 
