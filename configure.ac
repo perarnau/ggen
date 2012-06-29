@@ -11,18 +11,23 @@ AC_CONFIG_MACRO_DIR([m4])
 
 # automake should fail on any error
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
+
+# check for libtool
+LT_INIT([])
+
 # check for programs
-AC_LANG_C
+AC_LANG([C])
 AC_PROG_CC
 AC_PROG_CC_C_O
 AM_PROG_CC_C_O
 AC_PROG_CC_STDC
 AC_PROG_CPP
-AC_PROG_LIBTOOL
+AC_TYPE_SIZE_T
+
 
 # support for testing with valgrind
 AC_ARG_ENABLE(valgrind,
-[AC_HELP_STRING([--enable-valgrind],[Also valgrind on checks (default is no).])],
+[AS_HELP_STRING([--enable-valgrind],[Also valgrind on checks (default is no).])],
 [valgrind=true],[valgrind=false])
 
 if [[ "x$valgrind" = xtrue ]]; then
