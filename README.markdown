@@ -28,7 +28,7 @@ Please refer to its README for instructions.
 ### Compiling from repository ###
 
 - autotools (libtoolize, autoconf, automake, autoheaders, aclocal)
-- Igraph
+- Igraph (>= 0.6)
 - GNU Scientific Library 
 - Cgraph (graphviz) 
 - pkg-config (optional: you can tell configure were to find the other libs manually)

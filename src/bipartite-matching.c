@@ -167,7 +167,7 @@ int bipartite_maximum_matching(igraph_t *g, igraph_vector_t *res)
 	{
 		if(VECTOR(pair)[i] != (igraph_real_t)vg)
 		{
-			igraph_get_eid(g,&eid,i,VECTOR(pair)[i],0);
+			igraph_get_eid(g,&eid,i,VECTOR(pair)[i],0,0);
 			igraph_vector_push_back(res,eid);
 		}
 	}

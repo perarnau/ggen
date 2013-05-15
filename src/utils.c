@@ -275,7 +275,7 @@ int ggen_read_graph(igraph_t *g,FILE *input)
 			for(e = agfstout(cg,v); e; e = agnxtout(cg,e))
 			{
 				to = find_id(AGID(aghead(e)),vertices,vsize);
-				igraph_get_eid(g,&eid,from,to,1);
+				igraph_get_eid(g,&eid,from,to,1,0);
 				SETEAS(g,att->name,eid,agxget(e,att));
 			}
 		}
