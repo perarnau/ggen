@@ -156,7 +156,7 @@ static struct option long_options[] = {
 	{ 0, 0, 0, 0},
 };
 
-static const char* short_opts = "hVi:o:r:n:f:l:";
+static const char* short_opts = ":hVi:o:r:n:f:l:";
 
 void print_help(const char **message) {
 	for(int i=0; message[i] != NULL; i++)
@@ -451,11 +451,14 @@ int main(int argc,char** argv)
 			case 'l':
 				logval = optarg;
 				break;
-			default:
-				fprintf(stderr,"ggen bug: someone forgot how to write a switch\n");
+			case ':':
+				fprintf(stderr,"ggen: missing option argument at %s\n",argv[optind-1]);
 				exit(EXIT_FAILURE);
 			case '?':
-				fprintf(stderr,"ggen bug: getopt failed miserably\n");
+				fprintf(stderr,"ggen: invalid option: %s\n",argv[optind-1]);
+				exit(EXIT_FAILURE);
+			default:
+				fprintf(stderr,"ggen bug: someone forgot how to write a switch\n");
 				exit(EXIT_FAILURE);
 		}
 	}
