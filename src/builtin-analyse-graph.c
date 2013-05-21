@@ -63,6 +63,7 @@ const char* help_analyse[] = {
 	"max-independent-set  : gives a maximum independent set of the graph\n",
 	"strong-components    : gives the number of strong components in the graph\n",
 	"longest-antichain    : computes the longest antichain of the graph\n",
+	"lsa                  : computes the lowest single ancestor of all vertices in the graph\n",
 	NULL,
 };
 
@@ -225,6 +226,53 @@ static int cmd_longest_antichain(int argc, char **argv)
 	return 0;
 }
 
+static int cmd_lsa(int argc, char **argv)
+{
+	int err = 0;
+	unsigned long i,cnt;
+	char name[GGEN_DEFAULT_NAME_SIZE];
+	char *s = NULL;
+	igraph_vector_t *lsa;
+	igraph_vector_t d;
+	/* additional checks for the graph: we need a single source */
+	err = igraph_vector_init(&d,igraph_vcount(&g));
+	if(err) goto error;
+
+	err = igraph_degree(&g,&d,igraph_vss_all(),IGRAPH_IN,0);
+	if(err) goto d_d;
+
+	for(i = 0, cnt = 0; i < igraph_vcount(&g); i++)
+		if(VECTOR(d)[i] == 0)
+			cnt++;
+
+	igraph_vector_destroy(&d);
+	if(cnt != 1)
+	{
+		error("the graph must have a single source, detected %lu\n",cnt);
+		goto error;
+	}
+
+	lsa = ggen_analyze_lowest_single_ancestor(&g);
+	if(lsa == NULL) goto error;
+
+	for(i = 0; i < igraph_vcount(&g); i++)
+	{
+		s = ggen_vname(name,&g,i);
+		fprintf(outfile,"%s,",s==NULL?name:s);
+		s = ggen_vname(name,&g,(unsigned long)VECTOR(*lsa)[i]);
+		fprintf(outfile,"%s\n",s==NULL?name:s);
+	}
+	igraph_vector_destroy(lsa);
+	free(lsa);
+	goto ret;
+d_d:
+	igraph_vector_destroy(&d);
+error:
+	err = 1;
+ret:
+	return err;
+}
+
 struct second_lvl_cmd  cmds_analyse[] = {
 	{ "nb-vertices", 0, NULL, cmd_nb_vertices },
 	{ "nb-edges", 0, NULL, cmd_nb_edges },
@@ -235,5 +283,6 @@ struct second_lvl_cmd  cmds_analyse[] = {
         { "max-independent-set", 0, NULL, cmd_max_indep_set },
         { "strong-components", 0, NULL, cmd_strong_components },
         { "longest-antichain", 0, NULL, cmd_longest_antichain },
+        { "lsa", 0, NULL, cmd_lsa },
 	{ 0, 0, 0, 0},
 };

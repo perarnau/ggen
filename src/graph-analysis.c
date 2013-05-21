@@ -46,6 +46,7 @@
 #include <stdlib.h>
 #include "vector_utils.h"
 #include "bipartite-matching.h"
+#include "tree-lowest-common-ancestor.h"
 
 igraph_vector_t * ggen_analyze_longest_path(igraph_t *g)
 {
@@ -433,3 +434,107 @@ error:
 	igraph_destroy(&gstar);
 	return res;
 }
+
+/* Lowest Single Ancestor:
+ * The single lowest ancestor of a node is the vertex of maximum depth on all
+ * paths between the root of the dag (single source) and this node.
+ *
+ * The simplest way to compute this is to build a specialized tree and do LCA
+ * (lowest common ancestor of two nodes) queries on it.
+ * See "New Common Ancestor Problems in Trees and Directed Acyclic Graphs" by
+ * Johannes Fischer and Daniel H. Huson (2008).
+ * While this paper recommends the use of a LCA algorithm that supports online
+ * updates to the tree, it is quite difficult to implement correctly. The LCA
+ * algorithm we use is with O(n) prepocessing time and O(1) queries, making the
+ * LSA algorithm O(n^2).
+ */
+
+igraph_vector_t *ggen_analyze_lowest_single_ancestor(igraph_t *g)
+{
+	unsigned long i,v,l,vid,r;
+	int err = 0;
+	igraph_vector_t toposort,itopo;
+	igraph_vector_t *lsa;
+	igraph_t tree;
+	igraph_vs_t vs;
+	igraph_vit_t vit;
+	lca_metadata md;
+
+	if(g == NULL)
+		return NULL;
+
+	err = igraph_vector_init(&toposort,igraph_vcount(g));
+	if(err) return NULL;
+
+	err = igraph_topological_sorting(g,&toposort,IGRAPH_OUT);
+	if(err) goto d_tp;
+
+	/* build a reverse index of the toposort */
+	err = igraph_vector_init(&itopo,igraph_vcount(g));
+	if(err) goto d_tp;
+
+	for(i = 0; i < igraph_vcount(g); i++)
+	{
+		v = VECTOR(toposort)[i];
+		VECTOR(itopo)[v] = i;
+	}
+
+	err = igraph_empty(&tree,1,IGRAPH_DIRECTED);
+	if(err) goto d_i;
+
+	lsa = calloc(1,sizeof(igraph_vector_t*));
+	if(lsa == NULL) goto cleanup;
+
+	err = igraph_vector_init(lsa,igraph_vcount(g));
+	if(err) goto f_l;
+
+	for(v = 1; v < igraph_vcount(g); v++)
+	{
+		vid = VECTOR(toposort)[v];
+
+		tree_lca_metadata_init(&tree,&md);
+		tree_lca_preprocessing(&tree,0,&md);
+
+		/* iterate over parents of v in g
+		 * The lsa of a node is the LCA of all its parents in our
+		 * special tree.
+		 */
+		igraph_vs_adj(&vs, vid, IGRAPH_IN);
+		igraph_vit_create(g,vs,&vit);
+		l = VECTOR(itopo)[IGRAPH_VIT_GET(vit)];
+		IGRAPH_VIT_NEXT(vit);
+
+		for(vit;!IGRAPH_VIT_END(vit); IGRAPH_VIT_NEXT(vit))
+		{
+			tree_lca_query(&tree,l,VECTOR(itopo)[IGRAPH_VIT_GET(vit)],&r,&md);
+			l = r;
+		}
+
+		igraph_vit_destroy(&vit);
+		igraph_vs_destroy(&vs);
+		tree_lca_metadata_free(&tree,&md);
+
+		// update tree
+		err = igraph_add_vertices(&tree,1,NULL);
+		if(err) goto d_l;
+
+		err = igraph_add_edge(&tree,l,v);
+		if(err) goto d_l;
+
+		VECTOR(*lsa)[vid] = VECTOR(toposort)[l];
+	}
+	goto cleanup;
+d_l:
+	igraph_vector_destroy(lsa);
+f_l:
+	free(lsa);
+	lsa = NULL;
+cleanup:
+	igraph_destroy(&tree);
+d_i:
+	igraph_vector_destroy(&itopo);
+d_tp:
+	igraph_vector_destroy(&toposort);
+	return lsa;
+}
+

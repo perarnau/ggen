@@ -134,11 +134,14 @@ This module always requires a graph as input.
 
 	Prints the number of strong components.
 
-+ `maximal-paths`
++ `longest-antichain`
 
-	Prints the list of paths starting on a source and ending on a sink.
-	*WARNING* this method print a huge number of paths, and take a _long_ time
-	to compute.
+	Prints the longest antichain in the graph.
+
++ `lsa`
+
+	Prints the lowest single ancestor of each vertex.
+
 
 ## transform-graph
 

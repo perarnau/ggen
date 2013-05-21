@@ -87,6 +87,14 @@ generator must be initialized before the function call.
 
 	Computes the longest path in _g_. Returns it as a vector containing the nodes of the path in order.
 
++ `ggen_analyze_longest_antichain()`
+
+	Computes the longest antichain of g. Returns it as a vector containing the nodes of the chain (no specific order).
+
++ `ggen_analyze_lowest_single_ancestor()`
+
+	Computes the lowest single ancestor of all vertices of g. Returns it as vector, where v(i) is the lsa of vertex id i (in igraph).
+
 ## Tranformation Functions
 
 Transformation functions have a *type* parameter: _t_. This parameter change the goal of the transformations.
