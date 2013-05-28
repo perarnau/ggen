@@ -1,0 +1,38 @@
+body {
+	font-family: Arial;
+	font-size: 12px;
+	padding: 5px;
+	margin: 0px;
+	color: #555;
+	text-align: center;
+	background: #ffffff;
+}
+	
+#content {
+	width: 800px;
+	background-color: white;
+	border: 2px solid black;
+	margin: 20px auto;
+	padding: 15px;
+	float: center;
+	text-align: left;
+}
+
+#photo {
+	float: left;
+	margin: 10px;
+}
+
+.section.level3 {
+	clear: both;
+	margin-left: 10px;
+	border-bottom: 1px solid #000;
+}
+
+.section.level4 {
+	margin-left: 20px;
+}
+
+#publications-presentations p {
+	margin-left: 20px;
+}
