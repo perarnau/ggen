@@ -12,8 +12,8 @@ libraries for its data structures and random number generators.
 
 The command line client uses [DOT][] as its textual graph file format.
 
-Address any remarks concerning compiling or using this tool to the bug tracker
-of the [GGen Website][web] or the [GGen Mailing-list][mail].
+Address any remarks concerning compiling or using this tool to
+[Swann Perarnau (main developer)][mail].
 
 ## REQUIREMENTS ##
 
@@ -51,5 +51,5 @@ If you still have questions, mail us.
 [igraph]: http://igraph.sourceforge.net
 [gsl]: http://www.gnu.org/software/gsl/
 [DOT]: http://www.graphviz.org
-[mail]: ggen-commits@ligforge.imag.fr
+[mail]: mailto:swann.perarnau@imag.fr
 [web]: http://ggen.ligforge.imag.fr

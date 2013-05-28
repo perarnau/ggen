@@ -51,11 +51,11 @@ Some of the options described here are only available for specific commands. For
 + `-i, --input` *file*
 
 	Read input from *file* instead of standard input.
-			  
+
 + `-o, --output` *file*
 
 	Write output to *file* instead of standard output.
-			  
+
 + `-r, --rng-file` *file*
 
 	Read/Write Random Number Generator from/to *file*.
@@ -74,7 +74,7 @@ Some of the options described here are only available for specific commands. For
 
 Each module provides a different set of commands.
 
-## generate-graph 
+## generate-graph
 
 You should read the `ggen(3)` manual for a description of each generation method.
 By default the resulting graph is printed on standard output.
@@ -92,7 +92,7 @@ By default the resulting graph is printed on standard output.
 	Calls ggen_generate_erdos_lbl from libggen.
 
 + `fifo` *n:int* *od:int* *id:int*
-	
+
 	Calls ggen_generate_fifo from libggen.
 
 + `ro` *n:int* *orders:int*
@@ -112,7 +112,7 @@ This module always requires a graph as input.
 	Prints the number of edges.
 
 + `mst`
-	
+
 	Prints the Minimum Spanning Tree (as a graph).
 
 + `lp`
@@ -173,11 +173,11 @@ This module annotates the graph by adding on each vertex or edge a property
 randomly choosen using the given distribution.
 
 + `gaussian` *sigma:float*
-	
+
 	Uses a gaussian distribution centered on _sigma_.
 
 + `flat` *min:float* *max:float*
-	
+
 	Uses a flat (uniform) distribution limited by _min_ and _max_ (included).
 
 + `exponential` *mu*
@@ -194,7 +194,7 @@ This module requires a graph as input.
 The *--name* option is used to select the property to analyse.
 
 + `print`
-	
+
 	Prints for each vertex/edge the property value.
 
 + `stats`
@@ -225,8 +225,9 @@ to understand their use.
 
 # BUGS
 
-No known bugs. Note that you can introduce bugs by yourself if you are playing with the seed, the type or the state file
-of the random number generator. These variables require carefull use and a deep understanding of their consequences.
+No known bugs. Note that you can introduce bugs by yourself if you are playing
+with the seed, the type or the state file of the random number generator. These
+variables require carefull use and a deep understanding of their consequences.
 
 Some of the classical bugs falsely reported:
 
@@ -236,43 +237,48 @@ Some of the classical bugs falsely reported:
 
 + generated graph are of bad quality
 
-	First, some of these bugs can be real ones (if a graph generation does not seems to respect the spec, contact us).
-	
-	But, maybe, you used the same state file for too long: each random number generator has a period. Generation methods
-	roughly call the rng _n_ times. If you use the state file for too long you might bump against your rng period (if you
-	are very unlucky this can have consequences on the generation quality).
-	
+	First, some of these bugs can be real ones (if a graph generation does
+	not seems to respect the spec, contact us).
+
+	But, maybe, you used the same state file for too long: each random
+	number generator has a period. Generation methods roughly call the rng
+	_n_ times. If you use the state file for too long you might bump
+	against your rng period (if you are very unlucky this can have
+	consequences on the generation quality).
+
 	Try to use a different state file in this case.
 
 + I get *strange results* when simulating my algorithm against your graphs
 
-	Congratulations ! You just bumped into the very problem we are trying to raise awareness of: comparing algorithms using badly chosen 
+	Congratulations ! You just bumped into the very problem we are trying
+	to raise awareness of: comparing algorithms using badly chosen
 	generation methods can lead to meaningless simulation results.
-	
-	You should have a clear model of the kind of graph your application should take as
-	input before selecting a generation method and its parameters.
-	
-	You should also analyse the characteristics of your inputs graph to ensure
-	they match your model.
+
+	You should have a clear model of the kind of graph your application
+	should take as input before selecting a generation method and its
+	parameters.
+
+	You should also analyse the characteristics of your inputs graph to
+	ensure they match your model.
 
 
 # REPORTING BUGS
 
-If you find any bug or have any comment on this library, use
-our [mailing-list][].
+If you find any bug or have any comment on this library, contact
+the main developer directly: [Swann Perarnau][].
 
 # COPYRIGHT
 
-Copyright (C) 2009-2011 Swann Perarnau and others.   
-License CeCILL: Open Source, GPL Compatible <http://www.cecill.info>   
-This is free software: you are free to change and redistribute it.   
-There is NO WARRANTY, to the extent permitted by law.   
+Copyright (C) 2009-2011 Swann Perarnau and others.
+License CeCILL: Open Source, GPL Compatible <http://www.cecill.info>
+This is free software: you are free to change and redistribute it.
+There is NO WARRANTY, to the extent permitted by law.
 
 # SEE ALSO
 
 This tool was presented in a full article at the [Simutools][] Conference in
 March 2010.  You can find a copy of this article on the GGen [website][].
 
-[mailing-list]: ggen-commits@ligforge.imag.fr 
+[Swann Perarnau]: swann.perarnau@imag.fr
 [website]: http://ggen.ligforge.imag.fr
 [simutools]: http://www.simutools.org/2010/
