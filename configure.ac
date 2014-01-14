@@ -46,7 +46,7 @@ fi
 #check for GSL
 PKG_CHECK_MODULES([GSL],[gsl])
 #check for igraph
-PKG_CHECK_MODULES([IGRAPH],[igraph])
+PKG_CHECK_MODULES([IGRAPH],[igraph >= 0.6])
 #check for cgraph
 PKG_CHECK_MODULES([CGRAPH],[libcgraph])
 
