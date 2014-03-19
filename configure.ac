@@ -40,8 +40,10 @@ AM_CONDITIONAL([TEST_VALGRIND],[test "x$valgrind" = xtrue])
 
 AC_PATH_PROG(PANDOC,pandoc,no)
 if [[ "x$PANDOC" = xno ]]; then
-	AC_MSG_ERROR([Pandoc not found in PATH. ])
+	AC_MSG_WARN([Pandoc not found in PATH - will not generate documentation ])
 fi
+AM_CONDITIONAL([HAVE_PANDOC],[test ! "x$PANDOC" = xno])
+
 
 #check for GSL
 PKG_CHECK_MODULES([GSL],[gsl])
@@ -49,10 +51,15 @@ PKG_CHECK_MODULES([GSL],[gsl])
 PKG_CHECK_MODULES([IGRAPH],[igraph])
 #check for cgraph
 PKG_CHECK_MODULES([CGRAPH],[libcgraph])
+#check for libyaml
+PKG_CHECK_MODULES([YAML],[yaml-0.1])
 
 # configuration output in config.h
 AC_CONFIG_HEADERS([config.h])
 # output makefiles
-AC_CONFIG_FILES([Makefile src/Makefile doc/Makefile tests/Makefile ggen.pc])
+AC_CONFIG_FILES([Makefile src/Makefile tests/Makefile ggen.pc])
+# doc
+AM_COND_IF([HAVE_PANDOC],[AC_CONFIG_FILES([doc/Makefile])])
+
 # do the output
 AC_OUTPUT
