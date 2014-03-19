@@ -543,3 +543,124 @@ d_tp:
 	return lsa;
 }
 
+/* An approximation algorithm to list edge-disjoint paths in the graph.
+ * Note that:
+ * - this is a NP-Complete problem, so this algorithm is an approximation
+ * - we make no guaranties on the quality of this algorithm.
+ * Returns a vector, listing for each edge id the index of its path.
+ *
+ * The algorithm simply find a path in the graph, and removes it until no edges
+ * are left. We operate on a deep copy, the input graph is not destroyed by the
+ * analysis.
+ */
+igraph_vector_t * ggen_analyze_edge_disjoint_paths(igraph_t *g)
+{
+	igraph_vector_t *paths = NULL, *p;
+	igraph_vector_t indegrees, outdegrees;
+	igraph_es_t es;
+	igraph_t copy;
+	igraph_integer_t eid, from, to;
+	igraph_vector_ptr_t edges;
+	igraph_warning_handler_t *handler;
+	unsigned long vcount, ecount, source, sink, nbpaths, i;
+	int err = 0;
+
+	if(g == NULL)
+		return NULL;
+
+	err = igraph_copy(&copy,g);
+	if(err) return NULL;
+
+	paths = calloc(1,sizeof(igraph_vector_t));
+	if(!paths) goto error;
+
+	vcount = igraph_vcount(&copy);
+	err = igraph_vector_init(&indegrees,vcount);
+	if(err) goto error;
+
+	err = igraph_vector_init(&outdegrees,vcount);
+	if(err) goto error;
+
+	ecount = igraph_ecount(&copy);
+
+	err = igraph_vector_init(paths,ecount);
+	if(err) goto error;
+
+	err = igraph_vector_ptr_init(&edges, vcount);
+	if(err) goto error;
+
+	for(i = 0; i < vcount; i++)
+	{
+		VECTOR(edges)[i] = calloc(1,sizeof(igraph_vector_t));
+		if(!VECTOR(edges)[i]) goto error;
+
+		err = igraph_vector_init(VECTOR(edges)[i],0);
+		if(err) goto error;
+	}
+
+	nbpaths = 0;
+	while(ecount)
+	{
+		/* list vertex degrees */
+		igraph_degree(&copy, &indegrees, igraph_vss_all(), IGRAPH_IN,0);
+		igraph_degree(&copy, &outdegrees, igraph_vss_all(), IGRAPH_OUT,0);
+
+		/* find a source in the graph */
+		for(i = 0; i < vcount; i++)
+		{
+			if(VECTOR(indegrees)[i] == 0 && VECTOR(outdegrees)[i] != 0)
+				break;
+		}
+		if(i == vcount)
+			break; /* error ! */
+		source = i;
+
+		/* build the shortest paths to all vertices */
+		/* igrore warnings, we know some of the vertices don't have
+		 * paths from source
+		 */
+		handler = igraph_set_warning_handler(igraph_warning_handler_ignore);
+		igraph_get_shortest_paths(&copy, NULL, &edges, source,
+					igraph_vss_all(), IGRAPH_OUT);
+		igraph_set_warning_handler(handler);
+
+		/* find a sink that has a path from source */
+		for(i = 0; i < vcount; i++)
+		{
+			if(VECTOR(outdegrees)[i] == 0 && VECTOR(indegrees)[i] != 0)
+			{
+				/* check that this sink is connected to source
+				 */
+				if(igraph_vector_size(VECTOR(edges)[i]) != 0)
+					break;
+			}
+		}
+		if(i == vcount)
+			break; /* error */
+		sink = i;
+
+		/* remove the edges we just found from the graph, but before,
+		 * save the path is the result vector
+		 */
+		p = VECTOR(edges)[sink];
+		for(i = 0; i < igraph_vector_size(p); i++)
+		{
+			igraph_edge(&copy,VECTOR(*p)[i],&from,&to);
+			igraph_get_eid(g, &eid, from, to, 1, 0);
+			VECTOR(*paths)[eid] = nbpaths;
+		}
+		igraph_es_vector(&es,p);
+		igraph_delete_edges(&copy, es);
+		ecount = igraph_ecount(&copy);
+		nbpaths++;
+	}
+
+	igraph_vector_destroy(&indegrees);
+	igraph_vector_destroy(&outdegrees);
+
+error:
+	igraph_destroy(&copy);
+
+	return paths;
+}
+

@@ -64,6 +64,7 @@ const char* help_analyse[] = {
 	"strong-components    : gives the number of strong components in the graph\n",
 	"longest-antichain    : computes the longest antichain of the graph\n",
 	"lsa                  : computes the lowest single ancestor of all vertices in the graph\n",
+	"edge-disjoint-paths  : computes a set of edge-disjoint paths in the graph\n",
 	NULL,
 };
 
@@ -273,6 +274,36 @@ ret:
 	return err;
 }
 
+static int cmd_edge_disjoint_paths(int argc, char **argv)
+{
+	int err = 0;
+	unsigned long i,cnt;
+	char name[GGEN_DEFAULT_NAME_SIZE];
+	char *s = NULL;
+	igraph_vector_t *paths;
+	igraph_integer_t from, to;
+
+	paths = ggen_analyze_edge_disjoint_paths(&g);
+	if(paths == NULL) goto error;
+
+	for(i = 0; i < igraph_ecount(&g); i++)
+	{
+		igraph_edge(&g,i,&from,&to);
+		s = ggen_vname(name,&g,(unsigned long)from);
+		fprintf(outfile,"%s -> ",s==NULL?name:s);
+		s = ggen_vname(name,&g,(unsigned long)to);
+		fprintf(outfile,"%s : %lu\n",s==NULL?name:s, (unsigned long)VECTOR(*paths)[i]);
+	}
+	igraph_vector_destroy(paths);
+	free(paths);
+	goto ret;
+error:
+	err = 1;
+ret:
+	return err;
+}
+
+
 struct second_lvl_cmd  cmds_analyse[] = {
 	{ "nb-vertices", 0, NULL, cmd_nb_vertices },
 	{ "nb-edges", 0, NULL, cmd_nb_edges },
@@ -284,5 +315,6 @@ struct second_lvl_cmd  cmds_analyse[] = {
         { "strong-components", 0, NULL, cmd_strong_components },
         { "longest-antichain", 0, NULL, cmd_longest_antichain },
         { "lsa", 0, NULL, cmd_lsa },
+	{ "edge-disjoint-paths", 0, NULL, cmd_edge_disjoint_paths },
 	{ 0, 0, 0, 0},
 };
