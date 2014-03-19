@@ -220,6 +220,9 @@ int tree_lca_preprocessing(igraph_t *tree, unsigned long root, lca_metadata *m)
 			m->head.table[i].value = v;
 		}
 	}
+	igraph_vector_destroy(&preorder);
+	igraph_vector_destroy(&size);
+	igraph_vector_destroy(&dist);
 	return 0;
 }
 

@@ -451,7 +451,7 @@ error:
 
 igraph_vector_t *ggen_analyze_lowest_single_ancestor(igraph_t *g)
 {
-	unsigned long i,v,l,vid,r;
+	unsigned long i,v,l,m,vid,r;
 	int err = 0;
 	igraph_vector_t toposort,itopo;
 	igraph_vector_t *lsa;
@@ -488,6 +488,9 @@ igraph_vector_t *ggen_analyze_lowest_single_ancestor(igraph_t *g)
 	err = igraph_vector_init(lsa,igraph_vcount(g));
 	if(err) goto f_l;
 
+	/* lsa of single source is single source */
+	v = VECTOR(toposort)[0];
+	VECTOR(*lsa)[v] = v;
 	for(v = 1; v < igraph_vcount(g); v++)
 	{
 		vid = VECTOR(toposort)[v];
@@ -506,7 +509,8 @@ igraph_vector_t *ggen_analyze_lowest_single_ancestor(igraph_t *g)
 
 		for(vit;!IGRAPH_VIT_END(vit); IGRAPH_VIT_NEXT(vit))
 		{
-			tree_lca_query(&tree,l,VECTOR(itopo)[IGRAPH_VIT_GET(vit)],&r,&md);
+			m = VECTOR(itopo)[IGRAPH_VIT_GET(vit)];
+			tree_lca_query(&tree,l,m,&r,&md);
 			l = r;
 		}
 
@@ -518,6 +522,7 @@ igraph_vector_t *ggen_analyze_lowest_single_ancestor(igraph_t *g)
 		err = igraph_add_vertices(&tree,1,NULL);
 		if(err) goto d_l;
 
+		// v is the id of vid in tree
 		err = igraph_add_edge(&tree,l,v);
 		if(err) goto d_l;
 

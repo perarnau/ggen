@@ -66,6 +66,8 @@ int vector_uniq_sorted(igraph_vector_t *v)
 
 int vector_uniq(igraph_vector_t *v)
 {
+	if(igraph_vector_size(v) == 0)
+		return;
 	igraph_vector_sort(v);
 	return vector_uniq_sorted(v);
 }
