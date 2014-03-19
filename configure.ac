@@ -11,6 +11,8 @@ AC_CONFIG_MACRO_DIR([m4])
 
 # automake should fail on any error
 AM_INIT_AUTOMAKE([-Wall -Werror foreign])
+# automake 1.12 compat
+m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
 
 # check for libtool
 LT_INIT([])
