@@ -60,6 +60,8 @@ igraph_vector_t * ggen_analyze_longest_antichain(igraph_t *g);
 
 igraph_vector_t * ggen_analyze_lowest_single_ancestor(igraph_t *g);
 
+igraph_vector_t * ggen_analyze_edge_disjoint_paths(igraph_t *g);
+
 /**********************************************************
  * Generation methods
  *********************************************************/
