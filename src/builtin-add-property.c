@@ -63,6 +63,16 @@ const char* help_add_prop[] = {
 	"flat                     : add a property following a flat (uniform) distribution\n",
 	"exponential              : add a property following an exponential distribution\n",
 	"pareto                   : add a property following a pareto distribution\n",
+	"uniformint               : add a property following a uniform distribution over a range of integers\n",
+	NULL
+};
+
+static const char* uniform_int_help[] = {
+	"\nUniform Distribution (Integers):\n",
+	"Use an uniform distribution over the range [n,m-1] for the property.\n",
+	"Arguments:\n",
+	"     - n             : the minimum value of the range (included)\n",
+	"     - m             : the maximum value of the range (excluded)\n",
 	NULL
 };
 
@@ -101,6 +111,7 @@ static const char* pareto_help[] = {
 };
 
 
+static int cmd_uniform_int(int argc, char **argv);
 static int cmd_exponential(int argc, char** argv);
 static int cmd_gaussian(int argc, char** argv);
 static int cmd_flat(int argc, char** argv);
@@ -108,12 +119,41 @@ static int cmd_pareto(int argc, char** argv);
 
 /* Commands to handle */
 struct second_lvl_cmd cmds_add_prop[] = {
+	{ "uniformint", 2, uniform_int_help, cmd_uniform_int},
 	{ "exponential", 1, exponential_help, cmd_exponential},
 	{ "gaussian", 1, gaussian_help, cmd_gaussian},
 	{ "flat", 2, flat_help, cmd_flat},
 	{ "pareto", 2, pareto_help, cmd_pareto},
 	{ 0, 0, 0, 0},
 };
+
+static int cmd_uniform_int(int argc, char **argv)
+{
+	int err;
+	unsigned long count, i, arg1, arg2;
+
+	err = s2ul(argv[0],&arg1);
+	if(err) return 1;
+
+	err = s2ul(argv[1],&arg2);
+	if(err) return 1;
+
+	if(ptype == EDGE_PROPERTY)
+	{
+		count = igraph_ecount(&g);
+		for(i = 0; i < count; i++)
+			SETEAN(&g,name,i,arg1 + gsl_rng_uniform_int(rng,arg2 - arg1));
+	}
+	else
+	{
+		count = igraph_vcount(&g);
+		for(i = 0; i < count; i++)
+			SETVAN(&g,name,i,arg1 + gsl_rng_uniform_int(rng,arg2 - arg1));
+	}
+	return err;
+}
+
+
 
 /**
  * macro defining cmd_functions to call create rnds
