@@ -51,6 +51,12 @@
 #include<gsl/gsl_randist.h>
 
 /**********************************************************
+ * Error reporting
+ *********************************************************/
+
+const char* ggen_error_strerror(void);
+
+/**********************************************************
  * Analysis methods
  *********************************************************/
 
@@ -65,6 +71,7 @@ igraph_vector_t * ggen_analyze_edge_disjoint_paths(igraph_t *g);
 /**********************************************************
  * Generation methods
  *********************************************************/
+
 igraph_t *ggen_generate_erdos_gnm(gsl_rng *r, unsigned long n, unsigned long m);
 
 igraph_t *ggen_generate_erdos_gnp(gsl_rng *r, unsigned long n, double p);

@@ -59,7 +59,6 @@
 /* cmd declarations, we need this to be able to declare
  * the general struct
  */
-static int cmd_help(int argc, char** argv);
 static int cmd_gnp(int argc, char** argv);
 static int cmd_gnm(int argc, char** argv);
 static int cmd_lbl(int argc, char** argv);
@@ -148,7 +147,10 @@ static int cmd_gnp(int argc, char** argv)
 
 	g_p = ggen_generate_erdos_gnp(rng,number,prob);
 	if(g_p == NULL)
+	{
+		error("ggen error: %s\n",ggen_error_strerror());
 		err = 1;
+	}
 ret:
 	return err;
 }
@@ -166,7 +168,10 @@ static int cmd_gnm(int argc, char** argv)
 
 	g_p = ggen_generate_erdos_gnm(rng,n,m);
 	if(g_p == NULL)
+	{
+		error("ggen error: %s\n",ggen_error_strerror());
 		err = 1;
+	}
 ret:
 	return err;
 }
@@ -188,7 +193,10 @@ static int cmd_lbl(int argc, char** argv)
 
 	g_p = ggen_generate_erdos_lbl(rng,n,p,l);
 	if(g_p == NULL)
+	{
+		error("ggen error: %s\n",ggen_error_strerror());
 		err = 1;
+	}
 ret:
 	return err;
 }
@@ -206,7 +214,10 @@ static int cmd_ro(int argc, char** argv)
 
 	g_p = ggen_generate_random_orders(rng,n,o);
 	if(g_p == NULL)
+	{
+		error("ggen error: %s\n",ggen_error_strerror());
 		err = 1;
+	}
 ret:
 	return err;
 }
@@ -227,7 +238,10 @@ static int cmd_fifo(int argc, char** argv)
 
 	g_p = ggen_generate_fifo(rng,n,o,i);
 	if(g_p == NULL)
+	{
+		error("ggen error: %s\n",ggen_error_strerror());
 		err = 1;
+	}
 ret:
 	return err;
 }
