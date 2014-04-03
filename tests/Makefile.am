@@ -10,7 +10,8 @@ TESTS_ENVIRONMENT= @LIBTOOL@ --mode=execute @VALGRIND@ --tool=memcheck -q --leak
 endif
 
 # all check programs
-TST_PROGS = erdos_gnp erdos_gnm erdos_lbl fifo random_orders longest_path transform_add transform_delete
+TST_PROGS = erdos_gnp erdos_gnm erdos_lbl fifo random_orders longest_path \
+	    transform_add transform_delete errors
 TST_SH = check_dot.sh
 TO_COMPILE = dot_io
 
