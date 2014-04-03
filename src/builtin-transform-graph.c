@@ -65,18 +65,30 @@ const char* help_transform[] = {
 
 static int cmd_remove_sinks(int argc, char** argv)
 {
-	return ggen_transform_delete(&g,GGEN_TRANSFORM_SINK);
+	int err;
+	err = ggen_transform_delete(&g,GGEN_TRANSFORM_SINK);
+	if(err)
+		error("ggen error: %s\n",ggen_error_strerror());
+	return err;
 }
 
 static int cmd_remove_sources(int argc, char** argv)
 {
-	return ggen_transform_delete(&g,GGEN_TRANSFORM_SOURCE);
+	int err;
+	err = ggen_transform_delete(&g,GGEN_TRANSFORM_SOURCE);
+	if(err)
+		error("ggen error: %s\n",ggen_error_strerror());
+	return err;
 }
 
 static int cmd_add_sink(int argc, char** argv)
 {
 	int err = ggen_transform_add(&g,GGEN_TRANSFORM_SINK);
-	if(err) return err;
+	if(err)
+	{
+		error("ggen error: %s\n",ggen_error_strerror());
+		return err;
+	}
 
 	SETVAS(&g,GGEN_VERTEX_NAME_ATTR,igraph_vcount(&g)-1,argv[0]);
 	return 0;
@@ -85,7 +97,11 @@ static int cmd_add_sink(int argc, char** argv)
 static int cmd_add_source(int argc, char** argv)
 {
 	int err = ggen_transform_add(&g,GGEN_TRANSFORM_SOURCE);
-	if(err) return err;
+	if(err)
+	{
+		error("ggen error: %s\n",ggen_error_strerror());
+		return err;
+	}
 
 	SETVAS(&g,GGEN_VERTEX_NAME_ATTR,igraph_vcount(&g)-1,argv[0]);
 	return 0;
@@ -93,7 +109,11 @@ static int cmd_add_source(int argc, char** argv)
 
 static int cmd_transitive_closure(int argc, char **argv)
 {
-	return ggen_transform_transitive_closure(&g);
+	int err;
+	err = ggen_transform_transitive_closure(&g);
+	if(err)
+		error("ggen error: %s\n",ggen_error_strerror());
+	return err;
 }
 
 struct second_lvl_cmd cmds_transform[] = {

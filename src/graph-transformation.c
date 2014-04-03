@@ -43,6 +43,7 @@
  */
 
 #include "ggen.h"
+#include "error.h"
 
 int ggen_transform_add(igraph_t *g, enum ggen_transform_t t)
 {
@@ -50,23 +51,21 @@ int ggen_transform_add(igraph_t *g, enum ggen_transform_t t)
 	igraph_vector_t degrees;
 	igraph_vector_t edges;
 	unsigned int i,vcount,ssize;
-	int err;
 
+	ggen_error_start_stack();
 	if(g == NULL)
-		return 1;
+		GGEN_SET_ERRNO(GGEN_EINVAL);
 
 	vcount = igraph_vcount(g);
 
-	err = igraph_vector_init(&vertices,vcount);
-	if(err) return 1;
+	GGEN_CHECK_IGRAPH(igraph_vector_init(&vertices,vcount));
+	GGEN_FINALLY(igraph_vector_destroy,&vertices);
 
-	err = igraph_vector_init(&degrees,vcount);
-	if(err) goto error_id;
+	GGEN_CHECK_IGRAPH(igraph_vector_init(&degrees,vcount));
+	GGEN_FINALLY(igraph_vector_destroy,&degrees);
 
 	/* find degree of each vertex, in if new source is wanted. */
-	err = igraph_degree(g,&degrees,igraph_vss_all(),
-		(t==GGEN_TRANSFORM_SOURCE)?IGRAPH_IN:IGRAPH_OUT,0);
-	if(err) goto error;
+	GGEN_CHECK_IGRAPH(igraph_degree(g,&degrees,igraph_vss_all(),(t==GGEN_TRANSFORM_SOURCE)?IGRAPH_IN:IGRAPH_OUT,0));
 
 	/* only sources or sinks are of interest */
 	ssize = 0;
@@ -77,11 +76,10 @@ int ggen_transform_add(igraph_t *g, enum ggen_transform_t t)
 	/* we have something to do */
 	if(ssize > 0)
 	{
-		err = igraph_add_vertices(g,1,NULL);
-		if(err) goto error;
+		GGEN_CHECK_IGRAPH(igraph_add_vertices(g,1,NULL));
 
-		err = igraph_vector_init(&edges,ssize*2);
-		if(err) goto error;
+		GGEN_CHECK_IGRAPH(igraph_vector_init(&edges,ssize*2));
+		GGEN_FINALLY(igraph_vector_destroy,&edges);
 
 		for(i = 0; i < ssize; i++)
 		{
@@ -97,15 +95,12 @@ int ggen_transform_add(igraph_t *g, enum ggen_transform_t t)
 			}
 		}
 
-		err = igraph_add_edges(g,&edges,NULL);
-		igraph_vector_destroy(&edges);
-		if(err) goto error;
+		GGEN_CHECK_IGRAPH(igraph_add_edges(g,&edges,NULL));
 	}
-error:
-	igraph_vector_destroy(&degrees);
-error_id:
-	igraph_vector_destroy(&vertices);
-	return err;
+	ggen_error_clean(1);
+	return GGEN_SUCCESS;
+ggen_error_label:
+	return GGEN_FAILURE;
 }
 
 int ggen_transform_delete(igraph_t *g, enum ggen_transform_t t)
@@ -113,23 +108,21 @@ int ggen_transform_delete(igraph_t *g, enum ggen_transform_t t)
 	igraph_vector_t vertices;
 	igraph_vector_t degrees;
 	unsigned int i,vcount,ssize;
-	int err;
 
+	ggen_error_start_stack();
 	if(g == NULL)
-		return 1;
+		GGEN_SET_ERRNO(GGEN_EINVAL);
 
 	vcount = igraph_vcount(g);
 
-	err = igraph_vector_init(&vertices,vcount);
-	if(err) return 1;
+	GGEN_CHECK_IGRAPH(igraph_vector_init(&vertices,vcount));
+	GGEN_FINALLY(igraph_vector_destroy,&vertices);
 
-	err = igraph_vector_init(&degrees,vcount);
-	if(err) goto error_id;
+	GGEN_CHECK_IGRAPH(igraph_vector_init(&degrees,vcount));
+	GGEN_FINALLY(igraph_vector_destroy,&degrees);
 
 	/* find degree of each vertex, igraph_in if we need to identify sources. */
-	err = igraph_degree(g,&degrees,igraph_vss_all(),
-		(t==GGEN_TRANSFORM_SOURCE)?IGRAPH_IN:IGRAPH_OUT,0);
-	if(err) goto error;
+	GGEN_CHECK_IGRAPH(igraph_degree(g,&degrees,igraph_vss_all(), (t==GGEN_TRANSFORM_SOURCE)?IGRAPH_IN:IGRAPH_OUT,0));
 
 	/* only sources or sinks are of interest */
 	ssize = 0;
@@ -141,18 +134,17 @@ int ggen_transform_delete(igraph_t *g, enum ggen_transform_t t)
 	if(ssize > 0)
 	{
 		/* we should resize the array to avoid strange behaviors */
-		err = igraph_vector_resize(&vertices,ssize);
-		if(err) goto error;
+		GGEN_CHECK_IGRAPH(igraph_vector_resize(&vertices,ssize));
 
-		err = igraph_delete_vertices(g,igraph_vss_vector(&vertices));
-		if(err) goto error;
+		GGEN_CHECK_IGRAPH(igraph_delete_vertices(g,igraph_vss_vector(&vertices)));
 	}
-error:
-	igraph_vector_destroy(&degrees);
-error_id:
-	igraph_vector_destroy(&vertices);
-	return err;
+	ggen_error_clean(1);
+	return GGEN_SUCCESS;
+ggen_error_label:
+	return GGEN_FAILURE;
 }
+
+
 
 int TCdfsR(igraph_t *g, unsigned long from, unsigned long to,
 	igraph_matrix_t *m, igraph_vector_t *pred, unsigned long *cnt,
@@ -162,13 +154,15 @@ int TCdfsR(igraph_t *g, unsigned long from, unsigned long to,
 	int err = 0;
 	igraph_vit_t vit;
 	igraph_vs_t vs;
+
+	ggen_error_start_stack();
 	VECTOR(*pred)[to] = *cnt++;
 
-	err = igraph_vs_adj(&vs,to,IGRAPH_OUT);
-	if(err) return 1;
+	GGEN_CHECK_IGRAPH(igraph_vs_adj(&vs,to,IGRAPH_OUT));
+	GGEN_FINALLY(igraph_vs_destroy,&vs);
+	GGEN_CHECK_IGRAPH(igraph_vit_create(g,vs,&vit));
+	GGEN_FINALLY(igraph_vit_destroy,&vit);
 
-	err = igraph_vit_create(g,vs,&vit);
-	if(err) goto d_vs;
 	for(IGRAPH_VIT_RESET(vit); !IGRAPH_VIT_END(vit);IGRAPH_VIT_NEXT(vit))
 	{
 		u = (unsigned long)IGRAPH_VIT_GET(vit);
@@ -177,8 +171,7 @@ int TCdfsR(igraph_t *g, unsigned long from, unsigned long to,
 			continue;
 		if(VECTOR(*pred)[u] == (igraph_real_t) -1)
 		{
-			err = TCdfsR(g,to,u,m,pred,cnt,new_edges);
-			if(err) goto d_vit;
+			GGEN_CHECK_INTERNAL(TCdfsR(g,to,u,m,pred,cnt,new_edges));
 		}
 		for(i = 0; i < igraph_vcount(g); i++)
 			if(MATRIX(*m,u,i) == (igraph_real_t)1)
@@ -191,11 +184,10 @@ int TCdfsR(igraph_t *g, unsigned long from, unsigned long to,
 				}
 			}
 	}
-d_vit:
-	igraph_vit_destroy(&vit);
-d_vs:
-	igraph_vs_destroy(&vs);
-	return err;
+	ggen_error_clean(1);
+	return GGEN_SUCCESS;
+ggen_error_label:
+	return GGEN_FAILURE;
 }
 
 int ggen_transform_transitive_closure(igraph_t *g)
@@ -206,35 +198,33 @@ int ggen_transform_transitive_closure(igraph_t *g)
 	igraph_matrix_t m;
 	igraph_vector_t pred;
 	igraph_vector_t new_edges;
+
+	ggen_error_start_stack();
 	if(g == NULL)
-		return 1;
+		GGEN_SET_ERRNO(GGEN_EINVAL);
 
-	err = igraph_matrix_init(&m,igraph_vcount(g),igraph_vcount(g));
-	if(err) return 1;
+	GGEN_CHECK_IGRAPH(igraph_matrix_init(&m,igraph_vcount(g),igraph_vcount(g)));
+	GGEN_FINALLY(igraph_matrix_destroy,&m);
 
-	err = igraph_vector_init(&pred,igraph_vcount(g));
-	if(err) goto d_m;
+	GGEN_CHECK_IGRAPH(igraph_vector_init(&pred,igraph_vcount(g)));
+	GGEN_FINALLY(igraph_vector_destroy,&pred);
 	igraph_vector_fill(&pred,(igraph_real_t)-1);
 
-	err = igraph_vector_init(&new_edges,igraph_ecount(g)*igraph_vcount(g));
-	if(err) goto d_pred;
+	GGEN_CHECK_IGRAPH(igraph_vector_init(&new_edges,igraph_ecount(g)*igraph_vcount(g)));
+	GGEN_FINALLY(igraph_vector_destroy,&new_edges);
 	igraph_vector_clear(&new_edges);
 
 	for(i = 0; i < igraph_vector_size(&pred);i++)
 	{
 		if(VECTOR(pred)[i] == (igraph_real_t)-1)
 		{
-			err = TCdfsR(g,i,i,&m,&pred,&cnt,&new_edges);
-			if(err) goto d_edges;
+			GGEN_CHECK_INTERNAL(TCdfsR(g,i,i,&m,&pred,&cnt,&new_edges));
 		}
 	}
 	/* add edges */
-	err = igraph_add_edges(g,&new_edges,NULL);
-d_edges:
-	igraph_vector_destroy(&new_edges);
-d_pred:
-	igraph_vector_destroy(&pred);
-d_m:
-	igraph_matrix_destroy(&m);
-	return err;
+	GGEN_CHECK_IGRAPH(igraph_add_edges(g,&new_edges,NULL));
+	ggen_error_clean(1);
+	return GGEN_SUCCESS;
+ggen_error_label:
+	return GGEN_FAILURE;
 }
