@@ -55,16 +55,17 @@ typedef struct {
 } head_t;
 
 typedef struct {
+	unsigned long tsize;
 	unsigned long **table;
 	head_t head;
 } lca_metadata;
 
 int tree_lca_metadata_init(igraph_t *, lca_metadata *);
 
-int tree_lca_preprocessing(igraph_t *, unsigned long, lca_metadata *); 
+int tree_lca_preprocessing(igraph_t *, unsigned long, lca_metadata *);
 
 int tree_lca_query(igraph_t *, unsigned long, unsigned long, unsigned long *, lca_metadata *);
 
-int tree_lca_metadata_free(igraph_t *, lca_metadata *);
+void tree_lca_metadata_free(lca_metadata *);
 
 #endif

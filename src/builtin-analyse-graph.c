@@ -85,7 +85,11 @@ static int cmd_mst(int argc, char **argv)
 	int err;
 	igraph_t mst;
 	err = igraph_minimum_spanning_tree_unweighted(&g,&mst);
-	if(err) return err;
+	if(err)
+	{
+		error("igraph error: %s\n",igraph_strerror(err));
+		return err;
+	}
 
 	err = ggen_write_graph(&mst,outfile);
 	igraph_destroy(&mst);
@@ -100,7 +104,11 @@ static int cmd_lp(int argc, char **argv)
 	char name[GGEN_DEFAULT_NAME_SIZE];
 	char *s = NULL;
 	lp = ggen_analyze_longest_path(&g);
-	if(!lp) return 1;
+	if(!lp)
+	{
+		error("ggen error: %s\n",ggen_error_strerror());
+		return 1;
+	}
 
 	s = ggen_vname(name,&g,(unsigned long)VECTOR(*lp)[0]);
 	fprintf(outfile,"%s",s==NULL?name:s);
@@ -137,6 +145,8 @@ static int cmd_out_degree(int argc, char **argv)
 error:
 	igraph_vector_destroy(&d);
 ret:
+	if(err)
+		error("igraph error: %s\n",igraph_strerror(err));
 	return err;
 }
 
@@ -161,6 +171,8 @@ static int cmd_in_degree(int argc, char **argv)
 error:
 	igraph_vector_destroy(&d);
 ret:
+	if(err)
+		error("igraph error: %s\n",igraph_strerror(err));
 	return err;
 }
 
@@ -173,7 +185,7 @@ static int cmd_max_indep_set(int argc, char **argv)
 	igraph_vector_ptr_t l;
 
 	err = igraph_vector_ptr_init(&l,igraph_vcount(&g));
-	if(err) return 1;
+	if(err) goto ret;
 
 	err = igraph_largest_independent_vertex_sets(&g,&l);
 	if(err) goto error;
@@ -188,6 +200,9 @@ static int cmd_max_indep_set(int argc, char **argv)
 	fprintf(outfile,"\n");
 error:
 	igraph_vector_ptr_destroy(&l);
+ret:
+	if(err)
+		error("igraph error: %s\n",igraph_strerror(err));
 	return err;
 }
 static int cmd_strong_components(int argc, char **argv)
@@ -195,7 +210,11 @@ static int cmd_strong_components(int argc, char **argv)
 	int err;
 	igraph_integer_t n;
 	err = igraph_clusters(&g,NULL,NULL,&n,IGRAPH_STRONG);
-	if(err) return err;
+	if(err)
+	{
+		error("igraph error: %s\n",igraph_strerror(err));
+		return err;
+	}
 
 	fprintf(outfile,"Nb of strong components: %lu\n",(unsigned long)n);
 	return 0;
@@ -211,7 +230,10 @@ static int cmd_longest_antichain(int argc, char **argv)
 
 	a = ggen_analyze_longest_antichain(&g);
 	if(!a)
+	{
+		error("ggen error: %s\n",ggen_error_strerror());
 		return 1;
+	}
 
 	s = ggen_vname(name,&g,(unsigned long)VECTOR(*a)[0]);
 	fprintf(outfile,"%s",s==NULL?name:s);
@@ -237,10 +259,19 @@ static int cmd_lsa(int argc, char **argv)
 	igraph_vector_t d;
 	/* additional checks for the graph: we need a single source */
 	err = igraph_vector_init(&d,igraph_vcount(&g));
-	if(err) goto error;
+	if(err)
+	{
+		error("igraph error: %s\n",igraph_strerror(err));
+		return err;
+	}
 
 	err = igraph_degree(&g,&d,igraph_vss_all(),IGRAPH_IN,0);
-	if(err) goto d_d;
+	if(err)
+	{
+		igraph_vector_destroy(&d);
+		error("igraph error: %s\n",igraph_strerror(err));
+		return err;
+	}
 
 	for(i = 0, cnt = 0; i < igraph_vcount(&g); i++)
 		if(VECTOR(d)[i] == 0)
@@ -250,11 +281,15 @@ static int cmd_lsa(int argc, char **argv)
 	if(cnt != 1)
 	{
 		error("the graph must have a single source, detected %lu\n",cnt);
-		goto error;
+		return 1;
 	}
 
 	lsa = ggen_analyze_lowest_single_ancestor(&g);
-	if(lsa == NULL) goto error;
+	if(lsa == NULL)
+	{
+		error("ggen error: %s\n",ggen_error_strerror());
+		return 1;
+	}
 
 	for(i = 0; i < igraph_vcount(&g); i++)
 	{
@@ -265,13 +300,7 @@ static int cmd_lsa(int argc, char **argv)
 	}
 	igraph_vector_destroy(lsa);
 	free(lsa);
-	goto ret;
-d_d:
-	igraph_vector_destroy(&d);
-error:
-	err = 1;
-ret:
-	return err;
+	return 0;
 }
 
 static int cmd_edge_disjoint_paths(int argc, char **argv)
@@ -284,7 +313,11 @@ static int cmd_edge_disjoint_paths(int argc, char **argv)
 	igraph_integer_t from, to;
 
 	paths = ggen_analyze_edge_disjoint_paths(&g);
-	if(paths == NULL) goto error;
+	if(paths == NULL)
+	{
+		error("ggen error: %s\n",ggen_error_strerror());
+		return 1;
+	}
 
 	for(i = 0; i < igraph_ecount(&g); i++)
 	{
@@ -296,25 +329,21 @@ static int cmd_edge_disjoint_paths(int argc, char **argv)
 	}
 	igraph_vector_destroy(paths);
 	free(paths);
-	goto ret;
-error:
-	err = 1;
-ret:
-	return err;
+	return 0;
 }
 
 
 struct second_lvl_cmd  cmds_analyse[] = {
 	{ "nb-vertices", 0, NULL, cmd_nb_vertices },
 	{ "nb-edges", 0, NULL, cmd_nb_edges },
-        { "mst", 0, NULL, cmd_mst },
-        { "lp", 0, NULL, cmd_lp },
-        { "out-degree", 0, NULL, cmd_out_degree },
-        { "in-degree", 0, NULL, cmd_in_degree },
-        { "max-independent-set", 0, NULL, cmd_max_indep_set },
-        { "strong-components", 0, NULL, cmd_strong_components },
-        { "longest-antichain", 0, NULL, cmd_longest_antichain },
-        { "lsa", 0, NULL, cmd_lsa },
+	{ "mst", 0, NULL, cmd_mst },
+	{ "lp", 0, NULL, cmd_lp },
+	{ "out-degree", 0, NULL, cmd_out_degree },
+	{ "in-degree", 0, NULL, cmd_in_degree },
+	{ "max-independent-set", 0, NULL, cmd_max_indep_set },
+	{ "strong-components", 0, NULL, cmd_strong_components },
+	{ "longest-antichain", 0, NULL, cmd_longest_antichain },
+	{ "lsa", 0, NULL, cmd_lsa },
 	{ "edge-disjoint-paths", 0, NULL, cmd_edge_disjoint_paths },
 	{ 0, 0, 0, 0},
 };

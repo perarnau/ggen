@@ -49,19 +49,21 @@
  * right.
  */
 #include <igraph/igraph.h>
+#include "error.h"
 
-static int bfs(igraph_t *g, igraph_vector_t *pair, igraph_vector_t *layer)
+static int bfs(igraph_t *g, igraph_vector_t *pair, igraph_vector_t *layer, int *ret)
 {
 	unsigned long i,j,vg;
 	igraph_dqueue_t q;
 	int err, nil_value;
 	igraph_vit_t vit;
 	igraph_vs_t vs;
+
+	ggen_error_start_stack();
 	vg = igraph_vcount(g);
 
-	err = igraph_dqueue_init(&q,vg);
-	if(err)
-		return 0;
+	GGEN_CHECK_IGRAPH(igraph_dqueue_init(&q,vg));
+	GGEN_FINALLY(igraph_dqueue_destroy,&q);
 
 	for(i = 0; i < vg/2; i++)
 	{
@@ -80,9 +82,12 @@ static int bfs(igraph_t *g, igraph_vector_t *pair, igraph_vector_t *layer)
 		i = (unsigned long)igraph_dqueue_pop(&q);
 		if(i != vg)
 		{
-			err = igraph_vs_adj(&vs,i,IGRAPH_ALL);
+			GGEN_CHECK_IGRAPH(igraph_vs_adj(&vs,i,IGRAPH_ALL));
+			GGEN_FINALLY(igraph_vs_destroy,&vs);
 
-			err = igraph_vit_create(g,vs,&vit);
+			GGEN_CHECK_IGRAPH(igraph_vit_create(g,vs,&vit));
+			GGEN_FINALLY(igraph_vit_destroy,&vit);
+
 			for(IGRAPH_VIT_RESET(vit); !IGRAPH_VIT_END(vit); IGRAPH_VIT_NEXT(vit))
 			{
 				j = (unsigned long)IGRAPH_VIT_GET(vit);
@@ -93,75 +98,103 @@ static int bfs(igraph_t *g, igraph_vector_t *pair, igraph_vector_t *layer)
 					igraph_dqueue_push(&q,(igraph_real_t)j);
 				}
 			}
+			// clean vs and vit
+			ggen_error_pop(2);
 		}
 	}
-	igraph_vit_destroy(&vit);
-	igraph_vs_destroy(&vs);
-
 	if(VECTOR(*layer)[vg] == (igraph_real_t)vg)
-		return 0;
+		*ret = 0;
 	else
-		return 1;
+		*ret = 1;
+
+	ggen_error_clean(1);
+	return GGEN_SUCCESS;
+ggen_error_label:
+	return GGEN_FAILURE;
 }
 
-static int dfs(igraph_t *g, unsigned long i, igraph_vector_t *pair, igraph_vector_t *layer)
+static int dfs(igraph_t *g, unsigned long i, igraph_vector_t *pair, igraph_vector_t *layer, int *ret)
 {
 	igraph_vit_t vit;
 	igraph_vs_t vs;
 	unsigned long j,vg,p;
+	int val;
+
+	ggen_error_start_stack();
 	vg = igraph_vcount(g);
-
 	if(i == vg)
-		return 1;
+	{
+		*ret =1;
+		goto success;
+	}
 
-	igraph_vs_adj(&vs,i,IGRAPH_ALL);
+	GGEN_CHECK_IGRAPH(igraph_vs_adj(&vs,i,IGRAPH_ALL));
+	GGEN_FINALLY(igraph_vs_destroy,&vs);
 
-	igraph_vit_create(g,vs,&vit);
+	GGEN_CHECK_IGRAPH(igraph_vit_create(g,vs,&vit));
+	GGEN_FINALLY(igraph_vit_destroy,&vit);
+
 	for(IGRAPH_VIT_RESET(vit); !IGRAPH_VIT_END(vit); IGRAPH_VIT_NEXT(vit))
 	{
 		j = IGRAPH_VIT_GET(vit);
 		p = (unsigned long)VECTOR(*pair)[j];
 		if(VECTOR(*layer)[p] == (igraph_real_t) (VECTOR(*layer)[i] +1))
-			if(dfs(g,p,pair,layer))
+		{
+			GGEN_CHECK_INTERNAL(dfs(g,p,pair,layer,&val));
+			if(val)
 			{
 				VECTOR(*pair)[j] = i;
 				VECTOR(*pair)[i] = j;
-				return 1;
+				*ret = 1;
+				goto success;
 			}
+		}
 	}
 	VECTOR(*layer)[i] = (igraph_real_t)vg;
-	return 0;
+	*ret = 0;
+success:
+	ggen_error_clean(1);
+	return GGEN_SUCCESS;
+ggen_error_label:
+	return GGEN_FAILURE;
 }
 
 
 int bipartite_maximum_matching(igraph_t *g, igraph_vector_t *res)
 {
 	igraph_vector_t pair, layer;
-	int err,nil_value;
+	int nil_value;
 	unsigned long i,vg;
 	igraph_integer_t eid;
+	int bfscontinue, dfsret;
+
+	ggen_error_start_stack();
 	if(g == NULL || res == NULL)
-		return 1;
+		GGEN_SET_ERRNO(GGEN_EINVAL);
+
 	vg = (unsigned long)igraph_vcount(g);
 	if(vg%2)
-		return 1;
+		GGEN_SET_ERRNO(GGEN_EINVAL);
 
-	err = igraph_vector_init(&pair,vg+1);
-	if(err) return 1;
+	GGEN_CHECK_IGRAPH(igraph_vector_init(&pair,vg+1));
+	GGEN_FINALLY(igraph_vector_destroy,&pair);
 	igraph_vector_fill(&pair,(igraph_real_t)vg);
 
-	err = igraph_vector_init(&layer,vg+1);
-	if(err) goto d_pair;
+	GGEN_CHECK_IGRAPH(igraph_vector_init(&layer,vg+1));
+	GGEN_FINALLY(igraph_vector_destroy,&layer);
 
-	while(bfs(g,&pair,&layer))
+	GGEN_CHECK_INTERNAL(bfs(g,&pair,&layer,&bfscontinue));
+	while(bfscontinue)
 	{
 		for(i = 0; i < vg; i++)
 		{
 			if(VECTOR(pair)[i] == (igraph_real_t)vg)
-				dfs(g,i,&pair,&layer);
+			{
+				GGEN_CHECK_INTERNAL(dfs(g,i,&pair,&layer,&dfsret));
+			}
 		}
+		GGEN_CHECK_INTERNAL(bfs(g,&pair,&layer,&bfscontinue));
 	}
-	igraph_vector_destroy(&layer);
 	/* convert pair to matching */
 	for(i = 0; i < vg/2; i++)
 	{
@@ -171,7 +204,8 @@ int bipartite_maximum_matching(igraph_t *g, igraph_vector_t *res)
 			igraph_vector_push_back(res,eid);
 		}
 	}
-d_pair:
-	igraph_vector_destroy(&pair);
-	return 0;
+	ggen_error_clean(1);
+	return GGEN_SUCCESS;
+ggen_error_label:
+	return GGEN_FAILURE;
 }

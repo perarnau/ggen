@@ -68,12 +68,6 @@ int main(int argc,char** argv)
 	igraph_vector_destroy(lp);
 	free((void *)lp);
 
-	// a wrong graph (not dag) should fail
-	// graph is 0 -> 1 -> 2 and 2 -> 0
-	igraph_small(&g,10,1,0,1,1,2,2,0,-1);
-	assert(ggen_analyze_longest_path(&g) == NULL);
-	igraph_destroy(&g);
-
 	// a simple graph should work too
 	// graph is 0 -> 1 -> 2 and 0 -> 2
 	igraph_small(&g,10,1,0,1,1,2,0,2,-1);

@@ -47,6 +47,7 @@
 #include "vector_utils.h"
 #include "bipartite-matching.h"
 #include "tree-lowest-common-ancestor.h"
+#include "error.h"
 
 igraph_vector_t * ggen_analyze_longest_path(igraph_t *g)
 {
@@ -59,31 +60,30 @@ igraph_vector_t * ggen_analyze_longest_path(igraph_t *g)
 	int err;
 	unsigned long v,i,f,t;
 	long maxv;
+
+	ggen_error_start_stack();
 	if(g == NULL)
-		return NULL;
+		GGEN_SET_ERRNO(GGEN_EINVAL);
 
 	v = igraph_vcount(g);
-	err = igraph_vector_init(&topology,v);
-	if(err)	return NULL;
+	GGEN_CHECK_IGRAPH(igraph_vector_init(&topology,v));
+	GGEN_FINALLY(igraph_vector_destroy,&topology);
 
-	err = igraph_vector_init(&lengths,v);
-	if(err) goto error_il;
+	GGEN_CHECK_IGRAPH(igraph_vector_init(&lengths,v));
+	GGEN_FINALLY(igraph_vector_destroy,&lengths);
 
-	err = igraph_vector_init(&preds,v);
-	if(err) goto error_ip;
+	GGEN_CHECK_IGRAPH(igraph_vector_init(&preds,v));
+	GGEN_FINALLY(igraph_vector_destroy,&preds);
 
 	res = malloc(sizeof(igraph_vector_t));
-	if(res == NULL) goto cleanup;
+	GGEN_CHECK_ALLOC(res);
+	GGEN_FINALLY3(free,res,1);
 
-	err = igraph_vector_init(res,v);
-	if(err) goto error_ir;
+	GGEN_CHECK_IGRAPH(igraph_vector_init(res,v));
+	GGEN_FINALLY3(igraph_destroy,res,1);
 
 	// sort topologically the vertices
-	err = igraph_topological_sorting(g,&topology,IGRAPH_OUT);
-	if(err) goto error;
-	// igraph is stupid, it returns 0 even if the graph isn't a dag
-	if(igraph_vector_size(&topology) != v)
-		goto error;
+	GGEN_CHECK_IGRAPH(igraph_topological_sorting(g,&topology,IGRAPH_OUT));
 
 	// find the best path incomming from every node
 	igraph_vector_null(&lengths);
@@ -92,14 +92,11 @@ igraph_vector_t * ggen_analyze_longest_path(igraph_t *g)
 	for(i = 0; i < v; i++)
 	{
 		f = VECTOR(topology)[i];
-		err = igraph_vs_adj(&vs,f,IGRAPH_OUT);
-		if(err) goto error;
-		err = igraph_vit_create(g,vs,&vit);
-		if(err)
-		{
-			igraph_vs_destroy(&vs);
-			goto error;
-		}
+		GGEN_CHECK_IGRAPH(igraph_vs_adj(&vs,f,IGRAPH_OUT));
+		GGEN_FINALLY(igraph_vs_destroy,&vs);
+
+		GGEN_CHECK_IGRAPH(igraph_vit_create(g,vs,&vit));
+		GGEN_FINALLY(igraph_vit_destroy,&vit);
 
 		for(vit; !IGRAPH_VIT_END(vit); IGRAPH_VIT_NEXT(vit))
 		{
@@ -112,9 +109,9 @@ igraph_vector_t * ggen_analyze_longest_path(igraph_t *g)
 			if(maxv == -1 || VECTOR(lengths)[t] > VECTOR(lengths)[maxv])
 				maxv = t;
 		}
-		igraph_vs_destroy(&vs);
-		igraph_vit_destroy(&vit);
-
+		// if everything went ok, we need to pop the destructor for vs
+		// and vit
+		ggen_error_pop(2);
 	}
 	// build the path, using preds and maxv
 	f = 0;
@@ -125,25 +122,13 @@ igraph_vector_t * ggen_analyze_longest_path(igraph_t *g)
 	}
 
 	// finish the path correctly, resizing and reversing the array
-	err = igraph_vector_resize(res,f);
-	if(err) goto error;
+	GGEN_CHECK_IGRAPH(igraph_vector_resize(res,f));
+	GGEN_CHECK_IGRAPH(igraph_vector_reverse(res));
 
-	err = igraph_vector_reverse(res);
-	if(err) goto error;
-
-	goto cleanup;
-error:
-	igraph_vector_destroy(res);
-error_ir:
-	free(res);
-	res = NULL;
-cleanup:
-	igraph_vector_destroy(&preds);
-error_ip:
-	igraph_vector_destroy(&lengths);
-error_il:
-	igraph_vector_destroy(&topology);
+	ggen_error_clean(1);
 	return res;
+ggen_error_label:
+	return NULL;
 }
 
 /* An antichain is defined as a set of vertices so that
@@ -174,7 +159,7 @@ igraph_vector_t * ggen_analyze_longest_antichain(igraph_t *g)
 	/* The following steps are implemented :
 	 *  - Convert our DAG to a specific bipartite graph B
 	 *  - solve maximum matching on B
-	 *  - conver maximum matching to min vectex cover
+	 *  - convert maximum matching to min vectex cover
 	 *  - convert min vertex cover to antichain on G
 	 */
 	int err;
@@ -189,16 +174,17 @@ igraph_vector_t * ggen_analyze_longest_antichain(igraph_t *g)
 	igraph_vs_t vs;
 	igraph_real_t value;
 
+	ggen_error_start_stack();
 	if(g == NULL)
-		return NULL;
+		GGEN_SET_ERRNO(GGEN_EINVAL);
 
 	/* before creating the bipartite graph, we need all relations
 	 * between any two vertices : the transitive closure of g */
-	err = igraph_copy(&gstar,g);
-	if(err) return NULL;
+	GGEN_CHECK_IGRAPH(igraph_copy(&gstar,g));
+	GGEN_FINALLY(igraph_destroy,&gstar);
 
-	err = ggen_transform_transitive_closure(&gstar);
-	if(err) goto error;
+	GGEN_CHECK_IGRAPH(ggen_transform_transitive_closure(&gstar));
+
 
 	/* Bipartite convertion : let G = (S,C),
 	 * we build B = (U,V,E) with
@@ -212,39 +198,33 @@ igraph_vector_t * ggen_analyze_longest_antichain(igraph_t *g)
 	 * We will also need two additional nodes further in the code.
 	 */
 	vg = igraph_vcount(g);
-	err = igraph_empty(&b,vg*2,1);
-	if(err) goto error;
+	GGEN_CHECK_IGRAPH(igraph_empty(&b,vg*2,1));
+	GGEN_FINALLY(igraph_destroy,&b);
 
 	/* id and id+vg will be a vertex in U and its copy in V,
 	 * iterate over gstar edges to create edges in b
 	 */
-	err = igraph_vector_init(&edges,igraph_ecount(&gstar));
-	if(err) goto d_b;
+	GGEN_CHECK_IGRAPH(igraph_vector_init(&edges,igraph_ecount(&gstar)));
+	GGEN_FINALLY(igraph_vector_destroy,&edges);
 	igraph_vector_clear(&edges);
 
-	err = igraph_eit_create(&gstar,igraph_ess_all(IGRAPH_EDGEORDER_ID),&eit);
-	if(err) goto d_edges;
+	GGEN_CHECK_IGRAPH(igraph_eit_create(&gstar,igraph_ess_all(IGRAPH_EDGEORDER_ID),&eit));
+	GGEN_FINALLY(igraph_eit_destroy,&eit);
 
 	for(IGRAPH_EIT_RESET(eit); !IGRAPH_EIT_END(eit); IGRAPH_EIT_NEXT(eit))
 	{
-		err = igraph_edge(&gstar,IGRAPH_EIT_GET(eit),&from,&to);
-		if(err)
-		{
-			igraph_eit_destroy(&eit);
-			goto d_edges;
-		}
+		igraph_edge(&gstar,IGRAPH_EIT_GET(eit),&from,&to);
 		to += vg;
 		igraph_vector_push_back(&edges,(igraph_real_t)from);
 		igraph_vector_push_back(&edges,(igraph_real_t)to);
 	}
-	igraph_eit_destroy(&eit);
-	err = igraph_add_edges(&b,&edges,NULL);
-	if(err) goto d_edges;
+	// destroy eit
+	ggen_error_pop(1);
+	GGEN_CHECK_IGRAPH(igraph_add_edges(&b,&edges,NULL));
 
 	/* maximum matching on b */
 	igraph_vector_clear(&edges);
-	err = bipartite_maximum_matching(&b,&edges);
-	if(err) goto d_edges;
+	GGEN_CHECK_INTERNAL(bipartite_maximum_matching(&b,&edges));
 
 	/* Let M be the max matching, and N be E - M
 	 * Define T as all unmatched vectices from U as well as all vertices
@@ -254,47 +234,43 @@ igraph_vector_t * ggen_analyze_longest_antichain(igraph_t *g)
 	 * C:= L + R
 	 * C is a minimum vertex cover
 	 */
-	err = igraph_vector_init_seq(&n,0,igraph_ecount(&b)-1);
-	if(err) goto d_edges;
+	GGEN_CHECK_IGRAPH(igraph_vector_init_seq(&n,0,igraph_ecount(&b)-1));
+	GGEN_FINALLY(igraph_vector_destroy,&n);
 
-	err = vector_diff(&n,&edges);
-	if(err) goto d_n;
+	GGEN_CHECK_INTERNAL(vector_diff(&n,&edges));
 
-	err = igraph_vector_init(&c,vg);
-	if(err) goto d_n;
+	GGEN_CHECK_IGRAPH(igraph_vector_init(&c,vg));
+	GGEN_FINALLY(igraph_vector_destroy,&c);
 	igraph_vector_clear(&c);
 
 	/* matched vertices : S */
-	err = igraph_vector_init(&s,vg);
-	if(err) goto d_c;
+	GGEN_CHECK_IGRAPH(igraph_vector_init(&s,vg));
+	GGEN_FINALLY(igraph_vector_destroy,&s);
 	igraph_vector_clear(&s);
 
 	for(i = 0; i < igraph_vector_size(&edges); i++)
 	{
-		err = igraph_edge(&b,VECTOR(edges)[i],&from,&to);
-		if(err) goto d_s;
-
+		igraph_edge(&b,VECTOR(edges)[i],&from,&to);
 		igraph_vector_push_back(&s,from);
 	}
 	/* we may have inserted the same vertex multiple times */
-	err = vector_uniq(&s);
-	if(err) goto d_s;
+	GGEN_CHECK_INTERNAL(vector_uniq(&s));
 
 	/* unmatched */
-	err = igraph_vector_init_seq(&t,0,vg-1);
-	if(err) goto d_s;
+	GGEN_CHECK_IGRAPH(igraph_vector_init_seq(&t,0,vg-1));
+	GGEN_FINALLY(igraph_vector_destroy,&t);
 
-	err = vector_diff(&t,&s);
-	if(err) goto d_t;
+	GGEN_CHECK_INTERNAL(vector_diff(&t,&s));
 
 	/* alternating paths
 	 */
-	err = igraph_vector_copy(&todo,&t);
-	if(err) goto d_t;
+	GGEN_CHECK_IGRAPH(igraph_vector_copy(&todo,&t));
+	GGEN_FINALLY(igraph_vector_destroy,&todo);
 
-	err = igraph_vector_init(&next,vg);
-	if(err) goto d_todo;
+	GGEN_CHECK_IGRAPH(igraph_vector_init(&next,vg));
+	GGEN_FINALLY(igraph_vector_destroy,&next);
 	igraph_vector_clear(&next);
+
 	do {
 		vector_uniq(&todo);
 		added = 0;
@@ -303,25 +279,17 @@ igraph_vector_t * ggen_analyze_longest_antichain(igraph_t *g)
 			if(VECTOR(todo)[i] < vg)
 			{
 				/* scan edges */
-				err = igraph_es_adj(&es,VECTOR(todo)[i],IGRAPH_OUT);
-				if(err) goto d_next;
-				err = igraph_eit_create(&b,es,&eit);
-				if(err)
-				{
-					igraph_es_destroy(&es);
-					goto d_next;
-				}
+				GGEN_CHECK_IGRAPH(igraph_es_adj(&es,VECTOR(todo)[i],IGRAPH_OUT));
+				GGEN_FINALLY(igraph_es_destroy,&es);
+
+				GGEN_CHECK_IGRAPH(igraph_eit_create(&b,es,&eit));
+				GGEN_FINALLY(igraph_eit_destroy,&eit);
+
 				for(IGRAPH_EIT_RESET(eit); !IGRAPH_EIT_END(eit); IGRAPH_EIT_NEXT(eit))
 				{
 					if(igraph_vector_binsearch(&n,IGRAPH_EIT_GET(eit),NULL))
 					{
-						err = igraph_edge(&b,IGRAPH_EIT_GET(eit),&from,&to);
-						if(err)
-						{
-							igraph_eit_destroy(&eit);
-							igraph_es_destroy(&es);
-							goto d_next;
-						}
+						igraph_edge(&b,IGRAPH_EIT_GET(eit),&from,&to);
 						if(!igraph_vector_binsearch(&t,to,NULL))
 						{
 							igraph_vector_push_back(&next,to);
@@ -333,25 +301,17 @@ igraph_vector_t * ggen_analyze_longest_antichain(igraph_t *g)
 			else
 			{
 				/* scan edges */
-				err = igraph_es_adj(&es,VECTOR(todo)[i],IGRAPH_IN);
-				if(err) goto d_next;
-				err = igraph_eit_create(&b,es,&eit);
-				if(err)
-				{
-					igraph_es_destroy(&es);
-					goto d_next;
-				}
+				GGEN_CHECK_IGRAPH(igraph_es_adj(&es,VECTOR(todo)[i],IGRAPH_IN));
+				GGEN_FINALLY(igraph_es_destroy,&es);
+
+				GGEN_CHECK_IGRAPH(igraph_eit_create(&b,es,&eit));
+				GGEN_FINALLY(igraph_eit_destroy,&eit);
+
 				for(IGRAPH_EIT_RESET(eit); !IGRAPH_EIT_END(eit); IGRAPH_EIT_NEXT(eit))
 				{
 					if(igraph_vector_binsearch(&edges,IGRAPH_EIT_GET(eit),NULL))
 					{
-						err = igraph_edge(&b,IGRAPH_EIT_GET(eit),&from,&to);
-						if(err)
-						{
-							igraph_eit_destroy(&eit);
-							igraph_es_destroy(&es);
-							goto d_next;
-						}
+						igraph_edge(&b,IGRAPH_EIT_GET(eit),&from,&to);
 						if(!igraph_vector_binsearch(&t,to,NULL))
 						{
 							igraph_vector_push_back(&next,from);
@@ -360,8 +320,8 @@ igraph_vector_t * ggen_analyze_longest_antichain(igraph_t *g)
 					}
 				}
 			}
-			igraph_es_destroy(&es);
-			igraph_eit_destroy(&eit);
+			// destroy es and eit
+			ggen_error_pop(2);
 		}
 		igraph_vector_append(&t,&todo);
 		igraph_vector_clear(&todo);
@@ -369,17 +329,15 @@ igraph_vector_t * ggen_analyze_longest_antichain(igraph_t *g)
 		igraph_vector_clear(&next);
 	} while(added);
 
-	err = igraph_vector_init_seq(&l,0,vg-1);
-	if(err) goto d_t;
+	GGEN_CHECK_IGRAPH(igraph_vector_init_seq(&l,0,vg-1));
+	GGEN_FINALLY(igraph_vector_destroy,&l);
 
-	err = vector_diff(&l,&t);
-	if(err) goto d_l;
+	GGEN_CHECK_INTERNAL(vector_diff(&l,&t));
 
-	err = igraph_vector_update(&c,&l);
-	if(err) goto d_l;
+	GGEN_CHECK_IGRAPH(igraph_vector_update(&c,&l));
 
-	err = igraph_vector_init(&r,vg);
-	if(err) goto d_l;
+	GGEN_CHECK_IGRAPH(igraph_vector_init(&r,vg));
+	GGEN_FINALLY(igraph_vector_destroy,&r);
 	igraph_vector_clear(&r);
 
 	/* compute V \inter T */
@@ -390,49 +348,22 @@ igraph_vector_t * ggen_analyze_longest_antichain(igraph_t *g)
 	}
 
 	igraph_vector_add_constant(&r,(igraph_real_t)-vg);
-	err = vector_union(&c,&r);
-	if(err) goto d_r;
+	GGEN_CHECK_INTERNAL(vector_union(&c,&r));
 
 	/* our antichain is U - C */
 	res = malloc(sizeof(igraph_vector_t));
-	if(res == NULL) goto d_r;
+	GGEN_CHECK_ALLOC(res);
+	GGEN_FINALLY3(free,res,1);
 
-	err = igraph_vector_init_seq(res,0,vg-1);
-	if(err) goto f_res;
+	GGEN_CHECK_IGRAPH(igraph_vector_init_seq(res,0,vg-1));
+	GGEN_FINALLY3(igraph_vector_destroy,res,1);
 
-	err = vector_diff(res,&c);
-	if(err) goto d_res;
+	GGEN_CHECK_INTERNAL(vector_diff(res,&c));
 
-	goto ret;
-d_res:
-	igraph_vector_destroy(res);
-f_res:
-	free(res);
-	res = NULL;
-ret:
-d_r:
-	igraph_vector_destroy(&r);
-d_l:
-	igraph_vector_destroy(&l);
-d_next:
-	igraph_vector_destroy(&next);
-d_todo:
-	igraph_vector_destroy(&todo);
-d_t:
-	igraph_vector_destroy(&t);
-d_s:
-	igraph_vector_destroy(&s);
-d_c:
-	igraph_vector_destroy(&c);
-d_n:
-	igraph_vector_destroy(&n);
-d_edges:
-	igraph_vector_destroy(&edges);
-d_b:
-	igraph_destroy(&b);
-error:
-	igraph_destroy(&gstar);
+	ggen_error_clean(1);
 	return res;
+ggen_error_label:
+	return NULL;
 }
 
 /* Lowest Single Ancestor:
@@ -460,18 +391,18 @@ igraph_vector_t *ggen_analyze_lowest_single_ancestor(igraph_t *g)
 	igraph_vit_t vit;
 	lca_metadata md;
 
+	ggen_error_start_stack();
 	if(g == NULL)
-		return NULL;
+		GGEN_SET_ERRNO(GGEN_EINVAL);
 
-	err = igraph_vector_init(&toposort,igraph_vcount(g));
-	if(err) return NULL;
+	GGEN_CHECK_IGRAPH(igraph_vector_init(&toposort,igraph_vcount(g)));
+	GGEN_FINALLY(igraph_vector_destroy,&toposort);
 
-	err = igraph_topological_sorting(g,&toposort,IGRAPH_OUT);
-	if(err) goto d_tp;
+	GGEN_CHECK_IGRAPH(igraph_topological_sorting(g,&toposort,IGRAPH_OUT));
 
 	/* build a reverse index of the toposort */
-	err = igraph_vector_init(&itopo,igraph_vcount(g));
-	if(err) goto d_tp;
+	GGEN_CHECK_IGRAPH(igraph_vector_init(&itopo,igraph_vcount(g)));
+	GGEN_FINALLY(igraph_vector_destroy,&itopo);
 
 	for(i = 0; i < igraph_vcount(g); i++)
 	{
@@ -479,14 +410,15 @@ igraph_vector_t *ggen_analyze_lowest_single_ancestor(igraph_t *g)
 		VECTOR(itopo)[v] = i;
 	}
 
-	err = igraph_empty(&tree,1,IGRAPH_DIRECTED);
-	if(err) goto d_i;
+	GGEN_CHECK_IGRAPH(igraph_empty(&tree,1,IGRAPH_DIRECTED));
+	GGEN_FINALLY(igraph_destroy,&tree);
 
 	lsa = calloc(1,sizeof(igraph_vector_t*));
-	if(lsa == NULL) goto cleanup;
+	GGEN_CHECK_ALLOC(lsa);
+	GGEN_FINALLY3(free,lsa,1);
 
-	err = igraph_vector_init(lsa,igraph_vcount(g));
-	if(err) goto f_l;
+	GGEN_CHECK_IGRAPH(igraph_vector_init(lsa,igraph_vcount(g)));
+	GGEN_FINALLY3(igraph_vector_destroy,lsa,1);
 
 	/* lsa of single source is single source */
 	v = VECTOR(toposort)[0];
@@ -495,52 +427,44 @@ igraph_vector_t *ggen_analyze_lowest_single_ancestor(igraph_t *g)
 	{
 		vid = VECTOR(toposort)[v];
 
-		tree_lca_metadata_init(&tree,&md);
-		tree_lca_preprocessing(&tree,0,&md);
+		GGEN_CHECK_INTERNAL_ERRNO(tree_lca_metadata_init(&tree,&md));
+		GGEN_FINALLY(tree_lca_metadata_free,&md);
+		GGEN_CHECK_INTERNAL_ERRNO(tree_lca_preprocessing(&tree,0,&md));
 
 		/* iterate over parents of v in g
 		 * The lsa of a node is the LCA of all its parents in our
 		 * special tree.
 		 */
-		igraph_vs_adj(&vs, vid, IGRAPH_IN);
-		igraph_vit_create(g,vs,&vit);
+		GGEN_CHECK_IGRAPH(igraph_vs_adj(&vs, vid, IGRAPH_IN));
+		GGEN_FINALLY(igraph_vs_destroy,&vs);
+		GGEN_CHECK_IGRAPH(igraph_vit_create(g,vs,&vit));
+		GGEN_FINALLY(igraph_vit_destroy,&vit);
+
 		l = VECTOR(itopo)[IGRAPH_VIT_GET(vit)];
 		IGRAPH_VIT_NEXT(vit);
 
 		for(vit;!IGRAPH_VIT_END(vit); IGRAPH_VIT_NEXT(vit))
 		{
 			m = VECTOR(itopo)[IGRAPH_VIT_GET(vit)];
-			tree_lca_query(&tree,l,m,&r,&md);
+			GGEN_CHECK_INTERNAL_ERRNO(tree_lca_query(&tree,l,m,&r,&md));
 			l = r;
 		}
 
-		igraph_vit_destroy(&vit);
-		igraph_vs_destroy(&vs);
-		tree_lca_metadata_free(&tree,&md);
+		// destroy metadata, vs and vit
+		ggen_error_pop(3);
 
 		// update tree
-		err = igraph_add_vertices(&tree,1,NULL);
-		if(err) goto d_l;
+		GGEN_CHECK_IGRAPH(igraph_add_vertices(&tree,1,NULL));
 
 		// v is the id of vid in tree
-		err = igraph_add_edge(&tree,l,v);
-		if(err) goto d_l;
+		GGEN_CHECK_IGRAPH(igraph_add_edge(&tree,l,v));
 
 		VECTOR(*lsa)[vid] = VECTOR(toposort)[l];
 	}
-	goto cleanup;
-d_l:
-	igraph_vector_destroy(lsa);
-f_l:
-	free(lsa);
-	lsa = NULL;
-cleanup:
-	igraph_destroy(&tree);
-d_i:
-	igraph_vector_destroy(&itopo);
-d_tp:
-	igraph_vector_destroy(&toposort);
+	ggen_error_clean(1);
 	return lsa;
+ggen_error_label:
+	return NULL;
 }
 
 /* An approximation algorithm to list edge-disjoint paths in the graph.
@@ -565,37 +489,38 @@ igraph_vector_t * ggen_analyze_edge_disjoint_paths(igraph_t *g)
 	unsigned long vcount, ecount, source, sink, nbpaths, i;
 	int err = 0;
 
+	ggen_error_start_stack();
 	if(g == NULL)
-		return NULL;
+		GGEN_SET_ERRNO(GGEN_EINVAL);
 
-	err = igraph_copy(&copy,g);
-	if(err) return NULL;
+	GGEN_CHECK_IGRAPH(igraph_copy(&copy,g));
+	GGEN_FINALLY(igraph_destroy,&copy);
 
 	paths = calloc(1,sizeof(igraph_vector_t));
-	if(!paths) goto error;
+	GGEN_CHECK_ALLOC(paths);
+	GGEN_FINALLY3(free,paths,1);
 
 	vcount = igraph_vcount(&copy);
-	err = igraph_vector_init(&indegrees,vcount);
-	if(err) goto error;
+	GGEN_CHECK_IGRAPH(igraph_vector_init(&indegrees,vcount));
+	GGEN_FINALLY(igraph_vector_destroy,&indegrees);
 
-	err = igraph_vector_init(&outdegrees,vcount);
-	if(err) goto error;
+	GGEN_CHECK_IGRAPH(igraph_vector_init(&outdegrees,vcount));
+	GGEN_FINALLY(igraph_vector_destroy,&outdegrees);
 
 	ecount = igraph_ecount(&copy);
 
-	err = igraph_vector_init(paths,ecount);
-	if(err) goto error;
+	GGEN_CHECK_IGRAPH(igraph_vector_init(paths,ecount));
+	GGEN_FINALLY3(igraph_vector_destroy,paths,1);
 
-	err = igraph_vector_ptr_init(&edges, vcount);
-	if(err) goto error;
+	GGEN_CHECK_IGRAPH(igraph_vector_ptr_init(&edges, vcount));
+	IGRAPH_VECTOR_PTR_SET_ITEM_DESTRUCTOR(&edges, igraph_vector_destroy);
+	GGEN_FINALLY(igraph_vector_ptr_destroy_all,&edges);
 
 	for(i = 0; i < vcount; i++)
 	{
 		VECTOR(edges)[i] = calloc(1,sizeof(igraph_vector_t));
-		if(!VECTOR(edges)[i]) goto error;
-
-		err = igraph_vector_init(VECTOR(edges)[i],0);
-		if(err) goto error;
+		GGEN_CHECK_ALLOC(VECTOR(edges)[i]);
+		GGEN_CHECK_IGRAPH_VECTPTR(igraph_vector_init(VECTOR(edges)[i],0),edges,i);
 	}
 
 	nbpaths = 0;
@@ -612,7 +537,7 @@ igraph_vector_t * ggen_analyze_edge_disjoint_paths(igraph_t *g)
 				break;
 		}
 		if(i == vcount)
-			break; /* error ! */
+			GGEN_SET_ERRNO(GGEN_EINVAL); /* error ! */
 		source = i;
 
 		/* build the shortest paths to all vertices */
@@ -636,31 +561,27 @@ igraph_vector_t * ggen_analyze_edge_disjoint_paths(igraph_t *g)
 			}
 		}
 		if(i == vcount)
-			break; /* error */
+			GGEN_SET_ERRNO(GGEN_EINVAL); /* error */
 		sink = i;
 
 		/* remove the edges we just found from the graph, but before,
-		 * save the path is the result vector
+		 * save the path in the result vector
 		 */
 		p = VECTOR(edges)[sink];
 		for(i = 0; i < igraph_vector_size(p); i++)
 		{
 			igraph_edge(&copy,VECTOR(*p)[i],&from,&to);
-			igraph_get_eid(g, &eid, from, to, 1, 0);
+			GGEN_CHECK_IGRAPH(igraph_get_eid(g, &eid, from, to, 1, 0));
 			VECTOR(*paths)[eid] = nbpaths;
 		}
-		igraph_es_vector(&es,p);
-		igraph_delete_edges(&copy, es);
+		GGEN_CHECK_IGRAPH(igraph_es_vector(&es,p));
+		GGEN_CHECK_IGRAPH(igraph_delete_edges(&copy, es));
 		ecount = igraph_ecount(&copy);
 		nbpaths++;
 	}
-
-	igraph_vector_destroy(&indegrees);
-	igraph_vector_destroy(&outdegrees);
-
-error:
-	igraph_destroy(&copy);
-
+	ggen_error_clean(1);
 	return paths;
+ggen_error_label:
+	return NULL;
 }
 

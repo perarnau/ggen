@@ -42,7 +42,7 @@
  * INRIA, Grenoble Universities.
  */
 /* An implementation of offline lca query, with a prepocessing in O(n) and
- * query in O(1). 
+ * query in O(1).
  * - we need a fast LCA tree data structure.
  * - and the LCA algorithm itself.
  * See "On finding lowest common ancestors: simplification and parallelization"
@@ -51,58 +51,77 @@
 
 #include <igraph/igraph.h>
 #include "tree-lowest-common-ancestor.h"
+#include "error.h"
 
 /* a few utility functions for repetitive actions in the other functions */
 
 /* find the index of a key in the table. Could be implemented faster with a
  * real hash table. */
-static inline unsigned long head_search(head_t *h, unsigned long key)
+static inline int head_search(head_t *h, unsigned long key, unsigned long *index)
 {
 	unsigned long i;
-	
 	for(i = 0; i < h->size; i++)
 		if(h->table[i].key == key)
-			return i;
-	return -1;
+		{
+			*index = i;
+			return GGEN_SUCCESS;
+		}
+	return GGEN_FAILURE;
 }
 
 /* Find the father of a vid in the tree. Aborts program if we call it with a
  * node with no father. */
-static inline unsigned long tree_father(const igraph_t *tree, unsigned long vid)
+static inline int tree_father(const igraph_t *tree, unsigned long vid, unsigned long *ret)
 {
 	int err;
 	unsigned long father;
 	igraph_vs_t vs;
 	igraph_vit_t vit;
 
-	igraph_vs_adj(&vs, vid, IGRAPH_IN);
-	igraph_vit_create(tree,vs,&vit);
+	ggen_error_start_stack();
+	GGEN_CHECK_IGRAPH(igraph_vs_adj(&vs, vid, IGRAPH_IN));
+	GGEN_FINALLY(igraph_vs_destroy,&vs);
+	GGEN_CHECK_IGRAPH(igraph_vit_create(tree,vs,&vit));
+	GGEN_FINALLY(igraph_vit_destroy,&vit);
 	father = (unsigned long)IGRAPH_VIT_GET(vit);
-	igraph_vit_destroy(&vit);
-	igraph_vs_destroy(&vs);
-	return father;
+	*ret = father;
+	ggen_error_clean(1);
+	return GGEN_SUCCESS;
+ggen_error_label:
+	*ret = 0;
+	return GGEN_FAILURE;
 }
 
 int tree_lca_metadata_init(igraph_t *tree, lca_metadata *m)
 {
 	unsigned long i;
-	
-	m->table = calloc(igraph_vcount(tree),sizeof(unsigned long));
-	for(i = 0; i < igraph_vcount(tree); i++)
-		m->table[i] = calloc(3,sizeof(unsigned long));
-	m->head.table = calloc(igraph_vcount(tree),sizeof(head_e));
+	ggen_error_start_stack();
+	m->tsize = igraph_vcount(tree);
+	m->table = calloc(m->tsize,sizeof(unsigned long *));
+	GGEN_CHECK_ALLOC(m->table);
+	GGEN_FINALLY3(free,m->table,1);
+	m->table[0] = calloc(m->tsize*3,sizeof(unsigned long));
+	GGEN_CHECK_ALLOC(m->table[0]);
+	GGEN_FINALLY3(free,m->table[0],1);
+
+	for(i = 0; i < m->tsize; i++)
+	{
+		m->table[i] = m->table[0] + i*3;
+	}
+	m->head.table = calloc(m->tsize,sizeof(head_e));
+	GGEN_CHECK_ALLOC(m->head.table);
 	m->head.size = 0;
-	return 0;
+	ggen_error_clean(1);
+	return GGEN_SUCCESS;
+ggen_error_label:
+	return GGEN_FAILURE;
 }
 
-int tree_lca_metadata_free(igraph_t *tree, lca_metadata *m)
+void tree_lca_metadata_free(lca_metadata *m)
 {
-	unsigned long i;
-	for(i = 0; i < igraph_vcount(tree); i++)
-		free(m->table[i]);
+	free(m->table[0]);
 	free(m->table);
 	free(m->head.table);
-	return 0;
 }
 
 /* meta->table access macros */
@@ -118,7 +137,8 @@ static igraph_bool_t  tree_ascendant_bfs_callback(const igraph_t *tree,
 	unsigned long **table = (unsigned long **)extra;
 	unsigned long father;
 
-	father = tree_father(tree,vid);
+	ggen_error_start_stack();
+	GGEN_CHECK_INTERNAL_ERRNO(tree_father(tree,vid,&father));
 	// compute ascendant
 	if(INLABEL(table,vid) == INLABEL(table,father))
 	{
@@ -129,19 +149,24 @@ static igraph_bool_t  tree_ascendant_bfs_callback(const igraph_t *tree,
 		unsigned long i = log2(INLABEL(table,vid) - (INLABEL(table,vid) & (INLABEL(table,vid)-1)));
 		ASCENDANT(table,vid) = ASCENDANT(table,father) + (1 << i);
 	}
-	return 0;
+	ggen_error_clean(1);
+	return GGEN_SUCCESS;
+ggen_error_label:
+	return GGEN_FAILURE;
 }
 
 /* builds recursively a preorder numbering of all vertices in the tree.
  * Also fills a vector containing the size of the subtree of a root (includes
  * the current node).
  */
-static void tree_build_preorder(igraph_t *tree, unsigned long node,
+static int tree_build_preorder(igraph_t *tree, unsigned long node,
 	igraph_vector_t *preorder, igraph_vector_t *size, unsigned long *value)
 {
 	unsigned long sz = 0;
 	igraph_vs_t vs;
 	igraph_vit_t vit;
+
+	ggen_error_start_stack();
 	// save current value
 	sz = *value;
 	// asign preorder to node
@@ -149,17 +174,21 @@ static void tree_build_preorder(igraph_t *tree, unsigned long node,
 	VECTOR(*preorder)[node] = *value;
 
 	// find children and recurse
-	igraph_vs_adj(&vs, node, IGRAPH_OUT);
-	igraph_vit_create(tree,vs,&vit);
+	GGEN_CHECK_IGRAPH(igraph_vs_adj(&vs, node, IGRAPH_OUT));
+	GGEN_FINALLY(igraph_vs_destroy,&vs);
+	GGEN_CHECK_IGRAPH(igraph_vit_create(tree,vs,&vit));
+	GGEN_FINALLY(igraph_vit_destroy,&vit);
 	for(vit;!IGRAPH_VIT_END(vit); IGRAPH_VIT_NEXT(vit))
 	{
-		tree_build_preorder(tree,IGRAPH_VIT_GET(vit),preorder,size,value);
+		GGEN_CHECK_INTERNAL_ERRNO(tree_build_preorder(tree,IGRAPH_VIT_GET(vit),preorder,size,value));
 	}
-	igraph_vit_destroy(&vit);
-	igraph_vs_destroy(&vs);
 	// compute size of subtree
 	sz = *value - sz;
 	VECTOR(*size)[node] = sz;
+	ggen_error_clean(1);
+	return GGEN_SUCCESS;
+ggen_error_label:
+	return GGEN_FAILURE;
 }
 
 /* Preprocess a tree to answer LCA queries in constant time.
@@ -169,30 +198,35 @@ int tree_lca_preprocessing(igraph_t *tree, unsigned long root, lca_metadata *m)
 {
 	/* INLABEL(v) */
 	/* first step, compute the preorder of each vertex in the tree. */
-	igraph_vector_t preorder,size;
-	unsigned long v = 0;
-	igraph_vector_init(&preorder,igraph_vcount(tree));
-	igraph_vector_init(&size,igraph_vcount(tree));
-	tree_build_preorder(tree,root,&preorder,&size,&v);
+	igraph_vector_t preorder, size, dist;
+	unsigned long v = 0, l, i, father;
+
+	ggen_error_start_stack();
+	GGEN_CHECK_IGRAPH(igraph_vector_init(&preorder,igraph_vcount(tree)));
+	GGEN_FINALLY(igraph_vector_destroy,&preorder);
+	GGEN_CHECK_IGRAPH(igraph_vector_init(&size,igraph_vcount(tree)));
+	GGEN_FINALLY(igraph_vector_destroy,&size);
+	GGEN_CHECK_INTERNAL_ERRNO(tree_build_preorder(tree,root,&preorder,&size,&v));
 
 	/* second step, compute inlabel(v) */
 	for(v = 0; v < igraph_vcount(tree); v++)
 	{
 		// step 2.1
-		unsigned long i = (unsigned long)(VECTOR(preorder)[v] -1);
+		i = (unsigned long)(VECTOR(preorder)[v] -1);
 		i = i ^ (unsigned long)(VECTOR(preorder)[v]+VECTOR(size)[v] -1);
 		i = (unsigned long)log2(i);
 		// step 2.2
-		unsigned long l = ((unsigned long)(VECTOR(preorder)[v] + VECTOR(size)[v] -1)) >> i;
+		l = ((unsigned long)(VECTOR(preorder)[v] + VECTOR(size)[v] -1)) >> i;
 		INLABEL(m->table,v) = l << i;
 	}
 	/* ASCENDANT(v) & LEVEL(v)*/
-	igraph_vector_t dist;
-	igraph_vector_init(&dist,igraph_vcount(tree));
-	unsigned long l = ceil(log2(igraph_vcount(tree)+1)) -1;
+	GGEN_CHECK_IGRAPH(igraph_vector_init(&dist,igraph_vcount(tree)));
+	GGEN_FINALLY(igraph_vector_destroy,&dist);
+
+	l = ceil(log2(igraph_vcount(tree)+1)) -1;
 	ASCENDANT(m->table,0) = 1 << l;
-	igraph_bfs(tree,root,NULL,IGRAPH_OUT,0,NULL,NULL,NULL,NULL,NULL,NULL,
-			&dist, tree_ascendant_bfs_callback,m->table);
+
+	GGEN_CHECK_INTERNAL_DO(igraph_bfs(tree,root, NULL, IGRAPH_OUT, 0, NULL, NULL, NULL, NULL, NULL, NULL, &dist, tree_ascendant_bfs_callback,m->table));
 	/* Finish LEVEL(v) */
 	for(v = 0; v < igraph_vcount(tree); v++)
 	{
@@ -201,8 +235,7 @@ int tree_lca_preprocessing(igraph_t *tree, unsigned long root, lca_metadata *m)
 	/* HEAD table */
 	for(v = 0; v < igraph_vcount(tree); v++)
 	{
-		unsigned long i = head_search(&(m->head), INLABEL(m->table,v));
-		if(i == (unsigned long)-1)
+		if(head_search(&(m->head), INLABEL(m->table,v),&i) == GGEN_FAILURE);
 		{
 			m->head.table[m->head.size].key = INLABEL(m->table,v);
 			m->head.table[m->head.size].value = v;
@@ -211,26 +244,28 @@ int tree_lca_preprocessing(igraph_t *tree, unsigned long root, lca_metadata *m)
 	}
 	for(v = 1; v < igraph_vcount(tree); v++)
 	{
-		unsigned long father;
-		father = tree_father(tree,v);
-
+		GGEN_CHECK_INTERNAL_ERRNO(tree_father(tree,v,&father));
 		if(INLABEL(m->table,v) != INLABEL(m->table,father))
 		{
-			unsigned long i = head_search(&(m->head),INLABEL(m->table,v));
+			GGEN_CHECK_INTERNAL_ERRNO(head_search(&(m->head), INLABEL(m->table,v),&i));
 			m->head.table[i].value = v;
 		}
 	}
-	igraph_vector_destroy(&preorder);
-	igraph_vector_destroy(&size);
-	igraph_vector_destroy(&dist);
-	return 0;
+	ggen_error_clean(1);
+	return GGEN_SUCCESS;
+ggen_error_label:
+	return GGEN_FAILURE;
 }
 
 int tree_lca_query(igraph_t *tree, unsigned long u, unsigned long v,
 	unsigned long *ret, lca_metadata *m)
 {
+	unsigned long i,b,c,ci,j,iz,ubar,vbar,k,iw,w;
+	unsigned long tmp;
 	unsigned long **table = m->table;
 	head_t *head = &(m->head);
+
+	ggen_error_start_stack();
 	if(INLABEL(table,u) == INLABEL(table,v))
 	{
 		if(LEVEL(table,u) <= LEVEL(table,v))
@@ -241,46 +276,48 @@ int tree_lca_query(igraph_t *tree, unsigned long u, unsigned long v,
 	else
 	{
 		// step 1
-		unsigned long i = (unsigned long) log2(INLABEL(table,u) ^ INLABEL(table,v));
-		unsigned long b = ((INLABEL(table,u) >> (i+1)) << (i+1)) + (1 << i);
+		i = (unsigned long) log2(INLABEL(table,u) ^ INLABEL(table,v));
+		b = ((INLABEL(table,u) >> (i+1)) << (i+1)) + (1 << i);
 		// step 2
-		unsigned long c = ASCENDANT(table,u) & ASCENDANT(table,v);
-		unsigned long ci = (c >> i) << i;
-		unsigned long j = log2(ci - (ci & (ci -1)));
-		unsigned long iz = ((INLABEL(table,u) >> (j+1)) << (j+1)) + (1 << j);
+		c = ASCENDANT(table,u) & ASCENDANT(table,v);
+		ci = (c >> i) << i;
+		j = log2(ci - (ci & (ci -1)));
+		iz = ((INLABEL(table,u) >> (j+1)) << (j+1)) + (1 << j);
 		// step 3
-		unsigned long ubar, vbar;
 		if(INLABEL(table,u) == iz)
 			ubar = u;
 		else
 		{
-			unsigned long k = ((1 << j) -1) & ASCENDANT(table,u);
-			unsigned long iw;
+			k = ((1 << j) -1) & ASCENDANT(table,u);
 			if(k != 0)
 				k = log2(k);
 			iw = ((INLABEL(table,u) >> (k+1)) << (k+1)) + (1 << k);
-			unsigned long w = head->table[head_search(head,iw)].value;
-			ubar = tree_father(tree,w);
-
+			GGEN_CHECK_INTERNAL(head_search(head,iw,&tmp));
+			w = head->table[tmp].value;
+			GGEN_CHECK_INTERNAL_ERRNO(tree_father(tree,w,&ubar));
 		}
 		if(INLABEL(table,v) == iz)
 			vbar = v;
 		else
 		{
-			unsigned long k = ((1 << j) -1) & ASCENDANT(table,v);
-			unsigned long iw;
+			k = ((1 << j) -1) & ASCENDANT(table,v);
 			if(k != 0)
 				k = log2(k);
 			iw = ((INLABEL(table,v) >> (k+1)) << (k+1)) + (1 << k);
-			unsigned long w = head->table[head_search(head,iw)].value;
-			vbar = tree_father(tree,w);
+			GGEN_CHECK_INTERNAL(head_search(head,iw,&tmp));
+			w = head->table[tmp].value;
+			GGEN_CHECK_INTERNAL_ERRNO(tree_father(tree,w,&vbar));
 		}
 		if(LEVEL(table,ubar) <= LEVEL(table,vbar))
 			*ret = ubar;
 		else
 			*ret = vbar;
 	}
-	return 0;
+	ggen_error_clean(1);
+	return GGEN_SUCCESS;
+ggen_error_label:
+	*ret = 0;
+	return GGEN_FAILURE;
 }
 
 
