@@ -78,7 +78,11 @@ int find_attribute(igraph_t *ig,int attr_type,char *attr_name)
 	igraph_vector_init(&etypes,ecount);
 
 	err = igraph_cattribute_list(ig,&gnames,&gtypes,&vnames,&vtypes,&enames,&etypes);
-	if(err) return -1;
+	if(err)
+	{
+		error("igraph error: %s\n",igraph_strerror(err));
+		return -1;
+	}
 
 	err = -1;
 	if(attr_type == EDGE_PROPERTY)
