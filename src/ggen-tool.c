@@ -199,6 +199,74 @@ void print_version()
 	fprintf(stdout,"ggen: version %s\n",ggen_version_string);
 }
 
+/* helper function for command flags */
+int handle_need_input(void)
+{
+	int status;
+	igraph_bool_t isdag;
+
+	normal("Configuring input\n");
+	if(infname)
+	{
+		info("Using %s as input file\n",infname);
+		infile = fopen(infname,"r");
+		if(!infile)
+		{
+			warning("failed to open file %s for graph input, using stdin instead\n",infname);
+			infile = stdin;
+			infname = NULL;
+		}
+	}
+	else
+		infile = stdin;
+
+	status = ggen_read_graph(&g,infile);
+	if(infname)
+		fclose(infile);
+	if(status)
+	{
+		error("Failed to read graph\n");
+		return 1;
+	}
+	/* check that the graph is a DAG */
+	status = igraph_is_dag(&g,&isdag);
+	if(status || !isdag)
+	{
+		error("Input graph failed DAG verification\n");
+		return 1;
+	}
+	normal("Input configured and graph read\n");
+	return 0;
+}
+
+int handle_need_rng(void)
+{
+	int status;
+	normal("Configuring random number generator\n");
+	// turn off automatic abort on gsl error
+	gsl_set_error_handler_off();
+	status = ggen_rng_init(&rng);
+	if(status)
+	{
+		error("Failed to initialize RNG\n");
+		return 1;
+	}
+	if(rngfname)
+	{
+		info("Using %s as RNG state file\n",rngfname);
+		status = ggen_rng_load(&rng,rngfname);
+		if(status == 1)
+			warning("RNG State file not found, will continue anyway\n");
+		else if(status != 0)
+		{
+			error("Reading RNG State from file failed.\n");
+			return 1;
+		}
+	}
+	normal("RNG configured\n");
+	return 0;
+}
+
 int handle_second_lvl(int argc,char **argv,struct first_lvl_cmd *fl, struct second_lvl_cmd *sl)
 {
 	int status = 0;
@@ -221,56 +289,15 @@ int handle_second_lvl(int argc,char **argv,struct first_lvl_cmd *fl, struct seco
 	// open input
 	if(fl->flags & NEED_INPUT)
 	{
-		normal("Configuring input\n");
-		if(infname)
-		{
-			info("Using %s as input file\n",infname);
-			infile = fopen(infname,"r");
-			if(!infile)
-			{
-				warning("failed to open file %s for graph input, using stdin instead\n",infname);
-				infile = stdin;
-				infname = NULL;
-			}
-		}
-		else
-			infile = stdin;
-
-		status = ggen_read_graph(&g,infile);
-		if(infname)
-			fclose(infile);
-		if(status)
-		{
-			error("Failed to read graph\n");
-			goto free_ing;
-		}
-		normal("Input configured and graph read\n");
+		if(handle_need_input())
+			return 1;
 	}
 	// load rng
 	if(fl->flags & NEED_RNG)
 	{
-		normal("Configuring random number generator\n");
-		// turn off automatic abort on gsl error
-		gsl_set_error_handler_off();
-		status = ggen_rng_init(&rng);
+		status = handle_need_rng();
 		if(status)
-		{
-			error("Failed to initialize RNG\n");
 			goto free_ing;
-		}
-		if(rngfname)
-		{
-			info("Using %s as RNG state file\n",rngfname);
-			status = ggen_rng_load(&rng,rngfname);
-			if(status == 1)
-				warning("RNG State file not found, will continue anyway\n");
-			else if(status != 0)
-			{
-				error("Reading RNG State from file failed.\n");
-				goto free_rng;
-			}
-		}
-		normal("RNG configured\n");
 	}
 	// set name
 	if((fl->flags & NEED_NAME) && name == NULL)
