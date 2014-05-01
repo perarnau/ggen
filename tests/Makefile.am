@@ -12,14 +12,6 @@ endif
 # all check programs
 TST_PROGS = erdos_gnp erdos_gnm erdos_lbl fifo random_orders longest_path \
 	    transform_add transform_delete errors
-TST_SH = check_dot.sh
-TO_COMPILE = dot_io
 
-dot_io_SOURCES = $(top_srcdir)/src/utils.c $(top_srcdir)/src/log.c dot_io.c
-dot_io_CFLAGS = $(AM_CFLAGS) @CGRAPH_CFLAGS@
-dot_io_LDADD = $(LDADD) @CGRAPH_LIBS@
-check_PROGRAMS = $(TST_PROGS) $(TO_COMPILE)
+check_PROGRAMS = $(TST_PROGS)
 TESTS = $(TST_PROGS)
-# latest graviz distribution is bugged, skip dot I/O
-#TEST += $(TST_SH)
-EXTRA_DIST=check_dot.sh
