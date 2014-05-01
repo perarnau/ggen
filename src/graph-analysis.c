@@ -546,7 +546,7 @@ igraph_vector_t * ggen_analyze_edge_disjoint_paths(igraph_t *g)
 		 */
 		handler = igraph_set_warning_handler(igraph_warning_handler_ignore);
 		igraph_get_shortest_paths(&copy, NULL, &edges, source,
-					igraph_vss_all(), IGRAPH_OUT);
+					igraph_vss_all(), IGRAPH_OUT, NULL, NULL);
 		igraph_set_warning_handler(handler);
 
 		/* find a sink that has a path from source */

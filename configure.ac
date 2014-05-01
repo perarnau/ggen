@@ -50,7 +50,7 @@ AM_CONDITIONAL([HAVE_PANDOC],[test ! "x$PANDOC" = xno])
 #check for GSL
 PKG_CHECK_MODULES([GSL],[gsl])
 #check for igraph
-PKG_CHECK_MODULES([IGRAPH],[igraph >= 0.6])
+PKG_CHECK_MODULES([IGRAPH],[igraph >= 0.7])
 #check for cgraph
 PKG_CHECK_MODULES([CGRAPH],[libcgraph])
 #check for libyaml
