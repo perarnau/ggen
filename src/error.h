@@ -158,7 +158,7 @@ extern ggen_errno_t ggen_errno;
 
 #define GGEN_CHECK_INTERNAL_ERRNO(x) do {	\
 	int ggen_i_ret = (x);			\
-	if(!ggen_i_ret)				\
+	if(ggen_i_ret != GGEN_SUCCESS)		\
 	{					\
 		ggen_error_clean(0);		\
 		goto ggen_error_label;		\
