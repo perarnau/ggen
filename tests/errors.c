@@ -60,7 +60,7 @@ int test_internal_errno(void)
 {
 	// all ggen methods should fail on incorrect arguments
 	assert(ggen_error_start_stack() == 0);
-	GGEN_CHECK_INTERNAL_ERRNO(ggen_analyze_longest_path(NULL) != NULL);
+	GGEN_CHECK_INTERNAL_DO(ggen_analyze_longest_path(NULL));
 	return 0;
 ggen_error_label:
 	return GGEN_FAILURE;
@@ -94,7 +94,7 @@ int main(int argc,char** argv)
 	GGEN_FINALLY(igraph_vector_destroy,&vector);
 
 	g = ggen_generate_erdos_gnm(r,10,0);
-	GGEN_CHECK_INTERNAL_ERRNO(g != 0);
+	GGEN_CHECK_INTERNAL_DO(g);
 	GGEN_FINALLY(igraph_destroy,g);
 	GGEN_FINALLY(free,g);
 	

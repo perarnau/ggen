@@ -45,13 +45,12 @@
 
 int vector_uniq_sorted(igraph_vector_t *v)
 {
-	unsigned long i,pos,l;
+	unsigned long i,pos;
 	/* basic idea : remember the last good number,
 	 * test each index against it.
 	 * It is that simple because the vector is sorted
 	 */
 	pos = 0;
-	l = 1;
 	for(i = 1; i < igraph_vector_size(v); i++)
 	{
 		if(VECTOR(*v)[i] != VECTOR(*v)[pos])
@@ -67,14 +66,14 @@ int vector_uniq_sorted(igraph_vector_t *v)
 int vector_uniq(igraph_vector_t *v)
 {
 	if(igraph_vector_size(v) == 0)
-		return;
+		return 0;
 	igraph_vector_sort(v);
 	return vector_uniq_sorted(v);
 }
 
 int vector_diff(igraph_vector_t *to, igraph_vector_t *from)
 {
-	unsigned long i,j,found,ts,t,f;
+	unsigned long i,j,ts,t,f;
 	ts = igraph_vector_size(to);
 	for(i = 0; i < igraph_vector_size(from);i++)
 	{

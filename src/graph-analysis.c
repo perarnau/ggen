@@ -57,7 +57,6 @@ igraph_vector_t * ggen_analyze_longest_path(igraph_t *g)
 	igraph_vs_t vs;
 	igraph_vit_t vit;
 	igraph_vector_t *res = NULL;
-	int err;
 	unsigned long v,i,f,t;
 	long maxv;
 
@@ -98,7 +97,7 @@ igraph_vector_t * ggen_analyze_longest_path(igraph_t *g)
 		GGEN_CHECK_IGRAPH(igraph_vit_create(g,vs,&vit));
 		GGEN_FINALLY(igraph_vit_destroy,&vit);
 
-		for(vit; !IGRAPH_VIT_END(vit); IGRAPH_VIT_NEXT(vit))
+		for(; !IGRAPH_VIT_END(vit); IGRAPH_VIT_NEXT(vit))
 		{
 			t = IGRAPH_VIT_GET(vit);
 			if(VECTOR(lengths)[t] < VECTOR(lengths)[f] + 1)
