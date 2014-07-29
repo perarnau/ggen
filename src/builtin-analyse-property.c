@@ -143,7 +143,7 @@ int cmd_print(int argc, char **argv)
 		count = igraph_vcount(&g);
 		for(unsigned long i = 0; i < count; i++)
 		{
-			s = ggen_vname(n,&g,i);
+			s = ggen_vname(&g, n, i);
 			if(attr_type == 0)
 				fprintf(outfile,"%s,%s\n",s==NULL?n:s,VAS(&g,name,i));
 			else

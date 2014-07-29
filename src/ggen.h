@@ -94,4 +94,24 @@ int ggen_transform_delete(igraph_t *g, enum ggen_transform_t t);
 
 int ggen_transform_transitive_closure(igraph_t *g);
 
+
+/**********************************************************
+ * IO methods
+ *********************************************************/
+
+/* default values for graph attributes */
+#define GGEN_GRAPH_NAME_ATTR "__ggen_graph_name"
+#define GGEN_DEFAULT_GRAPH_NAME "dag"
+#define GGEN_VERTEX_NAME_ATTR "__ggen_vname"
+#define GGEN_DEFAULT_NAME_SIZE 80
+int ggen_read_graph(igraph_t *g,FILE *input);
+
+int ggen_write_graph(igraph_t *g,FILE *output);
+
+/* get vertex name:
+ * if name exists in graph, will return a pointer to it.
+ * if not, will write at most GGEN_DEFAULT_NAME_SIZE into buf
+ */
+char * ggen_vname(igraph_t *g, char *buf, unsigned long id);
+
 #endif // GGEN_H

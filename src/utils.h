@@ -47,20 +47,5 @@ int ggen_rng_load(gsl_rng **r,const char *file);
 int s2ul(char *s,unsigned long *l);
 int s2d(char *s,double *d);
 
-/* graph io */
-#define GGEN_GRAPH_NAME_ATTR "__ggen_graph_name"
-#define GGEN_DEFAULT_GRAPH_NAME "dag"
-#define GGEN_VERTEX_NAME_ATTR "__ggen_vname"
-#define GGEN_DEFAULT_NAME_SIZE 80
-int ggen_read_graph(igraph_t *g,FILE *input);
-
-int ggen_write_graph(igraph_t *g,FILE *output);
-
-/* get vertex name:
- * if name exists in graph, will return a pointer to it.
- * if not, will print at most GGEN_DEFAULT_NAME_SIZE into buf
- */
-char * ggen_vname(char *buf, igraph_t *g, unsigned long id);
-
 
 #endif

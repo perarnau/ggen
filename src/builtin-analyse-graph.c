@@ -110,11 +110,11 @@ static int cmd_lp(int argc, char **argv)
 		return 1;
 	}
 
-	s = ggen_vname(name,&g,(unsigned long)VECTOR(*lp)[0]);
+	s = ggen_vname(&g, name, (unsigned long)VECTOR(*lp)[0]);
 	fprintf(outfile,"%s",s==NULL?name:s);
 	for(i = 1; i < igraph_vector_size(lp); i++)
 	{
-		s = ggen_vname(name,&g,(unsigned long)VECTOR(*lp)[i]);
+		s = ggen_vname(&g, name, (unsigned long)VECTOR(*lp)[i]);
 		fprintf(outfile,",%s",s==NULL?name:s);
 	}
 	fprintf(outfile,"\n");
@@ -139,7 +139,7 @@ static int cmd_out_degree(int argc, char **argv)
 
 	for(i = 0; i < igraph_vcount(&g); i++)
 	{
-		s = ggen_vname(name,&g,i);
+		s = ggen_vname(&g, name, i);
 		fprintf(outfile,"%s,%lu\n",s==NULL?name:s,(unsigned long)VECTOR(d)[i]);
 	}
 error:
@@ -165,7 +165,7 @@ static int cmd_in_degree(int argc, char **argv)
 
 	for(i = 0; i < igraph_vcount(&g); i++)
 	{
-		s = ggen_vname(name,&g,i);
+		s = ggen_vname(&g,  name,  i);
 		fprintf(outfile,"%s,%lu\n",s==NULL?name:s,(unsigned long)VECTOR(d)[i]);
 	}
 error:
@@ -190,11 +190,11 @@ static int cmd_max_indep_set(int argc, char **argv)
 	err = igraph_largest_independent_vertex_sets(&g,&l);
 	if(err) goto error;
 
-	s = ggen_vname(name,&g,(unsigned long)VECTOR(l)[0]);
+	s = ggen_vname(&g, name, (unsigned long)VECTOR(l)[0]);
 	fprintf(outfile,"%s",s==NULL?name:s);
 	for(i = 1; i < igraph_vector_ptr_size(&l); i++)
 	{
-		s = ggen_vname(name,&g,(unsigned long)VECTOR(l)[i]);
+		s = ggen_vname(&g, name, (unsigned long)VECTOR(l)[i]);
 		fprintf(outfile,",%s",s==NULL?name:s);
 	}
 	fprintf(outfile,"\n");
@@ -235,11 +235,11 @@ static int cmd_longest_antichain(int argc, char **argv)
 		return 1;
 	}
 
-	s = ggen_vname(name,&g,(unsigned long)VECTOR(*a)[0]);
+	s = ggen_vname(&g, name, (unsigned long)VECTOR(*a)[0]);
 	fprintf(outfile,"%s",s==NULL?name:s);
 	for(i = 1; i < igraph_vector_size(a); i++)
 	{
-		s = ggen_vname(name,&g,(unsigned long)VECTOR(*a)[i]);
+		s = ggen_vname(&g, name, (unsigned long)VECTOR(*a)[i]);
 		fprintf(outfile,",%s",s==NULL?name:s);
 	}
 	fprintf(outfile,"\n");
@@ -293,9 +293,9 @@ static int cmd_lsa(int argc, char **argv)
 
 	for(i = 0; i < igraph_vcount(&g); i++)
 	{
-		s = ggen_vname(name,&g,i);
+		s = ggen_vname(&g, name, i);
 		fprintf(outfile,"%s,",s==NULL?name:s);
-		s = ggen_vname(name,&g,(unsigned long)VECTOR(*lsa)[i]);
+		s = ggen_vname(&g, name, (unsigned long)VECTOR(*lsa)[i]);
 		fprintf(outfile,"%s\n",s==NULL?name:s);
 	}
 	igraph_vector_destroy(lsa);
@@ -322,9 +322,9 @@ static int cmd_edge_disjoint_paths(int argc, char **argv)
 	for(i = 0; i < igraph_ecount(&g); i++)
 	{
 		igraph_edge(&g,i,&from,&to);
-		s = ggen_vname(name,&g,(unsigned long)from);
+		s = ggen_vname(&g, name, (unsigned long)from);
 		fprintf(outfile,"%s -> ",s==NULL?name:s);
-		s = ggen_vname(name,&g,(unsigned long)to);
+		s = ggen_vname(&g, name, (unsigned long)to);
 		fprintf(outfile,"%s : %lu\n",s==NULL?name:s, (unsigned long)VECTOR(*paths)[i]);
 	}
 	igraph_vector_destroy(paths);

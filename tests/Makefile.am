@@ -2,8 +2,8 @@
 AM_COLOR_TESTS = yes
 
 # flags for building check programs
-AM_CFLAGS = -I$(top_srcdir)/src @GSL_CFLAGS@ @IGRAPH_CFLAGS@
-LDADD = ../src/libggen.la @GSL_LIBS@ @IGRAPH_LIBS@
+AM_CFLAGS = -I$(top_srcdir)/src @GSL_CFLAGS@ @IGRAPH_CFLAGS@ @CGRAPH_CFLAGS@
+LDADD = ../src/libggen.la @GSL_LIBS@ @IGRAPH_LIBS@ @CGRAPH_LIBS@
 
 if TEST_VALGRIND
 TESTS_ENVIRONMENT= @LIBTOOL@ --mode=execute @VALGRIND@ --tool=memcheck -q --leak-check=full

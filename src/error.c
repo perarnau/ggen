@@ -62,6 +62,8 @@ const char *ggen_error_msgs[] = {
 	"internal GSL error",
 	"invalid value",
 	"no more memory",
+	"internal cgraph error",
+	"graph is not a dag",
 };
 
 const char* ggen_error_strerror(void)

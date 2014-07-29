@@ -5,7 +5,7 @@ lib_LTLIBRARIES = libggen.la
 LIBCSOURCES = graph-generation.c graph-analysis.c graph-transformation.c \
 	      vector_utils.c vector_utils.h bipartite-matching.c \
 	      bipartite-matching.h tree-lowest-common-ancestor.c \
-	      tree-lowest-common-ancestor.h error.h error.c
+	      tree-lowest-common-ancestor.h error.h error.c io.c
 
 LIBHSOURCES = ggen.h
 

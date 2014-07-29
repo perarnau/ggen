@@ -64,6 +64,8 @@ typedef enum {
 	GGEN_GSL_ERROR = 3,
 	GGEN_EINVAL = 4,
 	GGEN_ENOMEM = 5,
+	GGEN_CGRAPH_ERROR = 6,
+	GGEN_ENODAG = 7,
 } ggen_error_type_t;
 
 typedef struct ggen_errno_st {
