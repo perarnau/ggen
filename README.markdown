@@ -36,6 +36,11 @@ Please refer to its README for instructions.
 
 ./autogen.sh && ./configure && make && make install
 
+### Vagrant setup
+
+This repository contains a Vagrantfile you can use to deploy automatically a
+Virtualbox VM with ggen installed correctly.
+
 ## Documentation ##
 
 Man pages are generated automatically by make. The GGen website will eventually contain more
