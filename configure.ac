@@ -53,8 +53,6 @@ PKG_CHECK_MODULES([GSL],[gsl])
 PKG_CHECK_MODULES([IGRAPH],[igraph >= 0.7])
 #check for cgraph
 PKG_CHECK_MODULES([CGRAPH],[libcgraph])
-#check for libyaml
-PKG_CHECK_MODULES([YAML],[yaml-0.1])
 
 # configuration output in config.h
 AC_CONFIG_HEADERS([config.h])
