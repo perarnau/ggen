@@ -36,6 +36,7 @@
 #include <graphviz/cgraph.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
 #include "utils.h"
 #include "log.h"
@@ -44,13 +45,39 @@
 int ggen_rng_init(gsl_rng **r)
 {
 	const gsl_rng_type *T;
+	char *seedenv;
+	unsigned long seedval;
+	FILE *file;
+
 	gsl_rng_env_setup();
 
 	T = gsl_rng_default;
 	*r = gsl_rng_alloc(T);
 
 	info("Using %s as RNG.\n",gsl_rng_name(*r));
-	info("Using %lu as RNG seed.\n",gsl_rng_default_seed);
+
+	/* if the user didn't provide a seed, we try to seed the generator
+	 * using something sensible.
+	 * THIS IS NOT INTENDED TO BE USED IN REAL EXPERIMENTS.
+	 * USERS SHOULD BE CAREFUL ABOUT THEIR RNG INIT.
+	 */
+	seedenv = getenv("GSL_RNG_SEED");
+	if(seedenv == NULL)
+	{
+		warning("RNG seed not provided by user, will attempt to use /dev/urandom.\n");
+
+		file = fopen("/dev/urandom","r");
+		if(file == NULL)
+			error("Cannot open /dev/urandom: %s\n",strerror(errno));
+		if(fread(&seedval,sizeof(seedval),1,file) != 1)
+			error("Cannot read /dev/urandom: %s\n",
+					strerror(ferror(file)));
+		fclose(file);
+		gsl_rng_set(*r,seedval);
+		info("Using %lu as RNG seed (provided by urandom).\n", seedval);
+	}
+	else
+		info("Using %lu as RNG seed.\n",gsl_rng_default_seed);
 	return 0;
 }
 
