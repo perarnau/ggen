@@ -16,15 +16,20 @@ wget -nv http://igraph.org/nightly/get/c/igraph-0.7.1.tar.gz
 tar xzf igraph-0.7.1.tar.gz
 cd igraph-0.7.1
 ./configure --prefix=/usr
-make && make install
+make
+make install
 cd ..
 echo "installing ggen"
 git clone https://github.com/perarnau/ggen.git
 cd ggen
 ./autogen.sh
 ./configure --prefix=/usr
-make && make install
+make
+make check
+make install
 cd ..
+echo "cleaning up"
+rm -rf ggen igraph-0.7.1*
 echo "done"
 SCRIPT
 
@@ -34,4 +39,5 @@ VAGRANTFILE_API_VERSION = "2"
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.box = "ubuntu/trusty64"
   config.vm.provision :shell, inline: $bootstrap
+  config.vm.network "forwarded_port", guest: 8888, host: 8888
 end
