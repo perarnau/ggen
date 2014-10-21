@@ -7,6 +7,6 @@ Name: libggen
 Description: A library for DAG generation and analysis
 Version: @VERSION@
 URL: http://ggen.ligforge.imag.fr
-Requires: igraph gsl
+Requires: igraph gsl libcgraph
 Libs: -L${libdir} -lggen
 Cflags: -I${includedir}
