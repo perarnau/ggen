@@ -69,7 +69,8 @@ static const char * general_help[] = {
 	"--rng-file,-r   <file>  : use file to save rng state\n",
 	"                          if possible, will load state before cmd\n"
 	"--edge                  : manipulate an edge property\n",
-	"--vertex                : manipulate a vertex property \n",
+	"--vertex                : manipulate a vertex property\n",
+	"--graph                 : manipulate a graph property\n",
 	"--name       <string>   : use string as name\n",
 	"NOTE: most of these options are only available on some commands\n",
 	"\nEnvironment Variables:\n",
@@ -153,6 +154,7 @@ static struct option long_options[] = {
 	{ "name", required_argument, NULL, 'n' },
 	{ "edge", no_argument, &ptype, EDGE_PROPERTY },
 	{ "vertex", no_argument, &ptype, VERTEX_PROPERTY },
+	{ "graph", no_argument, &ptype, GRAPH_PROPERTY },
 	{ 0, 0, 0, 0},
 };
 
@@ -175,7 +177,7 @@ void print_first_lvl_help(struct first_lvl_cmd *fl)
 	if(fl->flags & NEED_RNG)
 		fprintf(stdout,", rng");
 	if(fl->flags & NEED_TYPE)
-		fprintf(stdout,", edge, vertex");
+		fprintf(stdout,", edge, vertex, graph");
 	if(fl->flags & NEED_NAME)
 		fprintf(stdout,", name");
 	fprintf(stdout,"\n");

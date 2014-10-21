@@ -138,18 +138,25 @@ static int cmd_uniform_int(int argc, char **argv)
 	err = s2ul(argv[1],&arg2);
 	if(err) return 1;
 
-	if(ptype == EDGE_PROPERTY)
+	switch(ptype)
 	{
-		count = igraph_ecount(&g);
-		for(i = 0; i < count; i++)
-			SETEAN(&g,name,i,arg1 + gsl_rng_uniform_int(rng,arg2 - arg1));
-	}
-	else
-	{
-		count = igraph_vcount(&g);
-		for(i = 0; i < count; i++)
-			SETVAN(&g,name,i,arg1 + gsl_rng_uniform_int(rng,arg2 - arg1));
-	}
+		case EDGE_PROPERTY:
+			count = igraph_ecount(&g);
+			for(i = 0; i < count; i++)
+				SETEAN(&g,name,i,arg1 + gsl_rng_uniform_int(rng,arg2 - arg1));
+			break;
+		case VERTEX_PROPERTY:
+			count = igraph_vcount(&g);
+			for(i = 0; i < count; i++)
+				SETVAN(&g,name,i,arg1 + gsl_rng_uniform_int(rng,arg2 - arg1));
+			break;
+		case GRAPH_PROPERTY:
+			SETGAN(&g,name,arg1 + gsl_rng_uniform_int(rng,arg2 - arg1));
+			break;
+		default:
+			error("ggen_error: wrong property type, please report this bug\n");
+			return 1;
+	};
 	return err;
 }
 
@@ -170,18 +177,25 @@ static int cmd_##dist(int argc, char **argv)		\
 	err = s2d(argv[0],&arg);			\
 	if(err) return 1;				\
 							\
-	if(ptype == EDGE_PROPERTY)			\
-		count = igraph_ecount(&g);		\
-	else						\
-		count = igraph_vcount(&g);		\
-							\
-	for(i = 0; i < count; i++) {			\
-		if(ptype == EDGE_PROPERTY)		\
-			SETEAN(&g,name,i,gsl_ran_##dist(rng,arg));\
-		else					\
-			SETVAN(&g,name,i,gsl_ran_##dist(rng,arg));\
+	switch(ptype)					\
+	{						\
+		case EDGE_PROPERTY:			\
+			count = igraph_ecount(&g);	\
+			for(i = 0; i < count; i++)	\
+				SETEAN(&g,name,i,gsl_ran_##dist(rng,arg));\
+			break;				\
+		case VERTEX_PROPERTY:			\
+			count = igraph_vcount(&g);	\
+			for(i = 0; i < count; i++)	\
+				SETVAN(&g,name,i,gsl_ran_##dist(rng,arg));\
+			break;				\
+		case GRAPH_PROPERTY:			\
+			SETGAN(&g,name,gsl_ran_##dist(rng,arg));\
+			break;				\
+		default:				\
+			error("ggen_error: wrong property type, please report this bug\n");\
+			return 1;			\
 	}						\
-							\
 	return err;					\
 }
 
@@ -206,18 +220,25 @@ static int cmd_##dist(int argc, char **argv)		\
 	err = s2d(argv[1],&arg2);			\
 	if(err) return 1;				\
 							\
-	if(ptype == EDGE_PROPERTY)			\
-		count = igraph_ecount(&g);		\
-	else						\
-		count = igraph_vcount(&g);		\
-							\
-	for(i = 0; i < count; i++) {			\
-		if(ptype == EDGE_PROPERTY)		\
-			SETEAN(&g,name,i,gsl_ran_##dist(rng,arg1,arg2));\
-		else					\
-			SETVAN(&g,name,i,gsl_ran_##dist(rng,arg1,arg2));\
+	switch(ptype)					\
+	{						\
+		case EDGE_PROPERTY:			\
+			count = igraph_ecount(&g);	\
+			for(i = 0; i < count; i++)	\
+				SETEAN(&g,name,i,gsl_ran_##dist(rng,arg1,arg2));\
+			break;				\
+		case VERTEX_PROPERTY:			\
+			count = igraph_vcount(&g);	\
+			for(i = 0; i < count; i++)	\
+				SETVAN(&g,name,i,gsl_ran_##dist(rng,arg1,arg2));\
+			break;				\
+		case GRAPH_PROPERTY:			\
+			SETGAN(&g,name,gsl_ran_##dist(rng,arg1,arg2));\
+			break;				\
+		default:				\
+			error("ggen_error: wrong property type, please report this bug\n");\
+			return 1;			\
 	}						\
-							\
 	return err;					\
 }
 

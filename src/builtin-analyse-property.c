@@ -85,31 +85,49 @@ int find_attribute(igraph_t *ig,int attr_type,char *attr_name)
 	}
 
 	err = -1;
-	if(attr_type == EDGE_PROPERTY)
+	switch(attr_type)
 	{
-		for(i = 0; i < igraph_strvector_size(&enames); i++)
-		{
-			if(!strcmp((char*)STR(enames,i),attr_name))
+		case EDGE_PROPERTY:
+			for(i = 0; i < igraph_strvector_size(&enames); i++)
 			{
-				if(VECTOR(etypes)[i]==IGRAPH_ATTRIBUTE_NUMERIC)
-					err = 1;
-				else
-					err = 0;
+				if(!strcmp((char*)STR(enames,i),attr_name))
+				{
+					if(VECTOR(etypes)[i]==IGRAPH_ATTRIBUTE_NUMERIC)
+						err = 1;
+					else
+						err = 0;
+					break;
+				}
 			}
-		}
-	}
-	else if(attr_type == VERTEX_PROPERTY)
-	{
-		for(i = 0; i < igraph_strvector_size(&vnames); i++)
-		{
-			if(!strcmp((char*)STR(vnames,i),attr_name))
+			break;
+		case VERTEX_PROPERTY:
+			for(i = 0; i < igraph_strvector_size(&vnames); i++)
 			{
-				if(VECTOR(vtypes)[i]==IGRAPH_ATTRIBUTE_NUMERIC)
-					err = 1;
-				else
-					err = 0;
+				if(!strcmp((char*)STR(vnames,i),attr_name))
+				{
+					if(VECTOR(vtypes)[i]==IGRAPH_ATTRIBUTE_NUMERIC)
+						err = 1;
+					else
+						err = 0;
+					break;
+				}
 			}
-		}
+			break;
+		case GRAPH_PROPERTY:
+			for(i = 0; i < igraph_strvector_size(&gnames); i++)
+			{
+				if(!strcmp((char*)STR(gnames,i),attr_name))
+				{
+					if(VECTOR(gtypes)[i]==IGRAPH_ATTRIBUTE_NUMERIC)
+						err = 1;
+					else
+						err = 0;
+					break;
+				}
+			}
+			break;
+		default:
+			error("ggen_error: wrong property type, please report this bug\n");
 	}
 	return err;
 }
@@ -127,64 +145,92 @@ int cmd_print(int argc, char **argv)
 		error("error: could not find property (%s)\n",name);
 		return 1;
 	}
-	if(ptype == EDGE_PROPERTY)
+	switch(ptype)
 	{
-		count = igraph_ecount(&g);
-		for(unsigned long i = 0; i < count; i++)
-		{
-			if(attr_type == 0)
-				fprintf(outfile,"%lu,%s\n",i,EAS(&g,name,i));
+		case EDGE_PROPERTY:
+			count = igraph_ecount(&g);
+			for(unsigned long i = 0; i < count; i++)
+			{
+				if(attr_type == 0)
+					fprintf(outfile,"%lu,%s\n",i,EAS(&g,name,i));
+				else
+					fprintf(outfile,"%lu,%f\n",i,(double)EAN(&g,name,i));
+			}
+			break;
+		case VERTEX_PROPERTY:
+			count = igraph_vcount(&g);
+			for(unsigned long i = 0; i < count; i++)
+			{
+				s = ggen_vname(&g, n, i);
+				if(attr_type == 0)
+					fprintf(outfile,"%s,%s\n",s==NULL?n:s,VAS(&g,name,i));
+				else
+					fprintf(outfile,"%s,%f\n",s==NULL?n:s,(double)VAN(&g,name,i));
+			}
+			break;
+		case GRAPH_PROPERTY:
+			if(attr_type ==0)
+				fprintf(outfile,"%s\n",GAS(&g,name));
 			else
-				fprintf(outfile,"%lu,%f\n",i,(double)EAN(&g,name,i));
-		}
-	}
-	else if(ptype == VERTEX_PROPERTY)
-	{
-		count = igraph_vcount(&g);
-		for(unsigned long i = 0; i < count; i++)
-		{
-			s = ggen_vname(&g, n, i);
-			if(attr_type == 0)
-				fprintf(outfile,"%s,%s\n",s==NULL?n:s,VAS(&g,name,i));
-			else
-				fprintf(outfile,"%s,%f\n",s==NULL?n:s,(double)VAN(&g,name,i));
-		}
+				fprintf(outfile,"%f\n",GAN(&g,name));
+			break;
+		default:
+			error("ggen_error: wrong property type, please report this bug\n");
 	}
 	return 0;
 }
 
-size_t get_property_size(igraph_t *ig,char *pname, int type)
+size_t get_property_size(igraph_t *ig, char *name, int type)
 {
-	if(type == EDGE_PROPERTY)
-		return igraph_ecount(ig);
-	else if(type == VERTEX_PROPERTY)
-		return igraph_vcount(ig);
-	else
-		return 0;
+	switch(type)
+	{
+		case EDGE_PROPERTY:
+			return igraph_ecount(ig);
+		case VERTEX_PROPERTY:
+			return igraph_vcount(ig);
+		case GRAPH_PROPERTY:
+			return 1;
+		default:
+			error("ggen_error: wrong property type, please report this bug\n");
+	}
+	return 0;
 }
 
-int get_property(igraph_t *ig, double *dest, char *pname, int attr_type, int ptype, int index)
+int get_property(igraph_t *ig, double *dest, char *pname, int attr_type, int type, int index)
 {
 	if(attr_type == 0)
 	{
-		if(ptype == EDGE_PROPERTY)
-			return s2d((char*)EAS(ig,pname,index),dest);
-		else
-			return s2d((char*)VAS(ig,pname,index),dest);
+		switch(type)
+		{
+			case EDGE_PROPERTY:
+				return s2d((char*)EAS(ig,pname,index),dest);
+			case VERTEX_PROPERTY:
+				return s2d((char*)VAS(ig,pname,index),dest);
+			case GRAPH_PROPERTY:
+				return s2d((char*)GAS(ig,pname),dest);
+			default:
+				error("ggen_error: wrong property type, please report this bug\n");
+		}
 	}
 	else
 	{
-		if(ptype == EDGE_PROPERTY)
+		switch(type)
 		{
-			*dest = (double) EAN(ig,pname,index);
-			return 0;
+			case EDGE_PROPERTY:
+				*dest = (double) EAN(ig,pname,index);
+				break;
+			case VERTEX_PROPERTY:
+				*dest = (double) VAN(ig,pname,index);
+				break;
+			case GRAPH_PROPERTY:
+				*dest = (double) GAN(ig,pname);
+				break;
+			default:
+				error("ggen_error: wrong property type, please report this bug\n");
 		}
-		else
-		{
-			*dest = (double) VAN(ig,pname,index);
-			return 0;
-		}
+		return 0;
 	}
+	return 1;
 }
 
 int cmd_stats(int argc, char **argv)
@@ -224,12 +270,11 @@ free_val:
 
 int cmd_hist(int argc, char **argv)
 {
-	int err,i;
+	int err;
 	int attr_type;
 	gsl_histogram *h = NULL;
 	double xmin,xmax,tmp;
-	unsigned long size;
-	unsigned long count;
+	unsigned long size, count, i;
 	attr_type = find_attribute(&g,ptype,name);
 	if(attr_type == -1)
 	{
