@@ -78,7 +78,8 @@ static const char * general_help[] = {
 	"GSL_RNG_TYPE             : use this environment variable to change the RNG type\n",
 	"Look at the gsl documentation for more info.\n",
 	"\nCommands available:\n",
-	"generate-graph          : use the graph utils\n",
+	"generate-graph          : generate random graphs\n",
+	"static-graph            : generate static graphs\n",
 	"analyse-graph           : use the graph analysis tools\n",
 	"transform-graph         : use the graph transformation tools\n",
 	"add-property            : use the property adding tools\n",
@@ -88,6 +89,7 @@ static const char * general_help[] = {
 
 static struct first_lvl_cmd cmd_table[] = {
 	{ "generate-graph" , cmds_generate, NEED_OUTPUT | IS_GRAPH_P | NEED_RNG, help_generate },
+	{ "static-graph" , cmds_static, NEED_OUTPUT | IS_GRAPH_P,  help_static },
 	{ "analyse-graph", cmds_analyse, NEED_INPUT, help_analyse },
 	{ "transform-graph", cmds_transform, NEED_INPUT | NEED_OUTPUT, help_transform },
 	{ "add-property", cmds_add_prop, NEED_INPUT | NEED_OUTPUT | NEED_RNG | NEED_NAME | NEED_TYPE, help_add_prop },

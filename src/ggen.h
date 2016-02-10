@@ -83,6 +83,12 @@ igraph_t *ggen_generate_fifo(gsl_rng *r, unsigned long n, unsigned long od, unsi
 igraph_t *ggen_generate_random_orders(gsl_rng *r, unsigned long n, unsigned int orders);
 
 /**********************************************************
+ * Static graphs
+ *********************************************************/
+
+igraph_t *ggen_generate_fibonacci(unsigned long n, unsigned long cutoff);
+
+/**********************************************************
  * Transformation methods
  *********************************************************/
 
