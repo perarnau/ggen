@@ -90,6 +90,8 @@ igraph_t *ggen_generate_fibonacci(unsigned long n, unsigned long cutoff);
 
 igraph_t *ggen_generate_forkjoin(unsigned long phases, unsigned long diameter);
 
+igraph_t *ggen_generate_sparselu(unsigned long size);
+
 /**********************************************************
  * Transformation methods
  *********************************************************/

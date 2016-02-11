@@ -61,12 +61,14 @@
  */
 static int cmd_fibonacci(int argc, char** argv);
 static int cmd_forkjoin(int argc, char** argv);
+static int cmd_sparselu(int argc, char** argv);
 
 /* help strings, there is a lot of them */
 const char* help_static[] = {
 	"Methods:\n",
 	"fibonacci                    : recursive fibonacci\n",
 	"forkjoin                     : fork-join graphs\n",
+	"sparselu                     : sparse LU decomposition\n",
 	NULL
 };
 
@@ -89,9 +91,18 @@ static const char* forkjoin_help[] = {
 	NULL
 };
 
+static const char* sparselu_help[] = {
+	"\nSparse LU:\n",
+	"Parallel LU decomposition over sparse matrix.\n",
+	"Arguments:\n",
+	"     - size                  : size of one side of the matrix in blocks\n",
+	NULL
+};
+
 struct second_lvl_cmd cmds_static[] = {
 	{ "fibonacci", 2, fibonacci_help, cmd_fibonacci },
 	{ "forkjoin" , 2, forkjoin_help , cmd_forkjoin  },
+	{ "sparselu" , 1, sparselu_help , cmd_sparselu  },
 	{ 0, 0, 0, 0},
 };
 
@@ -128,6 +139,24 @@ static int cmd_forkjoin(int argc, char** argv)
 	if(err) goto ret;
 
 	g_p = ggen_generate_forkjoin(phases, diameter);
+	if(g_p == NULL)
+	{
+		error("ggen error: %s\n",ggen_error_strerror());
+		err = 1;
+	}
+ret:
+	return err;
+}
+
+static int cmd_sparselu(int argc, char** argv)
+{
+	int err = 0;
+	unsigned long size;
+
+	err = s2ul(argv[0],&size);
+	if(err) goto ret;
+
+	g_p = ggen_generate_sparselu(size);
 	if(g_p == NULL)
 	{
 		error("ggen error: %s\n",ggen_error_strerror());

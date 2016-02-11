@@ -142,3 +142,153 @@ ggen_error_label:
 	return NULL;
 
 }
+
+/* lifted from the KaStORS/BCS OpenMP task suite */
+static int sparselu_genmat(igraph_vector_bool_t *matrix, unsigned long size)
+{
+	unsigned long ii, jj, kk;
+	igraph_bool_t empty;
+
+	for(ii = 0; ii < size; ii++)
+	{
+		for(jj = 0; jj < size; jj++)
+		{
+			empty = 0;
+			if((ii<jj) && (ii%3 !=0)) empty = 1;
+			if((ii>jj) && (jj%3 !=0)) empty = 1;
+			if(ii%2==1) empty = 1;
+			if(jj%2==1) empty = 1;
+			if(ii==jj) empty = 0;
+			if(ii==jj-1) empty = 0;
+			if(ii-1 == jj) empty = 0;
+			VECTOR(*matrix)[ii*size +jj] = !empty;
+		}
+	}
+	return 0;
+}
+
+static inline unsigned long addtask(igraph_t *g)
+{
+	unsigned long curtask = igraph_vcount(g);
+	igraph_add_vertices(g, 1, NULL);
+	return curtask;
+}
+
+/* SparseLU: generate the graph from a LU decomposition of a sparse matrix of
+ * size size*size BLOCKS.
+ */
+igraph_t *ggen_generate_sparselu(unsigned long size)
+{
+	igraph_t *g = NULL;
+	igraph_vector_bool_t nonempty;
+	igraph_vector_long_t lastwrite;
+	unsigned long ii, jj, kk, to, from, task, lastlu;
+
+	ggen_error_start_stack();
+
+	g = malloc(sizeof(igraph_t));
+	GGEN_CHECK_ALLOC(g);
+	GGEN_FINALLY3(free,g,1);
+
+	GGEN_CHECK_IGRAPH(igraph_empty(g,0,1));
+	GGEN_FINALLY3(igraph_destroy,g,1);
+	GGEN_CHECK_IGRAPH(igraph_vector_bool_init(&nonempty, size*size));
+	GGEN_FINALLY(igraph_vector_destroy, &nonempty);
+	GGEN_CHECK_IGRAPH(igraph_vector_long_init(&lastwrite, size*size));
+	GGEN_FINALLY(igraph_vector_destroy, &lastwrite);
+
+	/* start by figuring out which part of the matrix contains elements
+	 */
+	sparselu_genmat(&nonempty, size);
+
+	/* run through the motions of the algorithm, creating tasks and checking
+	 * their dependencies as we go. Since all tasks touch the same memory at
+	 * different times, we just track the last task (in creation order),
+	 * that writes to each block.
+	 * -1 in last write is used to identify unwritten blocks.
+	 */
+	igraph_vector_long_fill(&lastwrite, -1);
+	for(kk = 0; kk < size; kk++)
+	{
+		/* lu task: inout [kk*size +kk]*/
+		lastlu = addtask(g);
+		SETVAS(g, "kernel", lastlu, "lu");
+		SETVAN(g, "x", lastlu, kk);
+		SETVAN(g, "y", lastlu, kk);
+		if(VECTOR(lastwrite)[kk*size +kk] != -1)
+		{
+			from = VECTOR(lastwrite)[kk*size +kk];
+			igraph_add_edge(g, from, lastlu);
+		}
+		VECTOR(lastwrite)[kk*size + kk] = lastlu;
+
+		for(jj = kk+1; jj < size; jj++)
+			if(VECTOR(nonempty)[kk*size +jj])
+			{
+				/* fwd: in [kk*size + kk] inout [kk*size+jj] */
+				task = addtask(g);
+				SETVAS(g, "kernel", task, "fwd");
+				SETVAN(g, "x", task, kk);
+				SETVAN(g, "y", task, jj);
+				igraph_add_edge(g, lastlu, task);
+				if(VECTOR(lastwrite)[kk*size +jj] != -1)
+				{
+					from = VECTOR(lastwrite)[kk*size+jj];
+					igraph_add_edge(g, from, task);
+				}
+				VECTOR(lastwrite)[kk*size+jj] = task;
+			}
+		for(ii = kk+1; ii < size; ii++)
+			if(VECTOR(nonempty)[ii*size +kk])
+			{
+				/* bdiv: in [kk*size +kk] inout: [ii*size +kk]
+				 */
+				task = addtask(g);
+				SETVAS(g, "kernel", task, "bdiv");
+				SETVAN(g, "x", task, ii);
+				SETVAN(g, "y", task, kk);
+				igraph_add_edge(g, lastlu, task);
+				if(VECTOR(lastwrite)[ii*size +kk] != -1)
+				{
+					from = VECTOR(lastwrite)[ii*size+kk];
+					igraph_add_edge(g, from, task);
+				}
+				VECTOR(lastwrite)[ii*size+kk] = task;
+			}
+		for(ii = kk+1; ii < size; ii++)
+			if(VECTOR(nonempty)[ii*size +kk])
+				for(jj = kk+1; jj < size; jj++)
+					if(VECTOR(nonempty)[kk*size +jj])
+					{
+						/* bmod: in [ii*size +kk]
+						 *       in [kk*size +jj]
+						 *       inout [ii*size +jj]
+						 */
+						VECTOR(nonempty)[ii*size +jj] = 1;
+						task = addtask(g);
+						SETVAS(g, "kernel", task, "bmod");
+						SETVAN(g, "x", task, ii);
+						SETVAN(g, "y", task, jj);
+
+						/* this is the last fwd */
+						from = VECTOR(lastwrite)[ii*size+kk];
+						igraph_add_edge(g, from, task);
+
+						/* this is the last bdiv */
+						from = VECTOR(lastwrite)[kk*size+jj];
+						igraph_add_edge(g, from, task);
+
+						if(VECTOR(lastwrite)[ii*size+jj] != -1)
+						{
+							from = VECTOR(lastwrite)[ii*size+jj];
+							igraph_add_edge(g, from, task);
+						}
+						VECTOR(lastwrite)[ii*size+jj] = task;
+					}
+	}
+	ggen_error_clean(1);
+	return g;
+ggen_error_label:
+	return NULL;
+
+}
