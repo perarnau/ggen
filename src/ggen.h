@@ -88,6 +88,8 @@ igraph_t *ggen_generate_random_orders(gsl_rng *r, unsigned long n, unsigned int 
 
 igraph_t *ggen_generate_fibonacci(unsigned long n, unsigned long cutoff);
 
+igraph_t *ggen_generate_forkjoin(unsigned long phases, unsigned long diameter);
+
 /**********************************************************
  * Transformation methods
  *********************************************************/

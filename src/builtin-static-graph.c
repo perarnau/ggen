@@ -60,11 +60,13 @@
  * the general struct
  */
 static int cmd_fibonacci(int argc, char** argv);
+static int cmd_forkjoin(int argc, char** argv);
 
 /* help strings, there is a lot of them */
 const char* help_static[] = {
 	"Methods:\n",
 	"fibonacci                    : recursive fibonacci\n",
+	"forkjoin                     : fork-join graphs\n",
 	NULL
 };
 
@@ -78,8 +80,18 @@ static const char* fibonacci_help[] = {
 	NULL
 };
 
+static const char* forkjoin_help[] = {
+	"\nFork-Join:\n",
+	"Multiple phases of fork-join.\n",
+	"Arguments:\n",
+	"     - phases                : number of phases\n",
+	"     - diameter              : number of forks per phase\n",
+	NULL
+};
+
 struct second_lvl_cmd cmds_static[] = {
 	{ "fibonacci", 2, fibonacci_help, cmd_fibonacci },
+	{ "forkjoin" , 2, forkjoin_help , cmd_forkjoin  },
 	{ 0, 0, 0, 0},
 };
 
@@ -95,6 +107,27 @@ static int cmd_fibonacci(int argc, char** argv)
 	if(err) goto ret;
 
 	g_p = ggen_generate_fibonacci(n, cutoff);
+	if(g_p == NULL)
+	{
+		error("ggen error: %s\n",ggen_error_strerror());
+		err = 1;
+	}
+ret:
+	return err;
+}
+
+static int cmd_forkjoin(int argc, char** argv)
+{
+	int err = 0;
+	unsigned long phases,diameter;
+
+	err = s2ul(argv[0],&phases);
+	if(err) goto ret;
+
+	err = s2ul(argv[1],&diameter);
+	if(err) goto ret;
+
+	g_p = ggen_generate_forkjoin(phases, diameter);
 	if(g_p == NULL)
 	{
 		error("ggen error: %s\n",ggen_error_strerror());

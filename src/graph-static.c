@@ -97,3 +97,48 @@ igraph_t *ggen_generate_fibonacci(unsigned long n, unsigned long cutoff)
 ggen_error_label:
 	return NULL;
 }
+
+/* fork-join: generate a graph of multiple phases of fork-joins. All phases have
+ * the same diameter (number of forks).
+ */
+igraph_t *ggen_generate_forkjoin(unsigned long phases, unsigned long diameter)
+{
+	igraph_t *g = NULL;
+	igraph_vector_t edges;
+	unsigned long numvertices, source, sink, i;
+
+	ggen_error_start_stack();
+
+	g = malloc(sizeof(igraph_t));
+	GGEN_CHECK_ALLOC(g);
+	GGEN_FINALLY3(free,g,1);
+
+	/* number of tasks: 1 source, for each phase diameter forks and 1 join.
+	 */
+	numvertices = 1 + (diameter+1)*phases;
+	GGEN_CHECK_IGRAPH(igraph_empty(g,numvertices,1));
+	GGEN_FINALLY3(igraph_destroy,g,1);
+
+	GGEN_CHECK_IGRAPH(igraph_vector_init(&edges, 4*diameter));
+
+	/* iterate over the phases, adding the right edges at the time.
+	 * We stop once source points to the last sink.
+	 */
+	for(source = 0; source < numvertices-1; source += diameter+1)
+	{
+		sink = source + diameter +1;
+		for(i = 0; i < diameter; i++)
+		{
+			VECTOR(edges)[4*i] = source;
+			VECTOR(edges)[4*i+1] = source + i +1;
+			VECTOR(edges)[4*i+2] = source + i +1;
+			VECTOR(edges)[4*i+3] = sink;
+		}
+		GGEN_CHECK_IGRAPH(igraph_add_edges(g, &edges, NULL));
+	}
+	ggen_error_clean(1);
+	return g;
+ggen_error_label:
+	return NULL;
+
+}
