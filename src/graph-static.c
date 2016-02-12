@@ -44,6 +44,44 @@
 #include "ggen.h"
 #include "error.h"
 
+/**********************************************************
+ * Utils
+ *********************************************************/
+
+/* A lot of our algorithms rely on adding a single task and figuring out
+ * the dependencies it has because it's reading data that might have been wrote
+ * before.
+ * To manage that, we use long vector remembering the last task that wrote into
+ * a region of memory. If that vector contains a valid task id, then we add an
+ * edge from that last task to the new one.
+ * TODO: error checks
+ */
+
+static inline unsigned long addtask(igraph_t *g)
+{
+	unsigned long curtask = igraph_vcount(g);
+	igraph_add_vertices(g, 1, NULL);
+	return curtask;
+}
+
+static inline void raw_edge_2d(igraph_vector_long_t *lastwrite,
+			       unsigned long i, unsigned long j,
+			       unsigned long size, igraph_t *g,
+			       unsigned long task)
+{
+	long todo = VECTOR(*lastwrite)[i*size +j];
+	unsigned long from;
+	if(todo != -1)
+	{
+		from = VECTOR(*lastwrite)[i*size +j];
+		igraph_add_edge(g, from, task);
+	}
+}
+
+/**********************************************************
+ * Methods
+ *********************************************************/
+
 /* creates two subtasks, add the right edges to the graph */
 int _fibonacci_add_tasks(unsigned long n, unsigned long cutoff,
 			 unsigned long myid, igraph_t *g)
@@ -165,13 +203,6 @@ static int sparselu_genmat(igraph_vector_bool_t *matrix, unsigned long size)
 		}
 	}
 	return 0;
-}
-
-static inline unsigned long addtask(igraph_t *g)
-{
-	unsigned long curtask = igraph_vcount(g);
-	igraph_add_vertices(g, 1, NULL);
-	return curtask;
 }
 
 /* SparseLU: generate the graph from a LU decomposition of a sparse matrix of
