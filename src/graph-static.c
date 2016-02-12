@@ -64,6 +64,19 @@ static inline unsigned long addtask(igraph_t *g)
 	return curtask;
 }
 
+static inline void raw_edge_1d(igraph_vector_long_t *lastwrite,
+			       unsigned long i, igraph_t *g,
+			       unsigned long task)
+{
+	long todo = VECTOR(*lastwrite)[i];
+	unsigned long from;
+	if(todo != -1)
+	{
+		from = VECTOR(*lastwrite)[i];
+		igraph_add_edge(g, from, task);
+	}
+}
+
 static inline void raw_edge_2d(igraph_vector_long_t *lastwrite,
 			       unsigned long i, unsigned long j,
 			       unsigned long size, igraph_t *g,
@@ -416,44 +429,34 @@ igraph_t *ggen_generate_poisson2d(unsigned long n, unsigned long iter)
 	 * - new[i] = f(old[i-1], old[i], old[i+1])
 	 * To figure out dependencies between tasks, lw_old stores the last
 	 * task that wrote into old, and the same for lw_new/new.
+	 * Border cells never change values, so we avoid creating tasks for
+	 * them.
 	 */
 	GGEN_CHECK_IGRAPH(igraph_vector_long_init(&lw_old, n));
 	GGEN_FINALLY(igraph_vector_destroy, &lw_old);
+	igraph_vector_long_fill(&lw_old, -1);
 	GGEN_CHECK_IGRAPH(igraph_vector_long_init(&lw_new, n));
 	GGEN_FINALLY(igraph_vector_destroy, &lw_new);
-
-	/* -1 means no task wrote to this index yet. */
-	igraph_vector_long_fill(&lw_old, -1);
 	igraph_vector_long_fill(&lw_new, -1);
 
 	for(it = 0; it < iter; it++)
 	{
-		for(i = 0; i < n; i++)
+		for(i = 1; i < n-1; i++)
 		{
 			/* old[i] = new[i] */
 			task = addtask(g);
-			if(VECTOR(lw_new)[i] != -1)
-			{
-				from = VECTOR(lw_new)[i];
-				igraph_add_edge(g, from, task);
-			}
+			raw_edge_1d(&lw_new, i, g, task);
 			VECTOR(lw_old)[i] = task;
 		}
-		for(i = 0; i < n; i++)
+		for(i = 1; i < n-1; i++)
 		{
 			/* new[i] = f(old[i-1], old[i], old[i+1])
 			 * Note that on the edges, the dependencies are simpler
 			 */
 			task = addtask(g);
-			if(i > 0 && i < n-1)
-			{
-				from = VECTOR(lw_old)[i-1];
-				igraph_add_edge(g, from, task);
-				from = VECTOR(lw_old)[i];
-				igraph_add_edge(g, from, task);
-				from = VECTOR(lw_old)[i+1];
-				igraph_add_edge(g, from, task);
-			}
+			raw_edge_1d(&lw_old, i-1, g, task);
+			raw_edge_1d(&lw_old, i  , g, task);
+			raw_edge_1d(&lw_old, i+1, g, task);
 			VECTOR(lw_new)[i] = task;
 		}
 	}
