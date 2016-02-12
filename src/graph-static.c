@@ -77,16 +77,15 @@ static inline void raw_edge_1d(igraph_vector_long_t *lastwrite,
 	}
 }
 
-static inline void raw_edge_2d(igraph_vector_long_t *lastwrite,
+static inline void raw_edge_2d(igraph_matrix_long_t *lastwrite,
 			       unsigned long i, unsigned long j,
-			       unsigned long size, igraph_t *g,
-			       unsigned long task)
+			       igraph_t *g, unsigned long task)
 {
-	long todo = VECTOR(*lastwrite)[i*size +j];
+	long todo = MATRIX(*lastwrite,i,j);
 	unsigned long from;
 	if(todo != -1)
 	{
-		from = VECTOR(*lastwrite)[i*size +j];
+		from = MATRIX(*lastwrite,i,j);
 		igraph_add_edge(g, from, task);
 	}
 }
@@ -101,7 +100,7 @@ static inline void raw_edge_2d(igraph_vector_long_t *lastwrite,
 igraph_t *ggen_generate_cholesky(unsigned long size)
 {
 	igraph_t *g = NULL;
-	igraph_vector_long_t lastwrite;
+	igraph_matrix_long_t lastwrite;
 	unsigned long k, m, n, task;
 
 	ggen_error_start_stack();
@@ -113,47 +112,44 @@ igraph_t *ggen_generate_cholesky(unsigned long size)
 	GGEN_CHECK_IGRAPH(igraph_empty(g,0,1));
 	GGEN_FINALLY3(igraph_destroy,g,1);
 
-	GGEN_CHECK_IGRAPH(igraph_vector_long_init(&lastwrite, size*size));
-	GGEN_FINALLY(igraph_vector_destroy, &lastwrite);
-	igraph_vector_long_fill(&lastwrite, -1);
+	GGEN_CHECK_IGRAPH(igraph_matrix_long_init(&lastwrite, size, size));
+	GGEN_FINALLY(igraph_matrix_destroy, &lastwrite);
+	igraph_matrix_long_fill(&lastwrite, -1);
 
-	/* run through the motions of the algorithm, creating tasks and checking
-	 * their dependencies as we go. Since all tasks touch the same memory at
-	 * different times, we just track the last task (in creation order),
-	 * that writes to each block.
-	 * -1 in last write is used to identify unwritten blocks.
+	/* There's a single matrix used inout, use lastwrite to create the right
+	 * edges.
 	 */
 	for(k = 0; k < size; k++)
 	{
 		/* potrf inout [k,k]*/
 		task = addtask(g);
-		raw_edge_2d(&lastwrite, k, k, size, g, task);
-		VECTOR(lastwrite)[k*size + k] = task;
+		raw_edge_2d(&lastwrite, k, k, g, task);
+		MATRIX(lastwrite, k, k) = task;
 
 		for(m = k+1; m < size; m++)
 		{
 			/* trsm: in [k,k] inout [k,m] */
 			task = addtask(g);
-			raw_edge_2d(&lastwrite, k, k, size, g, task);
-			raw_edge_2d(&lastwrite, k, m, size, g, task);
-			VECTOR(lastwrite)[k*size +m] = task;
+			raw_edge_2d(&lastwrite, k, k, g, task);
+			raw_edge_2d(&lastwrite, k, m, g, task);
+			MATRIX(lastwrite, k, m) = task;
 		}
 		for(m = k+1; m < size; m++)
 		{
 			/* syrk: in [k,m] inout [m,m] */
 			task = addtask(g);
-			raw_edge_2d(&lastwrite, k, m, size, g, task);
-			raw_edge_2d(&lastwrite, m, m, size, g, task);
-			VECTOR(lastwrite)[m*size +m] = task;
+			raw_edge_2d(&lastwrite, k, m, g, task);
+			raw_edge_2d(&lastwrite, m, m, g, task);
+			MATRIX(lastwrite, m, m) = task;
 
 			for(n = k+1; n < m; n++)
 			{
 				/* gemm: in [k,n] in [k,m] inout [n,m] */
 				task = addtask(g);
-				raw_edge_2d(&lastwrite, k, n, size, g, task);
-				raw_edge_2d(&lastwrite, k, m, size, g, task);
-				raw_edge_2d(&lastwrite, n, m, size, g, task);
-				VECTOR(lastwrite)[m*size +m] = task;
+				raw_edge_2d(&lastwrite, k, n, g, task);
+				raw_edge_2d(&lastwrite, k, m, g, task);
+				raw_edge_2d(&lastwrite, n, m, g, task);
+				MATRIX(lastwrite, n, m) = task;
 			}
 		}
 	}
