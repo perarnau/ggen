@@ -61,6 +61,7 @@
  */
 static int cmd_fibonacci(int argc, char** argv);
 static int cmd_forkjoin(int argc, char** argv);
+static int cmd_poisson2d(int argc, char** argv);
 static int cmd_sparselu(int argc, char** argv);
 
 /* help strings, there is a lot of them */
@@ -68,6 +69,7 @@ const char* help_static[] = {
 	"Methods:\n",
 	"fibonacci                    : recursive fibonacci\n",
 	"forkjoin                     : fork-join graphs\n",
+	"poisson2d                    : poisson solving in 2D \n",
 	"sparselu                     : sparse LU decomposition\n",
 	NULL
 };
@@ -91,6 +93,15 @@ static const char* forkjoin_help[] = {
 	NULL
 };
 
+static const char* poisson2d_help[] = {
+	"\nPoisson 2D:\n",
+	"A few iterations of Poisson equation solving over even grid of size n*n.\n",
+	"Arguments:\n",
+	"     - n                     : size of the grid\n",
+	"     - iter                  : number of iterations\n",
+	NULL
+};
+
 static const char* sparselu_help[] = {
 	"\nSparse LU:\n",
 	"Parallel LU decomposition over sparse matrix.\n",
@@ -102,6 +113,7 @@ static const char* sparselu_help[] = {
 struct second_lvl_cmd cmds_static[] = {
 	{ "fibonacci", 2, fibonacci_help, cmd_fibonacci },
 	{ "forkjoin" , 2, forkjoin_help , cmd_forkjoin  },
+	{ "poisson2d", 2, poisson2d_help, cmd_poisson2d },
 	{ "sparselu" , 1, sparselu_help , cmd_sparselu  },
 	{ 0, 0, 0, 0},
 };
@@ -139,6 +151,27 @@ static int cmd_forkjoin(int argc, char** argv)
 	if(err) goto ret;
 
 	g_p = ggen_generate_forkjoin(phases, diameter);
+	if(g_p == NULL)
+	{
+		error("ggen error: %s\n",ggen_error_strerror());
+		err = 1;
+	}
+ret:
+	return err;
+}
+
+static int cmd_poisson2d(int argc, char** argv)
+{
+	int err = 0;
+	unsigned long n,iter;
+
+	err = s2ul(argv[0],&n);
+	if(err) goto ret;
+
+	err = s2ul(argv[1],&iter);
+	if(err) goto ret;
+
+	g_p = ggen_generate_poisson2d(n, iter);
 	if(g_p == NULL)
 	{
 		error("ggen error: %s\n",ggen_error_strerror());

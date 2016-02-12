@@ -292,3 +292,73 @@ ggen_error_label:
 	return NULL;
 
 }
+
+/* Poisson2D: iterations of a "sweep" across the unit square cut into a grid
+ * of n by n evenly-spaced points.
+ */
+igraph_t *ggen_generate_poisson2d(unsigned long n, unsigned long iter)
+{
+	igraph_t *g = NULL;
+	igraph_vector_long_t lw_old, lw_new;
+	unsigned long it, i, task, from;
+
+	ggen_error_start_stack();
+
+	g = malloc(sizeof(igraph_t));
+	GGEN_CHECK_ALLOC(g);
+	GGEN_FINALLY3(free,g,1);
+
+	GGEN_CHECK_IGRAPH(igraph_empty(g,0,1));
+	GGEN_FINALLY3(igraph_destroy,g,1);
+
+	/* We mimic a sweep across 2 arrays. Each iteration is doing:
+	 * - old[i] = new[i]
+	 * - new[i] = f(old[i-1], old[i], old[i+1])
+	 * To figure out dependencies between tasks, lw_old stores the last
+	 * task that wrote into old, and the same for lw_new/new.
+	 */
+	GGEN_CHECK_IGRAPH(igraph_vector_long_init(&lw_old, n));
+	GGEN_FINALLY(igraph_vector_destroy, &lw_old);
+	GGEN_CHECK_IGRAPH(igraph_vector_long_init(&lw_new, n));
+	GGEN_FINALLY(igraph_vector_destroy, &lw_new);
+
+	/* -1 means no task wrote to this index yet. */
+	igraph_vector_long_fill(&lw_old, -1);
+	igraph_vector_long_fill(&lw_new, -1);
+
+	for(it = 0; it < iter; it++)
+	{
+		for(i = 0; i < n; i++)
+		{
+			/* old[i] = new[i] */
+			task = addtask(g);
+			if(VECTOR(lw_new)[i] != -1)
+			{
+				from = VECTOR(lw_new)[i];
+				igraph_add_edge(g, from, task);
+			}
+			VECTOR(lw_old)[i] = task;
+		}
+		for(i = 0; i < n; i++)
+		{
+			/* new[i] = f(old[i-1], old[i], old[i+1])
+			 * Note that on the edges, the dependencies are simpler
+			 */
+			task = addtask(g);
+			if(i > 0 && i < n-1)
+			{
+				from = VECTOR(lw_old)[i-1];
+				igraph_add_edge(g, from, task);
+				from = VECTOR(lw_old)[i];
+				igraph_add_edge(g, from, task);
+				from = VECTOR(lw_old)[i+1];
+				igraph_add_edge(g, from, task);
+			}
+			VECTOR(lw_new)[i] = task;
+		}
+	}
+	ggen_error_clean(1);
+	return g;
+ggen_error_label:
+	return NULL;
+}
