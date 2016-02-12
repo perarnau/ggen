@@ -94,6 +94,8 @@ igraph_t *ggen_generate_forkjoin(unsigned long phases, unsigned long diameter);
 
 igraph_t *ggen_generate_sparselu(unsigned long size);
 
+igraph_t *ggen_generate_strassen(unsigned long size, unsigned long depth, unsigned long cutoff);
+
 igraph_t *ggen_generate_poisson2d(unsigned long n, unsigned long iter);
 
 /**********************************************************

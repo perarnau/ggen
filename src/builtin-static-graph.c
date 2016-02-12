@@ -64,6 +64,7 @@ static int cmd_fibonacci(int argc, char** argv);
 static int cmd_forkjoin(int argc, char** argv);
 static int cmd_poisson2d(int argc, char** argv);
 static int cmd_sparselu(int argc, char** argv);
+static int cmd_strassen(int argc, char** argv);
 
 /* help strings, there is a lot of them */
 const char* help_static[] = {
@@ -73,6 +74,7 @@ const char* help_static[] = {
 	"forkjoin                     : fork-join graphs\n",
 	"poisson2d                    : poisson solving in 2D \n",
 	"sparselu                     : sparse LU decomposition\n",
+	"strassen                     : fast matrix multiply\n",
 	NULL
 };
 
@@ -119,12 +121,23 @@ static const char* sparselu_help[] = {
 	NULL
 };
 
+static const char* strassen_help[] = {
+	"\nStrassen:\n",
+	"Fast matrix multiply.\n",
+	"Arguments:\n",
+	"     - size                  : size of one side of the matrix\n",
+	"     - depth                 : depth cutoff point\n",
+	"     - cutoff                : size cutoff point\n",
+	NULL
+};
+
 struct second_lvl_cmd cmds_static[] = {
 	{ "cholesky" , 1, cholesky_help , cmd_cholesky  },
 	{ "fibonacci", 2, fibonacci_help, cmd_fibonacci },
 	{ "forkjoin" , 2, forkjoin_help , cmd_forkjoin  },
 	{ "poisson2d", 2, poisson2d_help, cmd_poisson2d },
 	{ "sparselu" , 1, sparselu_help , cmd_sparselu  },
+	{ "strassen" , 3, strassen_help , cmd_strassen  },
 	{ 0, 0, 0, 0},
 };
 
@@ -218,6 +231,30 @@ static int cmd_sparselu(int argc, char** argv)
 	if(err) goto ret;
 
 	g_p = ggen_generate_sparselu(size);
+	if(g_p == NULL)
+	{
+		error("ggen error: %s\n",ggen_error_strerror());
+		err = 1;
+	}
+ret:
+	return err;
+}
+
+static int cmd_strassen(int argc, char** argv)
+{
+	int err = 0;
+	unsigned long size, depth, cutoff;
+
+	err = s2ul(argv[0],&size);
+	if(err) goto ret;
+
+	err = s2ul(argv[1],&depth);
+	if(err) goto ret;
+
+	err = s2ul(argv[2],&cutoff);
+	if(err) goto ret;
+
+	g_p = ggen_generate_strassen(size, depth, cutoff);
 	if(g_p == NULL)
 	{
 		error("ggen error: %s\n",ggen_error_strerror());
