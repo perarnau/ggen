@@ -260,7 +260,7 @@ ggen_error_label:
 }
 
 /* lifted from the KaStORS/BCS OpenMP task suite */
-static int sparselu_genmat(igraph_vector_bool_t *matrix, unsigned long size)
+static int sparselu_genmat(igraph_matrix_bool_t *matrix, unsigned long size)
 {
 	unsigned long ii, jj, kk;
 	igraph_bool_t empty;
@@ -277,7 +277,7 @@ static int sparselu_genmat(igraph_vector_bool_t *matrix, unsigned long size)
 			if(ii==jj) empty = 0;
 			if(ii==jj-1) empty = 0;
 			if(ii-1 == jj) empty = 0;
-			VECTOR(*matrix)[ii*size +jj] = !empty;
+			MATRIX(*matrix, ii, jj) = !empty;
 		}
 	}
 	return 0;
@@ -289,8 +289,8 @@ static int sparselu_genmat(igraph_vector_bool_t *matrix, unsigned long size)
 igraph_t *ggen_generate_sparselu(unsigned long size)
 {
 	igraph_t *g = NULL;
-	igraph_vector_bool_t nonempty;
-	igraph_vector_long_t lastwrite;
+	igraph_matrix_bool_t nonempty;
+	igraph_matrix_long_t lastwrite;
 	unsigned long ii, jj, kk, to, from, task, lastlu;
 
 	ggen_error_start_stack();
@@ -301,22 +301,19 @@ igraph_t *ggen_generate_sparselu(unsigned long size)
 
 	GGEN_CHECK_IGRAPH(igraph_empty(g,0,1));
 	GGEN_FINALLY3(igraph_destroy,g,1);
-	GGEN_CHECK_IGRAPH(igraph_vector_bool_init(&nonempty, size*size));
-	GGEN_FINALLY(igraph_vector_destroy, &nonempty);
-	GGEN_CHECK_IGRAPH(igraph_vector_long_init(&lastwrite, size*size));
-	GGEN_FINALLY(igraph_vector_destroy, &lastwrite);
+	GGEN_CHECK_IGRAPH(igraph_matrix_bool_init(&nonempty, size, size));
+	GGEN_FINALLY(igraph_matrix_destroy, &nonempty);
+	GGEN_CHECK_IGRAPH(igraph_matrix_long_init(&lastwrite, size, size));
+	GGEN_FINALLY(igraph_matrix_destroy, &lastwrite);
+	igraph_matrix_long_fill(&lastwrite, -1);
 
 	/* start by figuring out which part of the matrix contains elements
 	 */
 	sparselu_genmat(&nonempty, size);
 
-	/* run through the motions of the algorithm, creating tasks and checking
-	 * their dependencies as we go. Since all tasks touch the same memory at
-	 * different times, we just track the last task (in creation order),
-	 * that writes to each block.
-	 * -1 in last write is used to identify unwritten blocks.
+	/* run through the motions of the algorithm, creating tasks
+	 * and checking last writers.
 	 */
-	igraph_vector_long_fill(&lastwrite, -1);
 	for(kk = 0; kk < size; kk++)
 	{
 		/* lu task: inout [kk*size +kk]*/
@@ -324,15 +321,11 @@ igraph_t *ggen_generate_sparselu(unsigned long size)
 		SETVAS(g, "kernel", lastlu, "lu");
 		SETVAN(g, "x", lastlu, kk);
 		SETVAN(g, "y", lastlu, kk);
-		if(VECTOR(lastwrite)[kk*size +kk] != -1)
-		{
-			from = VECTOR(lastwrite)[kk*size +kk];
-			igraph_add_edge(g, from, lastlu);
-		}
-		VECTOR(lastwrite)[kk*size + kk] = lastlu;
+		raw_edge_2d(&lastwrite, kk, kk, g, lastlu);
+		MATRIX(lastwrite, kk, kk) = lastlu;
 
 		for(jj = kk+1; jj < size; jj++)
-			if(VECTOR(nonempty)[kk*size +jj])
+			if(MATRIX(nonempty, kk, jj))
 			{
 				/* fwd: in [kk*size + kk] inout [kk*size+jj] */
 				task = addtask(g);
@@ -340,15 +333,11 @@ igraph_t *ggen_generate_sparselu(unsigned long size)
 				SETVAN(g, "x", task, kk);
 				SETVAN(g, "y", task, jj);
 				igraph_add_edge(g, lastlu, task);
-				if(VECTOR(lastwrite)[kk*size +jj] != -1)
-				{
-					from = VECTOR(lastwrite)[kk*size+jj];
-					igraph_add_edge(g, from, task);
-				}
-				VECTOR(lastwrite)[kk*size+jj] = task;
+				raw_edge_2d(&lastwrite, kk, jj, g, task);
+				MATRIX(lastwrite, kk, jj) = task;
 			}
 		for(ii = kk+1; ii < size; ii++)
-			if(VECTOR(nonempty)[ii*size +kk])
+			if(MATRIX(nonempty, ii, kk))
 			{
 				/* bdiv: in [kk*size +kk] inout: [ii*size +kk]
 				 */
@@ -357,42 +346,34 @@ igraph_t *ggen_generate_sparselu(unsigned long size)
 				SETVAN(g, "x", task, ii);
 				SETVAN(g, "y", task, kk);
 				igraph_add_edge(g, lastlu, task);
-				if(VECTOR(lastwrite)[ii*size +kk] != -1)
-				{
-					from = VECTOR(lastwrite)[ii*size+kk];
-					igraph_add_edge(g, from, task);
-				}
-				VECTOR(lastwrite)[ii*size+kk] = task;
+				raw_edge_2d(&lastwrite, ii, kk, g, task);
+				MATRIX(lastwrite, ii, kk) = task;
 			}
 		for(ii = kk+1; ii < size; ii++)
-			if(VECTOR(nonempty)[ii*size +kk])
+			if(MATRIX(nonempty, ii, kk))
 				for(jj = kk+1; jj < size; jj++)
-					if(VECTOR(nonempty)[kk*size +jj])
+					if(MATRIX(nonempty, kk, jj))
 					{
 						/* bmod: in [ii*size +kk]
 						 *       in [kk*size +jj]
 						 *       inout [ii*size +jj]
 						 */
-						VECTOR(nonempty)[ii*size +jj] = 1;
+						MATRIX(nonempty, ii, jj) = 1;
 						task = addtask(g);
 						SETVAS(g, "kernel", task, "bmod");
 						SETVAN(g, "x", task, ii);
 						SETVAN(g, "y", task, jj);
 
 						/* this is the last fwd */
-						from = VECTOR(lastwrite)[ii*size+kk];
+						from = MATRIX(lastwrite, ii, kk);
 						igraph_add_edge(g, from, task);
 
 						/* this is the last bdiv */
-						from = VECTOR(lastwrite)[kk*size+jj];
+						from = MATRIX(lastwrite, kk, jj);
 						igraph_add_edge(g, from, task);
 
-						if(VECTOR(lastwrite)[ii*size+jj] != -1)
-						{
-							from = VECTOR(lastwrite)[ii*size+jj];
-							igraph_add_edge(g, from, task);
-						}
-						VECTOR(lastwrite)[ii*size+jj] = task;
+						raw_edge_2d(&lastwrite, ii, jj, g, task);
+						MATRIX(lastwrite, ii, jj) = task;
 					}
 	}
 	ggen_error_clean(1);
