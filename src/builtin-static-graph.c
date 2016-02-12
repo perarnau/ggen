@@ -59,6 +59,7 @@
 /* cmd declarations, we need this to be able to declare
  * the general struct
  */
+static int cmd_cholesky(int argc, char** argv);
 static int cmd_fibonacci(int argc, char** argv);
 static int cmd_forkjoin(int argc, char** argv);
 static int cmd_poisson2d(int argc, char** argv);
@@ -67,6 +68,7 @@ static int cmd_sparselu(int argc, char** argv);
 /* help strings, there is a lot of them */
 const char* help_static[] = {
 	"Methods:\n",
+	"cholesky                     : block cholesky factorization\n",
 	"fibonacci                    : recursive fibonacci\n",
 	"forkjoin                     : fork-join graphs\n",
 	"poisson2d                    : poisson solving in 2D \n",
@@ -74,6 +76,13 @@ const char* help_static[] = {
 	NULL
 };
 
+static const char* cholesky_help[] = {
+	"\nCholesky:\n",
+	"Block Cholesky factorization.\n",
+	"Arguments:\n",
+	"     - n                     : size of matrix in blocks\n",
+	NULL
+};
 
 static const char* fibonacci_help[] = {
 	"\nFibonacci:\n",
@@ -111,12 +120,31 @@ static const char* sparselu_help[] = {
 };
 
 struct second_lvl_cmd cmds_static[] = {
+	{ "cholesky" , 1, cholesky_help , cmd_cholesky  },
 	{ "fibonacci", 2, fibonacci_help, cmd_fibonacci },
 	{ "forkjoin" , 2, forkjoin_help , cmd_forkjoin  },
 	{ "poisson2d", 2, poisson2d_help, cmd_poisson2d },
 	{ "sparselu" , 1, sparselu_help , cmd_sparselu  },
 	{ 0, 0, 0, 0},
 };
+
+static int cmd_cholesky(int argc, char** argv)
+{
+	int err = 0;
+	unsigned long n;
+
+	err = s2ul(argv[0],&n);
+	if(err) goto ret;
+
+	g_p = ggen_generate_cholesky(n);
+	if(g_p == NULL)
+	{
+		error("ggen error: %s\n",ggen_error_strerror());
+		err = 1;
+	}
+ret:
+	return err;
+}
 
 static int cmd_fibonacci(int argc, char** argv)
 {

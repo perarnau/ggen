@@ -86,6 +86,8 @@ igraph_t *ggen_generate_random_orders(gsl_rng *r, unsigned long n, unsigned int 
  * Static graphs
  *********************************************************/
 
+igraph_t *ggen_generate_cholesky(unsigned long n);
+
 igraph_t *ggen_generate_fibonacci(unsigned long n, unsigned long cutoff);
 
 igraph_t *ggen_generate_forkjoin(unsigned long phases, unsigned long diameter);

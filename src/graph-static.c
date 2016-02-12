@@ -82,6 +82,75 @@ static inline void raw_edge_2d(igraph_vector_long_t *lastwrite,
  * Methods
  *********************************************************/
 
+/* Block Cholesky factorization, lifted for KaStORS/Plasma code.
+ * Matrix is of size n*n blocks.
+ */
+igraph_t *ggen_generate_cholesky(unsigned long size)
+{
+	igraph_t *g = NULL;
+	igraph_vector_long_t lastwrite;
+	unsigned long k, m, n, task;
+
+	ggen_error_start_stack();
+
+	g = malloc(sizeof(igraph_t));
+	GGEN_CHECK_ALLOC(g);
+	GGEN_FINALLY3(free,g,1);
+
+	GGEN_CHECK_IGRAPH(igraph_empty(g,0,1));
+	GGEN_FINALLY3(igraph_destroy,g,1);
+
+	GGEN_CHECK_IGRAPH(igraph_vector_long_init(&lastwrite, size*size));
+	GGEN_FINALLY(igraph_vector_destroy, &lastwrite);
+	igraph_vector_long_fill(&lastwrite, -1);
+
+	/* run through the motions of the algorithm, creating tasks and checking
+	 * their dependencies as we go. Since all tasks touch the same memory at
+	 * different times, we just track the last task (in creation order),
+	 * that writes to each block.
+	 * -1 in last write is used to identify unwritten blocks.
+	 */
+	for(k = 0; k < size; k++)
+	{
+		/* potrf inout [k,k]*/
+		task = addtask(g);
+		raw_edge_2d(&lastwrite, k, k, size, g, task);
+		VECTOR(lastwrite)[k*size + k] = task;
+
+		for(m = k+1; m < size; m++)
+		{
+			/* trsm: in [k,k] inout [k,m] */
+			task = addtask(g);
+			raw_edge_2d(&lastwrite, k, k, size, g, task);
+			raw_edge_2d(&lastwrite, k, m, size, g, task);
+			VECTOR(lastwrite)[k*size +m] = task;
+		}
+		for(m = k+1; m < size; m++)
+		{
+			/* syrk: in [k,m] inout [m,m] */
+			task = addtask(g);
+			raw_edge_2d(&lastwrite, k, m, size, g, task);
+			raw_edge_2d(&lastwrite, m, m, size, g, task);
+			VECTOR(lastwrite)[m*size +m] = task;
+
+			for(n = k+1; n < m; n++)
+			{
+				/* gemm: in [k,n] in [k,m] inout [n,m] */
+				task = addtask(g);
+				raw_edge_2d(&lastwrite, k, n, size, g, task);
+				raw_edge_2d(&lastwrite, k, m, size, g, task);
+				raw_edge_2d(&lastwrite, n, m, size, g, task);
+				VECTOR(lastwrite)[m*size +m] = task;
+			}
+		}
+	}
+	ggen_error_clean(1);
+	return g;
+ggen_error_label:
+	return NULL;
+
+}
+
 /* creates two subtasks, add the right edges to the graph */
 int _fibonacci_add_tasks(unsigned long n, unsigned long cutoff,
 			 unsigned long myid, igraph_t *g)
