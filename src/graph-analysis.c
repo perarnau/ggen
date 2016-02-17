@@ -161,17 +161,14 @@ igraph_vector_t * ggen_analyze_longest_antichain(igraph_t *g)
 	 *  - convert maximum matching to min vectex cover
 	 *  - convert min vertex cover to antichain on G
 	 */
-	int err;
-	unsigned long i,vg,found,added;
+	unsigned long i,vg,added;
 	igraph_t b,gstar;
 	igraph_vector_t edges,*res = NULL;
 	igraph_vector_t c,s,t,todo,n,next,l,r;
 	igraph_eit_t eit;
 	igraph_es_t es;
 	igraph_integer_t from,to;
-	igraph_vit_t vit;
-	igraph_vs_t vs;
-	igraph_real_t value;
+	long int pos;
 
 	ggen_error_start_stack();
 	if(g == NULL)
@@ -250,7 +247,7 @@ igraph_vector_t * ggen_analyze_longest_antichain(igraph_t *g)
 	for(i = 0; i < igraph_vector_size(&edges); i++)
 	{
 		igraph_edge(&b,VECTOR(edges)[i],&from,&to);
-		igraph_vector_push_back(&s,from);
+		igraph_vector_push_back(&s,(igraph_real_t)from);
 	}
 	/* we may have inserted the same vertex multiple times */
 	GGEN_CHECK_INTERNAL(vector_uniq(&s));
@@ -278,7 +275,7 @@ igraph_vector_t * ggen_analyze_longest_antichain(igraph_t *g)
 			if(VECTOR(todo)[i] < vg)
 			{
 				/* scan edges */
-				GGEN_CHECK_IGRAPH(igraph_es_adj(&es,VECTOR(todo)[i],IGRAPH_OUT));
+				GGEN_CHECK_IGRAPH(igraph_es_incident(&es,VECTOR(todo)[i],IGRAPH_OUT));
 				GGEN_FINALLY(igraph_es_destroy,&es);
 
 				GGEN_CHECK_IGRAPH(igraph_eit_create(&b,es,&eit));
@@ -289,9 +286,10 @@ igraph_vector_t * ggen_analyze_longest_antichain(igraph_t *g)
 					if(igraph_vector_binsearch(&n,IGRAPH_EIT_GET(eit),NULL))
 					{
 						igraph_edge(&b,IGRAPH_EIT_GET(eit),&from,&to);
-						if(!igraph_vector_binsearch(&t,to,NULL))
+						if(!igraph_vector_binsearch(&t,to,&pos))
 						{
-							igraph_vector_push_back(&next,to);
+							igraph_vector_push_back(&next, to);
+							igraph_vector_insert(&t, pos, to);
 							added = 1;
 						}
 					}
@@ -300,7 +298,7 @@ igraph_vector_t * ggen_analyze_longest_antichain(igraph_t *g)
 			else
 			{
 				/* scan edges */
-				GGEN_CHECK_IGRAPH(igraph_es_adj(&es,VECTOR(todo)[i],IGRAPH_IN));
+				GGEN_CHECK_IGRAPH(igraph_es_incident(&es,VECTOR(todo)[i],IGRAPH_IN));
 				GGEN_FINALLY(igraph_es_destroy,&es);
 
 				GGEN_CHECK_IGRAPH(igraph_eit_create(&b,es,&eit));
@@ -311,9 +309,10 @@ igraph_vector_t * ggen_analyze_longest_antichain(igraph_t *g)
 					if(igraph_vector_binsearch(&edges,IGRAPH_EIT_GET(eit),NULL))
 					{
 						igraph_edge(&b,IGRAPH_EIT_GET(eit),&from,&to);
-						if(!igraph_vector_binsearch(&t,to,NULL))
+						if(!igraph_vector_binsearch(&t,from,&pos))
 						{
 							igraph_vector_push_back(&next,from);
+							igraph_vector_insert(&t, pos, from);
 							added = 1;
 						}
 					}
@@ -322,13 +321,12 @@ igraph_vector_t * ggen_analyze_longest_antichain(igraph_t *g)
 			// destroy es and eit
 			ggen_error_pop(2);
 		}
-		igraph_vector_append(&t,&todo);
 		igraph_vector_clear(&todo);
 		igraph_vector_append(&todo,&next);
 		igraph_vector_clear(&next);
 	} while(added);
 
-	GGEN_CHECK_IGRAPH(igraph_vector_init_seq(&l,0,vg-1));
+	GGEN_CHECK_IGRAPH(igraph_vector_init_seq(&l,0,(igraph_real_t)(vg-1)));
 	GGEN_FINALLY(igraph_vector_destroy,&l);
 
 	GGEN_CHECK_INTERNAL(vector_diff(&l,&t));
@@ -346,7 +344,9 @@ igraph_vector_t * ggen_analyze_longest_antichain(igraph_t *g)
 			igraph_vector_push_back(&r,VECTOR(t)[i]);
 	}
 
-	igraph_vector_add_constant(&r,(igraph_real_t)-vg);
+	for(i = 0; i < igraph_vector_size(&r); i++)
+		VECTOR(r)[i] = VECTOR(r)[i] - vg;
+
 	GGEN_CHECK_INTERNAL(vector_union(&c,&r));
 
 	/* our antichain is U - C */
