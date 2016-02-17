@@ -38,7 +38,7 @@ ggen - graph generation library
 
 The GGen library provides an implementation of several random dag generators used
 in scheduling research. Along with these generators, a collection of analysis and
-utility fonctions are provided.
+utility functions are provided.
 
 The graph data structure comes from the [Igraph][] library.
 Random Number Generators come from [GSL][].
@@ -58,7 +58,7 @@ generator must be initialized before the function call.
 
 + `ggen_generate_erdos_gnp()`
 
-	Generates a DAG having _n_ nodes. Each possible edges of the DAG is tested for inclusion 
+	Generates a DAG having _n_ nodes. Each possible edges of the DAG is tested for inclusion
 	(with a *Bernouilli trial*) with probability _p_.
 
 	This is very similar to the *G(n,p)* random graph model but, again, only edges valid

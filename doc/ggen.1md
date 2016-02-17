@@ -13,9 +13,9 @@ ggen - command line interface to the ggen library.
 
 GGen is a command-line interface to the ggen graph generator library. It provides
 all the libggen functions as well as some trivial additional graph metrics.
-Graphs are manipuled as DOT files, see `dot(1)` for more information.
+Graphs are manipulated as DOT files, see `dot(1)` for more information.
 
-GGen fonctionalities are encapsuled into _MODULES_, each of them providing a different
+GGen functionalities are encapsulated into _MODULES_, each of them providing a different
 part of the ggen library: generators, analysers and transformers of graph, as well
 as annotations analysis (generally called graph properties).
 
@@ -240,7 +240,7 @@ The *--name* option is used to select the property to analyse.
 The ggen command line client is designed so that you can pipe the graph outputs back
 into the analyser modules.
 
-Two environment variables can be used to change the random number genetor used by ggen.
+Two environment variables can be used to change the random number generator used by ggen.
 They are defined and used by the underlying GNU Scientific library. Reading the [GSL Manual][] is recommended
 to understand their use.
 
@@ -256,7 +256,7 @@ to understand their use.
 
 No known bugs. Note that you can introduce bugs by yourself if you are playing
 with the seed, the type or the state file of the random number generator. These
-variables require carefull use and a deep understanding of their consequences.
+variables require careful use and a deep understanding of their consequences.
 
 Some of the classical bugs falsely reported:
 
