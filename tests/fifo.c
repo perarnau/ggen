@@ -46,6 +46,9 @@ int main()
 {
 	igraph_t *g;
 	gsl_rng *r;
+	igraph_vector_t *v;
+	igraph_vector_t degrees;
+	int i;
 
 	r = gsl_rng_alloc(gsl_rng_mt19937);
 	assert(r != NULL);
@@ -62,6 +65,30 @@ int main()
 	assert(g != NULL);
 	igraph_destroy(g);
 	free((void *)g);
+
+	// fifo 1 1 is a chain
+	g = ggen_generate_fifo(r, 10, 1, 1);
+	assert(g != NULL);
+	v = ggen_analyze_longest_path(g);
+	assert(v != NULL);
+	assert(igraph_vector_size(v) == 10);
+	igraph_vector_destroy(v);
+	igraph_destroy(g);
+	free((void*)g);
+
+	// random fifo: all vertices respect limits
+	g = ggen_generate_fifo(r, 20, 6, 5);
+	assert(g != NULL);
+	igraph_vector_init(&degrees, 20);
+	igraph_degree(g, &degrees, igraph_vss_all(), IGRAPH_OUT, 0);
+	for(i = 0; i < 20; i++)
+		assert(VECTOR(degrees)[i] <= 6);
+	igraph_degree(g, &degrees, igraph_vss_all(), IGRAPH_IN, 0);
+	for(i = 0; i < 20; i++)
+		assert(VECTOR(degrees)[i] <= 5);
+	igraph_vector_destroy(&degrees);
+	igraph_destroy(g);
+	free((void*)g);
 
 	gsl_rng_free(r);
 	return 0;
