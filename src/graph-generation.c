@@ -297,7 +297,7 @@ igraph_t *ggen_generate_fifo(gsl_rng *r, unsigned long n, unsigned long od, unsi
 
 			for(k = 0; k < j; k++)
 			{
-				VECTOR(edges)[2*k] = i;
+				VECTOR(edges)[2*k] = VECTOR(vertices)[i];
 				VECTOR(edges)[2*k+1] = vcount + k;
 			}
 			vcount+=k;
