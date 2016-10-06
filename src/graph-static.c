@@ -123,6 +123,7 @@ igraph_t *ggen_generate_cholesky(unsigned long size)
 	{
 		/* potrf inout [k,k]*/
 		task = addtask(g);
+		SETVAS(g, "kernel", task, "potrf");
 		raw_edge_2d(&lastwrite, k, k, g, task);
 		MATRIX(lastwrite, k, k) = task;
 
@@ -130,6 +131,7 @@ igraph_t *ggen_generate_cholesky(unsigned long size)
 		{
 			/* trsm: in [k,k] inout [k,m] */
 			task = addtask(g);
+			SETVAS(g, "kernel", task, "trsm");
 			raw_edge_2d(&lastwrite, k, k, g, task);
 			raw_edge_2d(&lastwrite, k, m, g, task);
 			MATRIX(lastwrite, k, m) = task;
@@ -138,6 +140,7 @@ igraph_t *ggen_generate_cholesky(unsigned long size)
 		{
 			/* syrk: in [k,m] inout [m,m] */
 			task = addtask(g);
+			SETVAS(g, "kernel", task, "syrk");
 			raw_edge_2d(&lastwrite, k, m, g, task);
 			raw_edge_2d(&lastwrite, m, m, g, task);
 			MATRIX(lastwrite, m, m) = task;
@@ -146,6 +149,7 @@ igraph_t *ggen_generate_cholesky(unsigned long size)
 			{
 				/* gemm: in [k,n] in [k,m] inout [n,m] */
 				task = addtask(g);
+				SETVAS(g, "kernel", task, "gemm");
 				raw_edge_2d(&lastwrite, k, n, g, task);
 				raw_edge_2d(&lastwrite, k, m, g, task);
 				raw_edge_2d(&lastwrite, n, m, g, task);
@@ -165,6 +169,7 @@ int _fibonacci_add_tasks(unsigned long n, unsigned long cutoff,
 			 unsigned long myid, igraph_t *g)
 {
 	unsigned long lastid;
+	SETVAN(g, "n", myid, n);
 	/* this task has already been created, or we got to the bottom */
 	if(n < 2 || n <= cutoff)
 		return GGEN_SUCCESS;
@@ -394,6 +399,7 @@ long _strassen(unsigned long mytask, unsigned long size,
 	unsigned long c, c12, c21, c22;
 	unsigned long s1, s2, s3, s4, s5, s6, s7, s8, m2, m5, t1, task;
 
+	SETVAS(g, "kernel", mytask, "strassen");
 	if(size <= cutseq || depth >= cutdepth)
 	{
 		return mytask;
@@ -601,6 +607,7 @@ igraph_t *ggen_generate_poisson2d(unsigned long n, unsigned long iter)
 		{
 			/* old[i] = new[i] */
 			task = addtask(g);
+			SETVAS(g, "kernel", task, "copy");
 			raw_edge_1d(&lw_new, i, g, task);
 			VECTOR(lw_old)[i] = task;
 		}
@@ -610,6 +617,7 @@ igraph_t *ggen_generate_poisson2d(unsigned long n, unsigned long iter)
 			 * Note that on the edges, the dependencies are simpler
 			 */
 			task = addtask(g);
+			SETVAS(g, "kernel", task, "apply");
 			raw_edge_1d(&lw_old, i-1, g, task);
 			raw_edge_1d(&lw_old, i  , g, task);
 			raw_edge_1d(&lw_old, i+1, g, task);
