@@ -282,7 +282,7 @@ int ggen_write_graph(igraph_t *g, FILE *output)
 		if(strcmp(GGEN_GRAPH_NAME_ATTR,STR(gnames,i)))
 		{
 			if(VECTOR(gtypes)[i]==IGRAPH_ATTRIBUTE_NUMERIC) {
-				snprintf(name,GGEN_DEFAULT_NAME_SIZE,"%f",
+				snprintf(name,GGEN_DEFAULT_NAME_SIZE,"%g",
 						(double)GAN(g,STR(gnames,i)));
 				agattr(cg,AGRAPH,(char *)STR(gnames,i),name);
 			}
@@ -303,7 +303,7 @@ int ggen_write_graph(igraph_t *g, FILE *output)
 			{
 				f = (Agnode_t *) VECTOR(vertices)[j];
 				if(VECTOR(vtypes)[i]==IGRAPH_ATTRIBUTE_NUMERIC) {
-					snprintf(name,GGEN_DEFAULT_NAME_SIZE,"%f",
+					snprintf(name,GGEN_DEFAULT_NAME_SIZE,"%g",
 							(double)VAN(g,STR(vnames,i),j));
 					agxset(f,attr,name);
 				}
@@ -325,7 +325,7 @@ int ggen_write_graph(igraph_t *g, FILE *output)
 			t = (Agnode_t *) VECTOR(vertices)[(unsigned long)to];
 			edge = agedge(cg,f,t,NULL,0);
 			if(VECTOR(etypes)[i]==IGRAPH_ATTRIBUTE_NUMERIC) {
-				snprintf(name,GGEN_DEFAULT_NAME_SIZE,"%f",
+				snprintf(name,GGEN_DEFAULT_NAME_SIZE,"%g",
 						(double)EAN(g,STR(enames,i),j));
 				agxset(edge,attr,name);
 			}
