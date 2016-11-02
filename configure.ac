@@ -1,7 +1,7 @@
 # fetch version number
 m4_include([version.m4])
 # init autoconf
-AC_INIT([ggen],[VERSION_NUMBER],[ggen-devel@ligforge.imag.fr])
+AC_INIT([ggen],[VERSION_NUMBER],[https://github.com/perarnau/ggen])
 # are we in the right source dir ?
 AC_CONFIG_SRCDIR([src/ggen.h])
 # build tools in separate dir

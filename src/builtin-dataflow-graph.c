@@ -54,7 +54,6 @@
 #include "builtin.h"
 #include "ggen.h"
 #include "utils.h"
-#include "config.h"
 
 /* cmd declarations, we need this to be able to declare
  * the general struct
