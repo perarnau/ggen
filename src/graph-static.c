@@ -51,7 +51,7 @@
 /* A lot of our algorithms rely on adding a single task and figuring out
  * the dependencies it has because it's reading data that might have been wrote
  * before.
- * To manage that, we use long vector remembering the last task that wrote into
+ * To manage that, we use a long vector remembering the last task that wrote into
  * a region of memory. If that vector contains a valid task id, then we add an
  * edge from that last task to the new one.
  * TODO: error checks
@@ -70,11 +70,15 @@ static inline void raw_edge_1d(igraph_vector_long_t *lastwrite,
 {
 	long todo = VECTOR(*lastwrite)[i];
 	unsigned long from;
+	igraph_integer_t eid;
 	if(todo != -1)
 	{
 		from = VECTOR(*lastwrite)[i];
 		igraph_add_edge(g, from, task);
+		igraph_get_eid(g, &eid, from, task, 1,0);
+		SETEAN(g, "x", eid, i);
 	}
+
 }
 
 static inline void raw_edge_2d(igraph_matrix_long_t *lastwrite,
@@ -83,10 +87,14 @@ static inline void raw_edge_2d(igraph_matrix_long_t *lastwrite,
 {
 	long todo = MATRIX(*lastwrite,i,j);
 	unsigned long from;
+	igraph_integer_t eid;
 	if(todo != -1)
 	{
 		from = MATRIX(*lastwrite,i,j);
 		igraph_add_edge(g, from, task);
+		igraph_get_eid(g, &eid, from, task, 1,0);
+		SETEAN(g, "x", eid, i);
+		SETEAN(g, "y", eid, j);
 	}
 }
 
@@ -116,7 +124,7 @@ igraph_t *ggen_generate_cholesky(unsigned long size)
 	GGEN_FINALLY(igraph_matrix_destroy, &lastwrite);
 	igraph_matrix_long_fill(&lastwrite, -1);
 
-	/* There's a single matrix used inout, use lastwrite to create the right
+	/* There's a single matrix using inout, use lastwrite to create the right
 	 * edges.
 	 */
 	for(k = 0; k < size; k++)
@@ -337,7 +345,7 @@ igraph_t *ggen_generate_sparselu(unsigned long size)
 				SETVAS(g, "kernel", task, "fwd");
 				SETVAN(g, "x", task, kk);
 				SETVAN(g, "y", task, jj);
-				igraph_add_edge(g, lastlu, task);
+				raw_edge_2d(&lastwrite, kk, kk, g, task);
 				raw_edge_2d(&lastwrite, kk, jj, g, task);
 				MATRIX(lastwrite, kk, jj) = task;
 			}
@@ -350,7 +358,7 @@ igraph_t *ggen_generate_sparselu(unsigned long size)
 				SETVAS(g, "kernel", task, "bdiv");
 				SETVAN(g, "x", task, ii);
 				SETVAN(g, "y", task, kk);
-				igraph_add_edge(g, lastlu, task);
+				raw_edge_2d(&lastwrite, kk, kk, g, task);
 				raw_edge_2d(&lastwrite, ii, kk, g, task);
 				MATRIX(lastwrite, ii, kk) = task;
 			}
@@ -370,12 +378,10 @@ igraph_t *ggen_generate_sparselu(unsigned long size)
 						SETVAN(g, "y", task, jj);
 
 						/* this is the last fwd */
-						from = MATRIX(lastwrite, ii, kk);
-						igraph_add_edge(g, from, task);
+						raw_edge_2d(&lastwrite, ii, kk, g, task);
 
 						/* this is the last bdiv */
-						from = MATRIX(lastwrite, kk, jj);
-						igraph_add_edge(g, from, task);
+						raw_edge_2d(&lastwrite, kk, jj, g, task);
 
 						raw_edge_2d(&lastwrite, ii, jj, g, task);
 						MATRIX(lastwrite, ii, jj) = task;
