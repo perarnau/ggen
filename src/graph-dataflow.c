@@ -220,8 +220,6 @@ static int generate_lu(igraph_t *g, unsigned long size, igraph_matrix_bool_t non
 		/* lu task: inout [kk*size +kk]*/
 		lastlu = addtask(g);
 		SETVAS(g, "kernel", lastlu, "lu");
-		SETVAN(g, "x", lastlu, kk);
-		SETVAN(g, "y", lastlu, kk);
 		raw_edge_2d(&lastwrite, kk, kk, g, lastlu);
 		MATRIX(lastwrite, kk, kk) = lastlu;
 
@@ -231,8 +229,6 @@ static int generate_lu(igraph_t *g, unsigned long size, igraph_matrix_bool_t non
 				/* fwd: in [kk*size + kk] inout [kk*size+jj] */
 				task = addtask(g);
 				SETVAS(g, "kernel", task, "fwd");
-				SETVAN(g, "x", task, kk);
-				SETVAN(g, "y", task, jj);
 				raw_edge_2d(&lastwrite, kk, kk, g, task);
 				raw_edge_2d(&lastwrite, kk, jj, g, task);
 				MATRIX(lastwrite, kk, jj) = task;
@@ -244,8 +240,6 @@ static int generate_lu(igraph_t *g, unsigned long size, igraph_matrix_bool_t non
 				 */
 				task = addtask(g);
 				SETVAS(g, "kernel", task, "bdiv");
-				SETVAN(g, "x", task, ii);
-				SETVAN(g, "y", task, kk);
 				raw_edge_2d(&lastwrite, kk, kk, g, task);
 				raw_edge_2d(&lastwrite, ii, kk, g, task);
 				MATRIX(lastwrite, ii, kk) = task;
@@ -262,8 +256,6 @@ static int generate_lu(igraph_t *g, unsigned long size, igraph_matrix_bool_t non
 						MATRIX(nonempty, ii, jj) = 1;
 						task = addtask(g);
 						SETVAS(g, "kernel", task, "bmod");
-						SETVAN(g, "x", task, ii);
-						SETVAN(g, "y", task, jj);
 
 						/* this is the last fwd */
 						raw_edge_2d(&lastwrite, ii, kk, g, task);
