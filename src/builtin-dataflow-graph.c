@@ -60,6 +60,7 @@
  * the general struct
  */
 static int cmd_cholesky(int argc, char** argv);
+static int cmd_denselu(int argc, char** argv);
 static int cmd_poisson2d(int argc, char** argv);
 static int cmd_sparselu(int argc, char** argv);
 
@@ -67,6 +68,7 @@ static int cmd_sparselu(int argc, char** argv);
 const char* help_dataflow[] = {
 	"Methods:\n",
 	"cholesky                     : block cholesky factorization\n",
+	"denselu                      : dense LU decomposition\n",
 	"poisson2d                    : poisson solving in 2D \n",
 	"sparselu                     : sparse LU decomposition\n",
 	NULL
@@ -77,6 +79,14 @@ static const char* cholesky_help[] = {
 	"Block Cholesky factorization.\n",
 	"Arguments:\n",
 	"     - n                     : size of matrix in blocks\n",
+	NULL
+};
+
+static const char* denselu_help[] = {
+	"\nDense LU:\n",
+	"Parallel LU decomposition over a dense matrix.\n",
+	"Arguments:\n",
+	"     - size                  : size of one side of the matrix in blocks\n",
 	NULL
 };
 
@@ -99,6 +109,7 @@ static const char* sparselu_help[] = {
 
 struct second_lvl_cmd cmds_dataflow[] = {
 	{ "cholesky" , 1, cholesky_help , cmd_cholesky  },
+	{ "denselu"  , 1, denselu_help  , cmd_denselu   },
 	{ "poisson2d", 2, poisson2d_help, cmd_poisson2d },
 	{ "sparselu" , 1, sparselu_help , cmd_sparselu  },
 	{ 0, 0, 0, 0},
@@ -113,6 +124,24 @@ static int cmd_cholesky(int argc, char** argv)
 	if(err) goto ret;
 
 	g_p = ggen_generate_cholesky(n);
+	if(g_p == NULL)
+	{
+		error("ggen error: %s\n",ggen_error_strerror());
+		err = 1;
+	}
+ret:
+	return err;
+}
+
+static int cmd_denselu(int argc, char** argv)
+{
+	int err = 0;
+	unsigned long size;
+
+	err = s2ul(argv[0],&size);
+	if(err) goto ret;
+
+	g_p = ggen_generate_denselu(size);
 	if(g_p == NULL)
 	{
 		error("ggen error: %s\n",ggen_error_strerror());

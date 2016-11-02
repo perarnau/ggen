@@ -196,33 +196,21 @@ static int sparselu_genmat(igraph_matrix_bool_t *matrix, unsigned long size)
 	return 0;
 }
 
-/* SparseLU: generate the graph from a LU decomposition of a sparse matrix of
+/* LU: generate the graph from a LU decomposition of a possibly sparse matrix of
  * size size*size BLOCKS.
  */
-igraph_t *ggen_generate_sparselu(unsigned long size)
+static int generate_lu(igraph_t *g, unsigned long size, igraph_matrix_bool_t nonempty)
 {
-	igraph_t *g = NULL;
-	igraph_matrix_bool_t nonempty;
 	igraph_matrix_long_t lastwrite;
 	unsigned long ii, jj, kk, to, from, task, lastlu;
 
 	ggen_error_start_stack();
 
-	g = malloc(sizeof(igraph_t));
-	GGEN_CHECK_ALLOC(g);
-	GGEN_FINALLY3(free,g,1);
-
 	GGEN_CHECK_IGRAPH(igraph_empty(g,0,1));
 	GGEN_FINALLY3(igraph_destroy,g,1);
-	GGEN_CHECK_IGRAPH(igraph_matrix_bool_init(&nonempty, size, size));
-	GGEN_FINALLY(igraph_matrix_destroy, &nonempty);
 	GGEN_CHECK_IGRAPH(igraph_matrix_long_init(&lastwrite, size, size));
 	GGEN_FINALLY(igraph_matrix_destroy, &lastwrite);
 	igraph_matrix_long_fill(&lastwrite, -1);
-
-	/* start by figuring out which part of the matrix contains elements
-	 */
-	sparselu_genmat(&nonempty, size);
 
 	/* run through the motions of the algorithm, creating tasks
 	 * and checking last writers.
@@ -288,11 +276,64 @@ igraph_t *ggen_generate_sparselu(unsigned long size)
 					}
 	}
 	ggen_error_clean(1);
+	return GGEN_SUCCESS;
+ggen_error_label:
+	return GGEN_FAILURE;
+
+}
+
+/* SparseLU: generate the graph from a LU decomposition of a sparse matrix of
+ * size size*size BLOCKS.
+ */
+igraph_t *ggen_generate_sparselu(unsigned long size)
+{
+	igraph_matrix_bool_t nonempty;
+	igraph_t *g;
+
+	ggen_error_start_stack();
+	g = malloc(sizeof(igraph_t));
+	GGEN_CHECK_ALLOC(g);
+	GGEN_FINALLY3(free,g,1);
+
+	GGEN_CHECK_IGRAPH(igraph_matrix_bool_init(&nonempty, size, size));
+	GGEN_FINALLY(igraph_matrix_destroy, &nonempty);
+
+	/* start by figuring out which part of the matrix contains elements
+	 */
+	sparselu_genmat(&nonempty, size);
+
+	GGEN_CHECK_INTERNAL(generate_lu(g, size, nonempty));
+	ggen_error_clean(1);
 	return g;
 ggen_error_label:
 	return NULL;
-
 }
+
+/* DenseLU: generate the graph from a LU decomposition of a dense matrix of
+ * size size*size BLOCKS.
+ */
+igraph_t *ggen_generate_denselu(unsigned long size)
+{
+	igraph_matrix_bool_t nonempty;
+	igraph_t *g;
+
+	ggen_error_start_stack();
+	g = malloc(sizeof(igraph_t));
+	GGEN_CHECK_ALLOC(g);
+	GGEN_FINALLY3(free,g,1);
+
+	GGEN_CHECK_IGRAPH(igraph_matrix_bool_init(&nonempty, size, size));
+	GGEN_FINALLY(igraph_matrix_destroy, &nonempty);
+
+	igraph_matrix_bool_fill(&nonempty, 1);
+
+	GGEN_CHECK_INTERNAL(generate_lu(g, size, nonempty));
+	ggen_error_clean(1);
+	return g;
+ggen_error_label:
+	return NULL;
+}
+
 
 /* Poisson2D: iterations of a "sweep" across the unit square cut into a grid
  * of n by n evenly-spaced points.
