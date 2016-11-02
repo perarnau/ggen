@@ -59,66 +59,60 @@
 /* cmd declarations, we need this to be able to declare
  * the general struct
  */
-static int cmd_fibonacci(int argc, char** argv);
-static int cmd_forkjoin(int argc, char** argv);
-static int cmd_strassen(int argc, char** argv);
+static int cmd_cholesky(int argc, char** argv);
+static int cmd_poisson2d(int argc, char** argv);
+static int cmd_sparselu(int argc, char** argv);
 
 /* help strings, there is a lot of them */
-const char* help_static[] = {
+const char* help_dataflow[] = {
 	"Methods:\n",
-	"fibonacci                    : recursive fibonacci\n",
-	"forkjoin                     : fork-join graphs\n",
-	"strassen                     : fast matrix multiply\n",
+	"cholesky                     : block cholesky factorization\n",
+	"poisson2d                    : poisson solving in 2D \n",
+	"sparselu                     : sparse LU decomposition\n",
 	NULL
 };
 
-static const char* fibonacci_help[] = {
-	"\nFibonacci:\n",
-	"Recursive Fibonacci sequence.\n",
+static const char* cholesky_help[] = {
+	"\nCholesky:\n",
+	"Block Cholesky factorization.\n",
 	"Arguments:\n",
-	"     - n                     : fibonacci number to `compute`\n",
-	"     - cutoff                : tasks not generated for smaller values\n",
+	"     - n                     : size of matrix in blocks\n",
 	NULL
 };
 
-static const char* forkjoin_help[] = {
-	"\nFork-Join:\n",
-	"Multiple phases of fork-join.\n",
+static const char* poisson2d_help[] = {
+	"\nPoisson 2D:\n",
+	"A few iterations of Poisson equation solving over even grid of size n*n.\n",
 	"Arguments:\n",
-	"     - phases                : number of phases\n",
-	"     - diameter              : number of forks per phase\n",
+	"     - n                     : size of the grid\n",
+	"     - iter                  : number of iterations\n",
 	NULL
 };
 
-static const char* strassen_help[] = {
-	"\nStrassen:\n",
-	"Fast matrix multiply.\n",
+static const char* sparselu_help[] = {
+	"\nSparse LU:\n",
+	"Parallel LU decomposition over sparse matrix.\n",
 	"Arguments:\n",
-	"     - size                  : size of one side of the matrix\n",
-	"     - depth                 : depth cutoff point\n",
-	"     - cutoff                : size cutoff point\n",
+	"     - size                  : size of one side of the matrix in blocks\n",
 	NULL
 };
 
-struct second_lvl_cmd cmds_static[] = {
-	{ "fibonacci", 2, fibonacci_help, cmd_fibonacci },
-	{ "forkjoin" , 2, forkjoin_help , cmd_forkjoin  },
-	{ "strassen" , 3, strassen_help , cmd_strassen  },
+struct second_lvl_cmd cmds_dataflow[] = {
+	{ "cholesky" , 1, cholesky_help , cmd_cholesky  },
+	{ "poisson2d", 2, poisson2d_help, cmd_poisson2d },
+	{ "sparselu" , 1, sparselu_help , cmd_sparselu  },
 	{ 0, 0, 0, 0},
 };
 
-static int cmd_fibonacci(int argc, char** argv)
+static int cmd_cholesky(int argc, char** argv)
 {
 	int err = 0;
-	unsigned long n,cutoff;
+	unsigned long n;
 
 	err = s2ul(argv[0],&n);
 	if(err) goto ret;
 
-	err = s2ul(argv[1],&cutoff);
-	if(err) goto ret;
-
-	g_p = ggen_generate_fibonacci(n, cutoff);
+	g_p = ggen_generate_cholesky(n);
 	if(g_p == NULL)
 	{
 		error("ggen error: %s\n",ggen_error_strerror());
@@ -128,18 +122,18 @@ ret:
 	return err;
 }
 
-static int cmd_forkjoin(int argc, char** argv)
+static int cmd_poisson2d(int argc, char** argv)
 {
 	int err = 0;
-	unsigned long phases,diameter;
+	unsigned long n,iter;
 
-	err = s2ul(argv[0],&phases);
+	err = s2ul(argv[0],&n);
 	if(err) goto ret;
 
-	err = s2ul(argv[1],&diameter);
+	err = s2ul(argv[1],&iter);
 	if(err) goto ret;
 
-	g_p = ggen_generate_forkjoin(phases, diameter);
+	g_p = ggen_generate_poisson2d(n, iter);
 	if(g_p == NULL)
 	{
 		error("ggen error: %s\n",ggen_error_strerror());
@@ -149,21 +143,15 @@ ret:
 	return err;
 }
 
-static int cmd_strassen(int argc, char** argv)
+static int cmd_sparselu(int argc, char** argv)
 {
 	int err = 0;
-	unsigned long size, depth, cutoff;
+	unsigned long size;
 
 	err = s2ul(argv[0],&size);
 	if(err) goto ret;
 
-	err = s2ul(argv[1],&depth);
-	if(err) goto ret;
-
-	err = s2ul(argv[2],&cutoff);
-	if(err) goto ret;
-
-	g_p = ggen_generate_strassen(size, depth, cutoff);
+	g_p = ggen_generate_sparselu(size);
 	if(g_p == NULL)
 	{
 		error("ggen error: %s\n",ggen_error_strerror());

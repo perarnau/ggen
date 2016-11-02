@@ -92,6 +92,7 @@ struct first_lvl_cmd {
  */
 extern const char *help_generate[];
 extern const char *help_static[];
+extern const char *help_dataflow[];
 extern const char *help_analyse[];
 extern const char *help_transform[];
 extern const char *help_add_prop[];
@@ -99,6 +100,7 @@ extern const char *help_analyse_prop[];
 
 extern struct second_lvl_cmd cmds_generate[];
 extern struct second_lvl_cmd cmds_static[];
+extern struct second_lvl_cmd cmds_dataflow[];
 extern struct second_lvl_cmd cmds_analyse[];
 extern struct second_lvl_cmd cmds_transform[];
 extern struct second_lvl_cmd cmds_add_prop[];
