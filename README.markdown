@@ -17,16 +17,6 @@ Address any remarks concerning compiling or using this tool to
 
 ## REQUIREMENTS ##
 
-### Compiling from distribution package ###
-
-While a stable release (0.3) was made a long time ago, it is not supported
-anymore. You can still try to build it, and there is a patch available
-on demand to make it work, but it is NOT recommended.
-
-Please refer to its README for instructions.
-
-### Compiling from repository ###
-
 - autotools (libtoolize, autoconf, automake, autoheaders, aclocal)
 - Igraph (>= 0.7, might not be packaged for your linux distribution yet)
 - GNU Scientific Library 
@@ -34,22 +24,28 @@ Please refer to its README for instructions.
 - pkg-config (optional: you can tell configure were to find the other libs manually)
 - pandoc
 
-./autogen.sh && ./configure && make && make install
+### Compiling from distribution package ###
 
-Note: in order to compile on OS X and some Linux platforms, you may have to change `libtoolize` in `autogen.sh` to `glibtoolize`.
+`./configure && make && make install` should work.
 
-### Vagrant setup
+### Compiling from repository ###
+
+`./autogen.sh && ./configure && make && make install`
+
+Note: in order to compile on OS X and some Linux platforms, you may have to
+change `libtoolize` in `autogen.sh` to `glibtoolize`.
+
+## Vagrant Setup
 
 This repository contains a Vagrantfile you can use to deploy automatically a
 Virtualbox VM with ggen installed correctly.
 
 ## Documentation ##
 
-Man pages are generated automatically by make. The GGen website will eventually contain more
-information.
+Man pages are generated automatically by make.
 
-The command line client as an extensive --help. It displays help recursively on modules, commands
-and required arguments.
+The command line client as an extensive --help. It displays help recursively on
+modules, commands and required arguments.
 
 ## Additional Info ##
 
@@ -59,4 +55,3 @@ If you still have questions, mail us.
 [gsl]: http://www.gnu.org/software/gsl/
 [DOT]: http://www.graphviz.org
 [mail]: mailto:swann.perarnau@imag.fr
-[web]: http://ggen.ligforge.imag.fr
