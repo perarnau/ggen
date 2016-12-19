@@ -94,10 +94,8 @@ generator must be initialized before the function call.
 
 These functions generate task graphs derived from classical parallel algorithms.
 
-+ `ggen_generate_cholesky()`
+_UNSTABLE_: these functions might change/disappear in future versions.
 
-	Generates a graph corresponding to a blocked Cholesky decomposition, on
-	a matrix of size _n_ by _n_ (in blocks).
 
 + `ggen_generate_fibonacci()`
 
@@ -110,6 +108,29 @@ These functions generate task graphs derived from classical parallel algorithms.
 	Generates a graph composed of _phases_ fork-joins. A fork creates
 	_diameter_ nodes, the join is always a single node.
 
++ `ggen_generate_strassen()`
+
+	Generates the graph corresponding to a Strassen matrix multiply over a
+	square matrix of _size_ by _size_ elements. Recursion is stopped at
+	_depth_ or when the submatrix is smaller than _cutoff_.
+
+## Dataflow Graphs
+
+These function generate task graphs according to the dataflow versions of
+parallel algorithms.
+
+_UNSTABLE_: these functions might change/disappear in future versions.
+
++ `ggen_generate_cholesky()`
+
+	Generates a graph corresponding to a blocked Cholesky decomposition, on
+	a matrix of size _n_ by _n_ (in blocks).
+
++ `ggen_generate_denselu()`
+
+	Generates the graph corresponding an LU decomposition of a dense square
+	matrix _size_ blocks wide.
+
 + `ggen_generate_poisson2d()`
 
 	Generates the graph corresponding to _iter_ iterations of the solving
@@ -118,14 +139,8 @@ These functions generate task graphs derived from classical parallel algorithms.
 
 + `ggen_generate_sparselu()`
 
-	Generates the graph corresponding an LU decomposition of a square
+	Generates the graph corresponding an LU decomposition of a sparse square
 	matrix _size_ blocks wide.
-
-+ `ggen_generate_strassen()`
-
-	Generates the graph corresponding to a Strassen matrix multiply over a
-	square matrix of _size_ by _size_ elements. Recursion is stopped at
-	_depth_ or when the submatrix is smaller than _cutoff_.
 
 ## Analysis Functions
 

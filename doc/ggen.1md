@@ -104,9 +104,7 @@ By default the resulting graph is printed on standard output.
 Static graph structures. See `ggen(3)` for a description of each method.
 By default the resulting graph is printed on standard output.
 
-+ `cholesky` *n:int*
-
-	Calls ggen_generate_cholesky from libggen.
+_UNSTABLE_: these functions might change/disappear in future versions.
 
 + `fibonacci` *n:int* *cutoff:int*
 
@@ -116,6 +114,25 @@ By default the resulting graph is printed on standard output.
 
 	Calls ggen_generate_forkjoin from libggen.
 
++ `strassen` *size:int* *depth:int* *cutoff:int*
+
+	Calls ggen_generate_strassen from libggen.
+
+## dataflow-graph
+
+Dataflow graph structures. See `ggen(3)` for a description of each method.
+By default the resulting graph is printed on standard output.
+
+_UNSTABLE_: these functions might change/disappear in future versions.
+
++ `cholesky` *n:int*
+
+	Calls ggen_generate_cholesky from libggen.
+
++ `denselu` *size:int*
+
+	Calls ggen_generate_denselu from libggen.
+
 + `poisson2d` *n:int* *iter:int*
 
 	Calls ggen_generate_poisson2d from libggen.
@@ -123,10 +140,6 @@ By default the resulting graph is printed on standard output.
 + `sparselu` *size:int*
 
 	Calls ggen_generate_sparselu from libggen.
-
-+ `strassen` *size:int* *depth:int* *cutoff:int*
-
-	Calls ggen_generate_strassen from libggen.
 
 ## analyse-graph
 
