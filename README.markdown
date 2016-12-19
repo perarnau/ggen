@@ -36,6 +36,8 @@ Please refer to its README for instructions.
 
 ./autogen.sh && ./configure && make && make install
 
+Note: in order to compile on OS X and some Linux platforms, you may have to change `libtoolize` in `autogen.sh` to `glibtoolize`.
+
 ### Vagrant setup
 
 This repository contains a Vagrantfile you can use to deploy automatically a
